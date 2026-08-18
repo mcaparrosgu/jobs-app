@@ -1,6 +1,20 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Actualizacion**: `docs/01-historias.md` y `docs/02-mvp.md` — segunda
+  vuelta de decisiones con Mar. Vuelven al MVP: autorregistro (privacidad,
+  cada usuaria crea su propia contrasena), carta de presentacion junto al
+  CV (una sola llamada, un solo archivo descargable con CV en pag 1-2 y
+  carta en pag 3), e historial de resultados al volver a entrar (evita
+  abandono a mitad de busqueda). Nueva historia G3: email automatico de
+  aviso (sin detalle de ofertas) cuando la ingesta de las 13:00 encuentra
+  algo relevante para el perfil de la usuaria. B2 pasa definitivamente a
+  textarea de texto plano, sin subida de PDF. G2 confirmado como
+  automatico via schedule/trigger de n8n. Esfuerzo revisado de 7-10 a
+  9-13 dias. Veredicto actualizado: el MVP crecio por decisiones de fondo
+  de Mar (privacidad, tasa de conversion a entrevista), no se propone
+  recortarlas de nuevo; la palanca que queda es secuenciar el Paso 9 en
+  dos tandas (recorrido critico primero, cron+email despues).
 * **Creacion**: `docs/02-mvp.md` (Paso 3) — recorte al recorrido critico:
   login simple sin auto-registro, un solo puesto, CV solo en PDF, una
   busqueda a la vez, seleccion "me interesa" mantenida (control de coste),

@@ -1,158 +1,188 @@
 # 02 · MVP
 
-> Basado en `docs/01-historias.md`. Aquí no se añade nada — solo se
-> recorta. Si una historia no está en el recorrido crítico, se aparca en
-> VERSIÓN 2, aunque estuviera marcada IMPRESCINDIBLE en el Paso 2. La
-> etiqueta de prioridad de una historia describe su importancia para el
-> producto completo, no si entra en esta primera tanda.
+> Basado en `docs/01-historias.md`. Revisado con Mar tras una segunda
+> vuelta de decisiones: algunas cosas que se habían aparcado en Versión 2
+> vuelven al MVP porque Mar las considera fundamentales (autorregistro,
+> carta de presentación, historial de resultados, aviso por email). El MVP
+> ha crecido respecto a la primera versión de este documento — se explica
+> por qué en cada punto.
 
 ## 1. Recorrido crítico
 
 La única secuencia que una usuaria debe poder completar de principio a fin
 para que el producto tenga algún valor:
 
-1. **Entra** con su email y contraseña (cuenta creada de antemano por Mar
-   para los 5 de la clase — sin auto-registro).
+1. **Se registra ella misma** con su email y una contraseña que elige
+   (nadie más crea la cuenta por ella — privacidad y protección de datos).
 2. **Rellena el formulario**: puesto que busca, palabras clave, años de
-   experiencia. Sube su CV en PDF.
+   experiencia, y **pega el texto de su CV** en un campo de texto (sin
+   subir archivo).
 3. **Pulsa "Buscar"**. Espera viendo un indicador de "buscando" mientras
    corre la ingesta.
 4. **Ve la lista de ofertas** remotas asalariadas encontradas.
 5. **Marca "me interesa"** en las ofertas que quiere. Espera viendo
-   "generando" mientras se crea el CV adaptado.
-6. **Descarga el CV** adaptado a esa oferta.
+   "generando" mientras se crean el CV y la carta de presentación
+   adaptados, en una sola llamada.
+6. **Descarga un único archivo** con el CV (1-2 páginas) y la carta de
+   presentación (página 3) de esa oferta.
 7. Lo envía ella misma a la empresa (fuera del producto).
 
+Además, **por fuera** de este recorrido (pero igual de necesario para que
+el producto funcione en la práctica, no solo en la demo):
+
+- Cada día a las 13:00, la ingesta compartida corre automáticamente vía
+  el schedule/trigger de n8n (sin que nadie la dispare a mano), y si
+  encuentra ofertas nuevas que coinciden con el perfil de una usuaria, le
+  llega un email corto con enlace a sus resultados.
+- Si una usuaria vuelve a entrar otro día, ve sus resultados anteriores
+  sin tener que repetir la búsqueda desde cero.
+
 Si esta secuencia funciona de principio a fin para 1 persona, el MVP ya
-demuestra el valor central: ahorrar el trabajo manual de adaptar el CV.
+demuestra el valor central: ahorrar el trabajo manual de adaptar el CV (y
+ahora la carta) a cada oferta.
 
 ## 2. Historias del MVP
 
-Solo las que forman el recorrido de arriba — y recortadas dentro de sí
-mismas donde se podía:
-
-- **A1 · Entrar con email y contraseña.** Recortado: sin auto-registro.
-  Las 5 cuentas las crea Mar a mano antes de empezar la prueba. Elimina
-  toda la lógica de validación de registro.
+- **A1 · Registrarme y entrar con email y contraseña.** Tal cual, **sin
+  recortar**: cada usuaria crea su propia cuenta y contraseña. Decisión
+  explícita de Mar por privacidad — nadie más debe poder crear ni conocer
+  la contraseña de otra persona del grupo.
+- **A3 · Volver a ver mis resultados sin repetir la búsqueda.** Vuelve al
+  MVP (estaba aparcada): Mar señala que sin esto la usuaria se cansa a
+  mitad de proceso y abandona la búsqueda de empleo. Se implementa como
+  parte natural de guardar los datos por cuenta, no hace falta una
+  pantalla nueva compleja — solo mostrar lo último guardado al entrar.
 - **B1 · Formulario de perfil.** Recortado: un solo campo de puesto (no
   varios), sin autosugerencias mientras escribe. Texto libre.
-- **B2 · Subir CV base.** Recortado: solo PDF, un único formato aceptado.
-  Sin opción de pegar texto.
+- **B2 · Pegar CV base en texto.** Recortado respecto a la idea original
+  de subir archivo: **solo textarea de texto plano**, sin subida de PDF.
+  Evita depender de que un PDF se lea bien — menos piezas que puedan
+  fallar, sin perder la función.
 - **C1 · Lanzar búsqueda.** Recortado: mientras haya una búsqueda en curso
   para esa usuaria, el botón "Buscar" se deshabilita — no hay lógica de
   detectar duplicados por campo ni de permitir paralelas. Una a la vez.
 - **E1 · Ver lista de ofertas.** Tal cual, es el corazón del recorrido.
 - **C2 · Seleccionar "me interesa".** Tal cual: sin esto no hay forma de
-  decidir qué CV generar, y es lo que mantiene bajo control el coste
-  (riesgo del Paso 1).
-- **C3 · Generar CV por oferta seleccionada.** Recortado: **solo CV, sin
-  carta de presentación.** La carta duplica llamadas a Anthropic y
-  complejidad de prompt por una funcionalidad que ni siquiera estaba en el
-  problema original del Paso 1 — se añadió en la revisión del Paso 2, pero
-  no es necesaria para demostrar el valor central.
-- **C4 · Descargar el CV.** Tal cual (sin carta que descargar).
+  decidir qué generar, y es lo que mantiene bajo control el coste (riesgo
+  del Paso 1). Mar lo confirma como fundamental.
+- **C3 · Generar CV y carta de presentación juntos.** Vuelve al MVP
+  (estaba aparcada): Mar confirma que sin carta es más difícil conseguir
+  entrevista, especialmente para los perfiles no-tech de la clase
+  (marketing, educación, traducción) y para quien está en transición de
+  carrera. Se generan en **una sola llamada** al modelo (mismo contexto,
+  mismo prompt) — no duplica coste como se pensaba en el primer recorte.
+- **C4 · Descargar CV + carta en un único archivo.** Vuelve ampliada: CV
+  en las primeras 1-2 páginas, carta en la página 3, un solo archivo
+  descargable.
 - **D1 + D2 · Espera.** Fusionadas en un único estado simple: "procesando"
-  mientras dura cualquiera de las dos fases (búsqueda o generación). No
-  hace falta que el mensaje diferencie cuál de las dos es.
+  mientras dura cualquiera de las dos fases (búsqueda o generación).
 - **F1 + F2 · Sin resultados / error.** Fusionadas en un mensaje mínimo:
   "no se encontraron ofertas" o "algo falló, inténtalo de nuevo" — sin
   sugerencias accionables ni botón de reintento automático.
 - **G1 · Límite de uso.** Recortado a lo mínimo: un número fijo
   hardcodeado (a decidir en el Paso 5) de búsquedas/generaciones por
-  usuaria y día. Sin panel, sin aviso proactivo — solo bloquea y dice "has
-  alcanzado tu límite de hoy".
-- **G2 · Ingesta compartida diaria a las 13:00.** Tal cual: reutiliza el
-  cron que el backend de n8n ya tiene montado, así que no añade esfuerzo
-  nuevo — de hecho ahorra construir una llamada a la API bajo demanda por
-  cada búsqueda.
+  usuaria y día. Sin panel, sin aviso proactivo.
+- **G2 · Ingesta compartida automática a las 13:00.** Tal cual: vía
+  schedule/trigger de n8n, reutilizando el cron que el backend ya tiene
+  montado — Mar confirma que debe ser automático, no manual.
+- **G3 · Email de aviso cuando hay ofertas nuevas.** Nueva, entra al MVP:
+  aviso corto + enlace a la web (sin listar el detalle de las ofertas
+  dentro del correo, para no duplicar la plantilla de la web). Solo se
+  envía si hay ofertas relevantes nuevas y la usuaria ya tiene perfil
+  guardado.
 
 ## 3. Versión 2 (aparcado)
 
-Todo esto queda fuera del MVP. No porque no importe, sino porque el
-recorrido crítico funciona sin ello:
+Lo que queda fuera del MVP porque el recorrido crítico funciona sin ello:
 
-- **A2 · Recuperar contraseña.** Mientras tanto: si alguien de las 5
-  personas la olvida, se la resetea Mar a mano. Construir un flujo de
-  recuperación por email para 5 personas conocidas es esfuerzo que no
-  compra validación.
-- **A3 · Volver a ver resultados anteriores sin relanzar búsqueda** (como
-  pantalla explícita). El dato queda igualmente guardado por debajo, pero
-  no se construye una vista dedicada de "historial" en el MVP.
+- **A2 · Recuperar contraseña (self-service).** Mientras tanto: si alguien
+  de las 5 personas la olvida, se lo resuelve Mar manualmente (p. ej.
+  borrando y dejando que se re-registre). Construir un flujo de
+  recuperación por email para 5 personas es esfuerzo que no compra
+  validación todavía — aunque ahora que el registro es autoservicio, esto
+  habrá que revisarlo pronto si el grupo crece.
 - **B1 · Autosugerencias de puesto mientras se escribe, y varios puestos a
-  la vez.** Puro azúcar de UX, cero impacto en si el producto funciona.
-- **B2 · Subir CV en Word o pegar texto**, además de PDF.
+  la vez.** Azúcar de UX, cero impacto en si el producto funciona.
 - **C1 · Búsquedas en paralelo cuando no hay campos duplicados.** Lógica
   fina que no aporta nada si de partida solo se permite una búsqueda a la
   vez por usuaria.
-- **C3/C4 · Carta de presentación.** Se añade en cuanto el CV solo
-  demuestre que la gente lo usa de verdad.
 - **F1/F2 · Mensajes de error accionables** (sugerir ampliar palabras
   clave, botón de reintento, distinguir causa del fallo).
 - **G1 · Panel de uso / aviso proactivo antes de llegar al límite.**
+- **G3 · Detalle de las ofertas dentro del email.** El email del MVP es
+  solo un aviso con enlace; listar título/empresa/enlace directamente en
+  el correo es una mejora posterior.
 
 ## 4. Hipótesis
 
 Creemos que **las 5 personas de la clase** (perfiles diversos: profesora,
 marketing, traducción, developer, Marta) **usarán el MVP para su búsqueda
-real de empleo remoto asalariado y generarán al menos un CV adaptado cada
-una**, porque **les ahorra el trabajo manual y repetitivo de adaptar el CV
-a cada oferta, algo que hoy hacen a mano sin método**.
+real de empleo remoto asalariado y generarán al menos un CV y carta
+adaptados cada una**, porque **les ahorra el trabajo manual y repetitivo
+de adaptar el CV y escribir una carta a cada oferta, algo que hoy hacen a
+mano sin método (o directamente no hacen, en el caso de la carta)**.
 
 Sabremos que acertamos si, durante el periodo de prueba, **las 5 personas
-entran con su cuenta y generan CVs de verdad para ofertas que les
-interesan** (no solo prueban la web una vez) — el mismo criterio de éxito
-ya fijado en `docs/00-problema.md`: 5 de 5 usuarias activas, al menos 5 CVs
-generados en total.
+entran con su propia cuenta y generan CVs+cartas de verdad para ofertas
+que les interesan** (no solo prueban la web una vez) — el mismo criterio
+de éxito ya fijado en `docs/00-problema.md`: 5 de 5 usuarias activas, al
+menos 5 CVs generados en total.
 
 ## 5. Esfuerzo
 
 Para alguien sin experiencia técnica previa trabajando con Claude Code,
-partiendo de que **el backend de n8n ya existe y funciona** (solo hay que
-conectarlo, no construirlo):
+partiendo de que **el backend de n8n ya existe y funciona** (hay que
+conectarlo y **adaptar el nodo de ingesta de empleo existente** a este
+MVP, no construir el pipeline desde cero):
 
 | Bloque | Días estimados |
 | :---- | :---- |
-| Cuentas + login (email/contraseña, sin auto-registro) | 1 |
-| Formulario + subida de CV en PDF | 1 |
+| Registro + login (email/contraseña, autoservicio) | 1–1,5 |
+| Formulario + textarea de CV + guardado de perfil | 1 |
 | Conectar el botón "Buscar" al webhook + estado de espera | 1–2 |
 | Lista de ofertas + selección "me interesa" + disparo de generación | 1–2 |
-| Descarga del CV generado | 0,5 |
+| Generación conjunta de CV + carta (prompt) y ensamblado en un único archivo descargable | 1–1,5 |
+| Ver resultados anteriores al volver a entrar (persistencia simple) | 0,5–1 |
+| Adaptar el nodo n8n de ingesta de empleo al schedule de las 13:00 + email de aviso personalizado | 1–1,5 |
 | Límite de uso por usuaria/día | 0,5 |
-| Ajustar la ingesta compartida a las 13:00 (reusa cron existente) | 0,5 |
 | Mensajes de error/sin resultados mínimos | 0,5 |
 | Pruebas con la clase real y arreglos | 1–2 |
 
-**Total estimado: 7–10 días** de trabajo enfocado (no necesariamente
+**Total estimado: 9–13 días** de trabajo enfocado (no necesariamente
 jornada completa), con apoyo de Claude Code en cada tarea del Paso 9.
 
 ## 6. Veredicto
 
-**Sigue siendo grande para un primer proyecto estructurado de alguien sin
-experiencia técnica.** Tiene autenticación, subida de archivos, una
-llamada asíncrona a un sistema externo con estado de espera, una pantalla
-de selección, generación condicionada, descarga de archivo y control de
-cuota — son 7 piezas técnicas distintas, aunque cada una sea pequeña.
+**El MVP ha crecido respecto a la primera versión de este documento**,
+porque varias historias que parecían recortables (carta de presentación,
+autorregistro, historial, email automático) resultaron ser importantes
+para Mar por razones de fondo — no caprichos, sino privacidad de datos y
+tasa real de conversión a entrevista. Eso es válido y hay que respetarlo,
+pero como founder tengo que decirlo con la misma honestidad que antes:
+**sigue sin ser un MVP pequeño para un primer proyecto sin experiencia
+técnica.** Ahora son 9 piezas técnicas (auth con registro propio, textarea
+de perfil, llamada asíncrona con estado, selección, generación conjunta
+CV+carta, ensamblado de archivo, persistencia entre sesiones, cron +
+email automático, control de cuota), no 7.
 
-Si el objetivo fuera aprender más rápido con menos riesgo, una versión
-**todavía más reducida (MVP v0)** sería:
+Lo que sí puedo recortar sin tocar ninguna de las decisiones de Mar:
 
-- **Sin login real**: una lista fija de 5 nombres para elegir "quién soy"
-  (sigue separando los datos por persona, pero sin contraseña ni
-  formulario de alta — nota: esto reabre el riesgo de privacidad que Mar
-  señaló, así que solo tendría sentido si las 5 personas aceptan
-  explícitamente que no hace falta contraseña para esta prueba tan
-  acotada).
-- **Sin subida de PDF**: un textarea donde la usuaria pega su experiencia
-  en texto plano. Evita parsear PDFs, que es donde más cosas raras pasan.
-- **Sin pantalla de selección**: se genera CV automáticamente para las 3
-  primeras ofertas encontradas, sin marcar "me interesa" una por una.
-  Menos control de coste por persona, pero una pantalla y un estado menos.
-- **Descarga en texto plano**, no PDF con formato.
+- **B1 y C1 ya vienen recortados al hueso** (un puesto, sin paralelismo) —
+  no hay más grasa ahí.
+- **El email (G3) puede simplificarse dentro de sí mismo**: un solo nodo
+  de n8n que reutiliza la plantilla más simple posible (texto plano, sin
+  diseño), no un email con estilo — ya está reflejado arriba.
+- **La persistencia (A3) no necesita una pantalla de "historial" separada**
+  — basta con que la pantalla de resultados sea la misma tanto si vengo de
+  buscar ahora como si vengo de una sesión anterior. Ya está reflejado
+  arriba como parte de A3, no como pieza nueva.
 
-Esta versión reduce el esfuerzo a unos **4–5 días**, a costa de una
-experiencia más tosca. Mi recomendación: **mantener el MVP tal como está
-descrito arriba (con login real, ya que Mar lo pidió explícitamente por
-privacidad) pero sí adoptar del MVP v0** el textarea en vez de subida de
-PDF y la generación automática de las primeras ofertas en vez de la
-pantalla de selección — recorta ~2 días sin tocar la decisión de
-contraseña, que no es negociable.
+No voy a proponer otra ronda de "MVP v0" recortando registro, carta o
+persistencia — ya se decidió explícitamente que son fundamentales, y
+insistir en recortarlas otra vez sería ignorar lo que Mar ya resolvió. Si
+en algún momento el plazo aprieta, la palanca que queda es **secuenciar el
+Paso 9 en dos tandas dentro del propio MVP**: primero el recorrido crítico
+sin G2/G3 (ingesta y email automáticos), probando con ingesta manual
+bajo demanda; y añadir el cron + email al final, una vez que el resto
+funciona de punta a punta. Eso no cambia el alcance, solo el orden de
+construcción — lo dejo anotado para el Paso 7 (tareas).

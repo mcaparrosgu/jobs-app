@@ -75,17 +75,17 @@ búsqueda de ofertas se ajuste a mí y no a un perfil genérico.
   ¿el formulario me deja completarlo igual que a un perfil tech, sin
   suponer que busco un puesto de programación? Sí/No.
 
-### B2. Subir mi CV base para que se use como punto de partida
-**IMPORTANTE**
+### B2. Pegar mi CV base para que se use como punto de partida
+**IMPRESCINDIBLE**
 
-Como usuaria, quiero subir mi CV actual (o pegar su contenido), para que la
-generación de CV adaptado parta de mi experiencia real y no de cero.
+Como usuaria, quiero pegar el texto de mi CV actual en un campo de texto
+(sin subir archivo), para que la generación de CV adaptado parta de mi
+experiencia real y no de cero, sin depender de que un PDF se lea bien.
 
-- Dado que subo un archivo de CV en un formato soportado (PDF o texto),
-  cuando confirmo, ¿queda asociado a mi cuenta para usarse en la
-  generación? Sí/No.
-- Dado que intento subir un archivo en un formato no soportado, ¿me avisa
-  del formato esperado en vez de fallar en silencio? Sí/No.
+- Dado que pego el texto de mi CV en el campo y confirmo, ¿queda asociado
+  a mi cuenta para usarse en la generación? Sí/No.
+- Dado que intento continuar sin pegar nada en el campo (obligatorio),
+  ¿me lo impide y me indica que hace falta? Sí/No.
 
 ## C. Búsqueda, selección y generación de CV + carta de presentación
 
@@ -136,17 +136,20 @@ escribirlos yo misma oferta por oferta.
   ¿cada una recibe su propio CV y carta, sin mezclarse entre ofertas?
   Sí/No.
 
-### C4. Descargar el CV y la carta de presentación
+### C4. Descargar el CV y la carta de presentación en un único archivo
 **IMPRESCINDIBLE**
 
-Como usuaria, quiero descargar el CV y la carta de presentación de una
-oferta que seleccioné, para poder enviarlos yo misma a la empresa.
+Como usuaria, quiero descargar un único archivo con el CV (1-2 páginas) y
+la carta de presentación (página 3) de una oferta que seleccioné, para
+poder enviarlo yo misma a la empresa sin tener que adjuntar dos archivos
+por separado.
 
 - Dado que ya se generaron el CV y la carta para una oferta seleccionada,
-  cuando pulso "Descargar", ¿obtengo ambos archivos legibles y listos
-  para enviar (no un volcado de texto sin formato)? Sí/No.
+  cuando pulso "Descargar", ¿obtengo un único archivo legible y listo para
+  enviar, con el CV en las primeras 1-2 páginas y la carta en la página
+  siguiente? Sí/No.
 - Dado que el CV o la carta aún se están generando, cuando intento
-  descargarlos, ¿el botón de descarga permanece deshabilitado en vez de
+  descargar, ¿el botón de descarga permanece deshabilitado en vez de
   darme un archivo vacío o roto? Sí/No.
 
 ## D. Espera y estado
@@ -253,13 +256,31 @@ variable.
   el resultado de la última ingesta compartida en vez de disparar una
   ingesta nueva? Sí/No.
 
+### G3. Avisarme por email cuando hay ofertas nuevas
+**IMPRESCINDIBLE**
+
+Como usuaria, quiero recibir un email corto cuando la ingesta compartida de
+las 13:00 encuentra ofertas nuevas que coinciden con mi perfil, con un
+enlace a mis resultados, para no tener que entrar a la web activamente
+cada día a comprobar si hay algo nuevo (reduce el riesgo de que alguien
+abandone a mitad de la búsqueda de empleo por no acordarse de volver).
+
+- Dado que la ingesta de las 13:00 encuentra ofertas nuevas que coinciden
+  con mi perfil guardado, ¿recibo un email ese mismo día con un aviso
+  corto y un enlace directo a mis resultados? Sí/No.
+- Dado que la ingesta de las 13:00 no encuentra ninguna oferta nueva para
+  mi perfil, ¿NO recibo email ese día (para no generar ruido)? Sí/No.
+- Dado que aún no he rellenado mi perfil cuando se ejecuta la ingesta de
+  las 13:00, ¿el sistema no me envía email ese día (no hay con qué
+  comparar relevancia)? Sí/No.
+
 ## HUECOS
 
 Cosas que quedan por decidir antes o durante el Paso 4 (spec):
 
-1. **Formato exacto de subida/descarga del CV y la carta** (B2, C4): no
-   se especifica si el CV base se sube como PDF, Word o texto pegado, ni
-   en qué formato se descargan el CV y la carta generados.
+1. **Formato exacto del archivo descargado** (C4): PDF con formato,
+   Word, o texto plano — el contenido y el orden (CV 1-2 páginas + carta
+   en página 3) ya están decididos, falta el formato de archivo.
 2. **Valor exacto del límite de uso** (G1): el Paso 1 identifica el riesgo
    de coste pero no da un número de búsquedas/generaciones permitidas por
    usuaria. Se decide en el Paso 5 (plan técnico).
@@ -267,13 +288,25 @@ Cosas que quedan por decidir antes o durante el Paso 4 (spec):
    dos búsquedas en paralelo se bloquean solo si el puesto u "otros datos
    importantes" coinciden — falta definir exactamente qué campos entran
    en esa comparación (¿solo el puesto? ¿también palabras clave?).
+4. **Proveedor de email** (G3): qué servicio envía el correo de aviso
+   (¿el mismo n8n con un nodo de email? ¿un servicio externo tipo Resend?)
+   — se decide en el Paso 5.
 
 ## Resuelto en esta revisión (ya no son huecos)
 
-- **Mecanismo de identificación**: email + contraseña, con recuperación de
-  contraseña (A1, A2). Se descartó login sin contraseña porque el grupo se
-  conoce los emails entre sí.
+- **Mecanismo de identificación**: email + contraseña, **autorregistro por
+  cada usuaria** (no cuentas creadas por Mar) — decisión explícita de Mar
+  por privacidad y protección de datos: cada persona debe crear y controlar
+  su propia contraseña. Incluye recuperación de contraseña (A1, A2).
 - **Definición de "relevante"**: coincidencia con las palabras clave que
   puso la usuaria en su perfil (B1), más una pregunta opcional a la
   usuaria sobre si quiere que se tenga en cuenta la experiencia pasada que
-  se ve en el CV que subió (B2) a la hora de valorar relevancia.
+  pegó en su CV (B2) a la hora de valorar relevancia.
+- **Formato de entrada del CV**: textarea de texto plano (B2), sin subida
+  de archivo — evita depender de que un PDF se lea bien.
+- **CV y carta de presentación van juntos**: se generan en una sola
+  llamada (mismo contexto, mismo prompt) y se descargan como un único
+  archivo (C3, C4). Justificación de negocio: fuera del sector tech puro
+  —marketing, educación, traducción, y perfiles en transición de
+  carrera— la carta de presentación sigue siendo relevante para conseguir
+  entrevista.
