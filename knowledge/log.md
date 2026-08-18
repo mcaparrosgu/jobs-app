@@ -1,6 +1,14 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Construccion**: T10 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0002_ofertas.sql` crea la tabla `ofertas` con los
+  campos de `docs/04-plan-tecnico.md` §3.4 (`titulo`, `empresa`, `enlace`,
+  `descripcion`, `fuente`, `id_externo`, `ingerida_en`). Restriccion
+  `unique (fuente, id_externo)` para que la misma oferta no se duplique
+  si aparece dos dias seguidos. Aplicada directamente en Supabase
+  (supervisado en Chrome), con el mismo truco de T09: SQL en una sola
+  linea y "Run without RLS" (RLS en `ofertas` es la tarea T14, aparte).
 * **Construccion**: T09 de `docs/06-tareas.md` (Paso 9) —
   `supabase/migrations/0001_perfiles.sql` crea la tabla `perfiles` con
   los campos de `docs/04-plan-tecnico.md` §3.4 (`user_id` unico contra
