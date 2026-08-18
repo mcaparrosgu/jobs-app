@@ -8,6 +8,20 @@
   de texto, `usar_experiencia_cv` booleano, `actualizado_en` para el
   borrado al mes). RLS se deja fuera a proposito: es la tarea T13,
   aparte, para no adelantar trabajo que no le toca a esta tarea.
+  **Obstaculo encontrado**: a Mar no le aparecia la tabla tras pegar el
+  SQL. Supervisado en Chrome: el editor SQL de Supabase (Monaco) rompe
+  el texto multilinea al pegarlo/escribirlo (auto-indenta y desplaza
+  lineas), asi que la consulta nunca llegaba a ejecutarse bien; y aunque
+  el SQL sea valido, Supabase muestra un aviso bloqueante ("Potential
+  issue detected: creates a table without RLS") que exige elegir **"Run
+  without RLS"** o **"Run and enable RLS"** antes de correr cualquier
+  `create table` sin RLS — si ese dialogo se cierra o se ignora, no pasa
+  nada. **Se aplico manualmente** pegando el SQL como una sola linea (sin
+  saltos de linea) y pulsando "Run without RLS"; la tabla quedo creada
+  y vacia, sin RLS, tal como toca en esta tarea. **Va a repetirse en
+  T10-T14** (mismo editor, mismas tablas sin RLS hasta T13/T14): pegar
+  el SQL de cada migracion en una sola linea, y en el aviso elegir "Run
+  without RLS".
 * **Construccion**: Hito 0 de `docs/06-tareas.md` terminado (T01-T05,
   Paso 9). Proyecto Next.js 16 con TypeScript y Tailwind generado con
   `create-next-app`; `npm run build` compila sin errores. **Obstaculo
