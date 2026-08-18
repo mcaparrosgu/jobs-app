@@ -34,7 +34,7 @@ existe en produccion y no se toca desde aqui.
 - [decision-rol-ia.md](decision-rol-ia.md) — decision tomada en el Paso 6:
   que usa IA, que no, y como se contienen los fallos del modelo.
 - [decision-tareas-mvp.md](decision-tareas-mvp.md) — decision tomada en el
-  Paso 7: como se trocea el MVP en 74 tareas verificables.
+  Paso 7: como se trocea el MVP en 76 tareas verificables.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

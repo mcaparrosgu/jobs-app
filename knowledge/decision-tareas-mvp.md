@@ -1,7 +1,7 @@
 ---
 type: Decision
-title: Lista de tareas del MVP — 74 tareas en 10 hitos
-description: Decision del Paso 7 sobre como se trocea la construccion del MVP en tareas de menos de una hora, verificables sin saber programar.
+title: Lista de tareas del MVP — 76 tareas en 10 hitos
+description: Decision del Paso 7 sobre como se trocea la construccion del MVP en tareas de menos de una hora, verificables sin saber programar. Renumerada de 74 a 76 tras la correccion de Mar sobre no tocar los workflows Jobs existentes.
 tags: [jobs-app, paso-7, tareas, implementacion]
 timestamp: 2026-08-18T00:00:00Z
 ---
