@@ -25,6 +25,8 @@ existe en produccion y no se toca desde aqui.
   proyecto y que hereda del backend n8n existente.
 - [decision-alcance-mvp-remoto.md](decision-alcance-mvp-remoto.md) —
   decision tomada en el Paso 1: el MVP se acota a trabajo remoto asalariado.
+- [concepto-mvp.md](concepto-mvp.md) — explicacion didactica de que es un
+  MVP y por que el alcance actual no es permanente.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

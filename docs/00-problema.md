@@ -11,17 +11,29 @@
 Buscar trabajo remoto asalariado obliga a repetir, oferta tras oferta, un
 ciclo lento y manual: encontrar ofertas que de verdad encajen entre el
 ruido, y adaptar el CV a cada una — perdiendo horas por semana sin
-garantía de que el CV resultante pase los filtros (ATS) de la empresa.
+garantía de que el CV resultante pase los filtros (ATS) de la empresa. Esto
+le pasa a cualquier persona buscando empleo remoto, **no solo a perfiles
+tech** — el sector o profesión concreta no cambia el problema de fondo.
 
 ## 2. Usuario
 
-**Marta**, 29 años, participante del bootcamp de IA Engineering, en
-transición hacia un rol tech. Nivel técnico **bajo** (como el resto de sus
-5 compañeros de clase, principiantes en programación). Busca su primer
-empleo **remoto y asalariado** (descarta freelance y puestos presenciales).
-No tiene experiencia previa optimizando CVs para ATS ni buscando ofertas de
-forma sistemática — hasta ahora lo ha hecho a mano, mirando LinkedIn e
-Infojobs sin método.
+**Marta**, 29 años, participante de un bootcamp de IA Engineering. Nivel
+técnico **bajo** — como el resto de sus 5 compañeros de clase, un grupo
+deliberadamente diverso: hay una profesora de secundaria, alguien de
+marketing, un traductor de videojuegos y un developer, además de Marta.
+Cada uno busca empleo en su propio sector, no necesariamente tech. Busca su
+próximo empleo **remoto y asalariado** (descarta freelance y puestos
+presenciales, por ahora — ver nota de alcance abajo). No tiene experiencia
+previa optimizando CVs para ATS ni buscando ofertas de forma sistemática —
+hasta ahora lo ha hecho a mano, mirando LinkedIn e Infojobs sin método.
+
+> **Nota sobre el alcance (remoto asalariado y "cualquier sector"):** esto
+> es el MVP, la primera versión mínima para validar si la idea funciona
+> antes de invertir en construir más (ver analogía de la casa en
+> `knowledge/`). No es una limitación permanente del producto: si el MVP
+> funciona, una fase posterior amplía a presencial y freelance. El producto
+> **nunca se ha limitado a empleos tech** — eso nunca estuvo en alcance,
+> el pipeline de ingesta ya trae ofertas de cualquier sector.
 
 ## 3. Ejemplo concreto
 
@@ -46,8 +58,10 @@ compañeros del bootcamp):
 ## 5. Qué NO es
 
 1. No es una app móvil nativa — es una web mínima.
-2. No cubre freelance ni empleo presencial — el alcance del MVP es
-   **solo trabajo remoto asalariado**.
+2. No cubre freelance ni empleo presencial **en esta primera fase** — el
+   alcance del MVP es solo trabajo remoto asalariado. Es una decisión de
+   secuencia, no un límite permanente: se revisa en fases posteriores si
+   el MVP valida la idea.
 3. No hace seguimiento del proceso tras enviar la candidatura (entrevistas,
    negociación) — el MVP solo cubre búsqueda + generación de CV, no el
    seguimiento que sí existe en el backend n8n para otros usos.

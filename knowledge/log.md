@@ -5,6 +5,11 @@
   `decision-alcance-mvp-remoto.md` — se define el problema, la persona
   (Marta), el ejemplo concreto, el criterio de exito (5/5 testers, >=5 CVs
   generados) y se acota el MVP a trabajo remoto asalariado.
+* **Actualizacion**: `docs/00-problema.md` — se corrige el sesgo "rol
+  tech" (la clase es diversa: profesora, marketing, traduccion, developer)
+  y se aclara que el alcance remoto asalariado es una decision de fase 1,
+  no permanente. Se anade `concepto-mvp.md` con la analogia didactica del
+  MVP.
 * **Creacion**: se establece el bundle OKF (`knowledge/index.md`,
   `knowledge/log.md`) para documentar el proyecto Jobs App a partir de
   ahora, siguiendo la especificacion de
