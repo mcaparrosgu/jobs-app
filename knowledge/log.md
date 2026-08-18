@@ -1,6 +1,11 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/01-historias.md` (Paso 2) — historias de usuario
+  agrupadas en Identificacion, Perfil, Busqueda/generacion de CV, Espera,
+  Resultados, Errores y Control de uso/coste. Huecos detectados: mecanismo
+  de identificacion real, definicion de "relevante", formato de CV, valor
+  del limite de uso.
 * **Creacion**: `docs/00-problema.md` (Paso 1) y
   `decision-alcance-mvp-remoto.md` — se define el problema, la persona
   (Marta), el ejemplo concreto, el criterio de exito (5/5 testers, >=5 CVs
