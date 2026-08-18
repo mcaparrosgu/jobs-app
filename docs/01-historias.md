@@ -31,9 +31,12 @@ que una contraseña, sin tener que gestionar contraseñas).
 > de entrega de correo, no de contraseña olvidada (ver F2).
 
 > Nota sobre duración de la sesión: una vez dentro, la usuaria queda
-> conectada en ese navegador varios días — no necesita pedir un enlace
-> nuevo cada vez que vuelve a abrir la web (relevante para A3 y para
-> cuando llega desde el email de aviso G3).
+> conectada en ese navegador hasta **15 días** sin volver a usarlo — no
+> necesita pedir un enlace nuevo cada vez que vuelve a abrir la web
+> (relevante para A3 y para cuando llega desde el email de aviso G3).
+> Pasados esos 15 días de inactividad, o si el enlace ya se usó una vez,
+> caduca y tiene que pedir uno nuevo y verificarlo de nuevo por email —
+> sin atajos.
 
 ### A3. Volver a acceder a mis resultados sin repetir la búsqueda
 **IMPORTANTE**
@@ -49,27 +52,7 @@ visita, para no perder el trabajo ya hecho si cierro la pestaña.
 
 ## B. Perfil de búsqueda
 
-### B1. Contar qué busco para recibir ofertas relevantes
-**IMPRESCINDIBLE**
-
-Como usuaria, quiero rellenar un formulario corto con mi perfil (uno o
-varios puestos que busco, palabras clave, años de experiencia), con
-sugerencias de puestos mientras escribo para ir más rápido, para que la
-búsqueda de ofertas se ajuste a mí y no a un perfil genérico.
-
-- Dado que abro el formulario, cuando lo relleno con puesto(s) y palabras
-  clave y lo envío, ¿se dispara la búsqueda con esos datos? Sí/No.
-- Dado que empiezo a escribir un puesto, cuando tecleo unas letras,
-  ¿se me sugieren puestos ya existentes para completarlo más rápido, sin
-  impedirme escribir uno distinto si no está en la lista? Sí/No.
-- Dado que intento enviar el formulario sin rellenar ningún puesto (campo
-  obligatorio), ¿me lo impide y me indica qué falta? Sí/No.
-- Dado que soy la profesora de secundaria de la clase (perfil no-tech),
-  cuando relleno el formulario con mi propio puesto y palabras clave,
-  ¿el formulario me deja completarlo igual que a un perfil tech, sin
-  suponer que busco un puesto de programación? Sí/No.
-
-### B2. Pegar mi CV base para que se use como punto de partida
+### B1. Pegar mi CV base para que se use como punto de partida
 **IMPRESCINDIBLE**
 
 Como usuaria, quiero pegar el texto de mi CV actual en un campo de texto
@@ -78,6 +61,45 @@ experiencia real y no de cero, sin depender de que un PDF se lea bien.
 
 - Dado que pego el texto de mi CV en el campo y confirmo, ¿queda asociado
   a mi cuenta para usarse en la generación? Sí/No.
+- Dado que intento continuar sin pegar nada en el campo (obligatorio),
+  ¿me lo impide y me indica que hace falta? Sí/No.
+
+### B2. Que el sistema me proponga puesto y palabras clave al leer mi CV
+**IMPRESCINDIBLE**
+
+Como usuaria, quiero que, nada más pegar mi CV, el sistema me proponga
+automáticamente un puesto y unas palabras clave a partir de lo que lee en
+él, y poder añadir o quitar las que quiera antes de guardar, para no
+tener que rellenar ese formulario desde cero — quiero pasar poco tiempo
+en este trámite.
+
+- Dado que acabo de pegar mi CV, ¿el sistema me propone un puesto y una
+  lista de palabras clave sin que yo tenga que escribirlas primero? Sí/No.
+- Dado que veo la propuesta, ¿puedo quitar cualquier palabra clave o el
+  puesto propuesto que no me representa? Sí/No.
+- Dado que veo la propuesta, ¿puedo añadir puesto(s) o palabras clave
+  propias que el sistema no haya sugerido? Sí/No.
+- Dado que soy la profesora de secundaria de la clase (perfil no-tech),
+  cuando pego mi CV, ¿la propuesta se ajusta a mi sector real, sin
+  suponer que busco un puesto de programación? Sí/No.
+- Dado que intento guardar mi perfil sin ningún puesto (ni propuesto ni
+  añadido a mano), ¿me lo impide y me indica que hace falta? Sí/No.
+
+> Nota: sustituye a la idea original de "autosugerencias mientras escribo"
+> (aparcada en Versión 2) por una propuesta automática única al pegar el
+> CV, editable después. Cubre el mismo objetivo — que la usuaria escriba
+> lo mínimo — con menos piezas que construir que un autocompletado en
+> vivo.
+
+### B3. Contar mis años de experiencia
+**IMPRESCINDIBLE**
+
+Como usuaria, quiero indicar mis años de experiencia a mano (el sistema no
+puede proponerlo automáticamente con fiabilidad), para completar mi
+perfil.
+
+- Dado que relleno mis años de experiencia y guardo el perfil, ¿queda
+  asociado a mi cuenta junto con el puesto y las palabras clave? Sí/No.
 - Dado que intento continuar sin pegar nada en el campo (obligatorio),
   ¿me lo impide y me indica que hace falta? Sí/No.
 
@@ -255,9 +277,9 @@ compartido.
 
 Como responsable del proyecto (Mar), quiero que la ingesta de ofertas
 (Adzuna/Jooble/Apify) se ejecute una vez al día para toda la clase — a las
-13:00 — en vez de relanzarse por cada búsqueda individual, para
-aprovechar mejor cada llamada a las fuentes externas y reducir el coste
-variable.
+**13:00, hora de España** — en vez de relanzarse por cada búsqueda
+individual, para aprovechar mejor cada llamada a las fuentes externas y
+reducir el coste variable.
 
 - Dado que son las 13:00, cuando llega esa hora, ¿se ejecuta
   automáticamente la ingesta compartida sin que ninguna usuaria tenga que
@@ -291,14 +313,16 @@ abandone a mitad de la búsqueda de empleo por no acordarse de volver).
 
 ## HUECOS
 
-Todos los huecos de identificación funcional quedaron resueltos en esta
-revisión (ver abajo). Quedan dos huecos puramente técnicos, sin efecto en
-`docs/03-spec.md` (que no menciona tecnología), a decidir en el Paso 5:
+No quedan huecos funcionales abiertos — los dos que había (zona horaria
+de la ingesta, retención de datos) se resolvieron en esta revisión: la
+ingesta es a las 13:00 hora de España (G2), y los datos de cada usuaria
+se conservan un mes tras generarse, eliminándose después automáticamente.
 
-1. **Zona horaria de las 13:00** (G2): ¿hora de España, hora del servidor?
-   No se ha concretado.
-2. **Cuánto tiempo se conservan los datos** de cada usuaria tras acabar el
-   periodo de prueba (retención/borrado) — pendiente de decidir.
+Sigue pendiente, pero es una decisión de **tecnología** (sin efecto en
+`docs/03-spec.md`, que no la menciona), a resolver en el Paso 5: qué
+modelo de IA usar para generar CVs y cartas — preferencia de Mar por uno
+gratuito y de código abierto (ver
+`knowledge/preferencias-tecnicas-paso5.md`).
 
 ## Resuelto en esta revisión (ya no son huecos)
 
@@ -318,21 +342,34 @@ revisión (ver abajo). Quedan dos huecos puramente técnicos, sin efecto en
   máximo (G1). Se aplica solo a la generación, no a "Buscar" (que ya no
   consume llamadas externas tras la corrección de C1).
 - **Qué campos definen el perfil para filtrar**: puesto y palabras clave
-  (C1) — los mismos que ya definían "relevante" en B1; años de
-  experiencia se muestra pero no participa en el filtrado.
+  (C1) — los mismos que ya definían "relevante" en B2; años de
+  experiencia (B3) se muestra pero no participa en el filtrado.
 - **Alcance del email de aviso**: aviso genérico ("hay ofertas nuevas,
   entra a verlas") a las 5 si la ingesta encontró algo ese día, sin
   calcular relevancia por persona dentro del propio cron (G3) — la
   relevancia se sigue filtrando en la web, no se duplica esa lógica.
-- **Definición de "relevante"**: coincidencia con las palabras clave que
-  puso la usuaria en su perfil (B1), más una pregunta opcional a la
-  usuaria sobre si quiere que se tenga en cuenta la experiencia pasada que
-  pegó en su CV (B2) a la hora de valorar relevancia.
-- **Formato de entrada del CV**: textarea de texto plano (B2), sin subida
-  de archivo — evita depender de que un PDF se lea bien.
+- **Definición de "relevante"**: coincidencia con el puesto y las palabras
+  clave del perfil de la usuaria — propuestos automáticamente al pegar su
+  CV y editables por ella (B2) — más una pregunta opcional sobre si quiere
+  que se tenga en cuenta la experiencia pasada que pegó en su CV (B1) a la
+  hora de valorar relevancia.
+- **Formato de entrada del CV**: textarea de texto plano (B1), sin subida
+  de archivo — evita depender de que un PDF se lea bien. Además, pegar el
+  CV dispara automáticamente la propuesta de puesto y palabras clave
+  (B2), para que la usuaria pase el mínimo tiempo posible en este trámite.
 - **CV y carta de presentación van juntos**: se generan en una sola
   llamada (mismo contexto, mismo prompt) y se descargan como un único
   archivo (C3, C4). Justificación de negocio: fuera del sector tech puro
   —marketing, educación, traducción, y perfiles en transición de
   carrera— la carta de presentación sigue siendo relevante para conseguir
   entrevista.
+- **Caducidad del acceso**: 15 días sin usarse (A1) — pasado ese tiempo,
+  o si el enlace ya se usó una vez, hace falta pedir uno nuevo y
+  verificarlo de nuevo por email, sin excepciones.
+- **Retención de datos**: un mes desde que se generan; después se borran
+  automáticamente. Mar señala que el periodo de prueba con la clase será
+  bastante más corto que ese mes, así que da margen de sobra.
+- **Propuesta automática de puesto y palabras clave**: al pegar el CV, el
+  sistema propone ambos automáticamente y la usuaria los edita (añade o
+  quita) antes de guardar (B2) — sustituye a la idea de autosugerencias
+  en vivo mientras se escribe.

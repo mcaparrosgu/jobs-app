@@ -15,10 +15,13 @@ para que el producto tenga algún valor:
 1. **Entra escribiendo su email** y pulsando el enlace de un solo uso
    (magic link) que le llega — sin crear ni recordar contraseña. Mismo
    nivel de privacidad que exigía Mar (solo quien controla ese email
-   entra), sin construir registro ni recuperación de contraseña.
-2. **Rellena el formulario**: puesto que busca, palabras clave, años de
-   experiencia, y **pega el texto de su CV** en un campo de texto (sin
-   subir archivo).
+   entra), sin construir registro ni recuperación de contraseña. El
+   acceso caduca a los 15 días sin usarse.
+2. **Pega el texto de su CV** en un campo de texto (sin subir archivo).
+   El sistema le propone automáticamente un puesto y unas palabras clave
+   leyendo ese CV — ella solo tiene que revisarlas: quitar lo que no le
+   representa, añadir lo que falte. Solo rellena a mano sus años de
+   experiencia. Pensado para llevarle poco tiempo.
 3. **Pulsa "Buscar"**. En segundos ve las ofertas que coinciden con su
    puesto y palabras clave — "Buscar" solo filtra el pool que ya trajo la
    ingesta compartida de las 13:00, no dispara ninguna llamada nueva.
@@ -35,7 +38,7 @@ para que el producto tenga algún valor:
 Además, **por fuera** de este recorrido (pero igual de necesario para que
 el producto funcione en la práctica, no solo en la demo):
 
-- Cada día a las 13:00, la ingesta compartida corre automáticamente vía
+- Cada día a las 13:00 (hora de España), la ingesta compartida corre automáticamente vía
   el schedule/trigger de n8n (sin que nadie la dispare a mano). Si
   encuentra ofertas nuevas ese día, envía un email genérico ("hay ofertas
   nuevas, entra a verlas") a las 5 — sin calcular relevancia por persona
@@ -59,12 +62,20 @@ ahora la carta) a cada oferta.
   mitad de proceso y abandona la búsqueda de empleo. Se implementa como
   parte natural de guardar los datos por cuenta, no hace falta una
   pantalla nueva compleja — solo mostrar lo último guardado al entrar.
-- **B1 · Formulario de perfil.** Recortado: un solo campo de puesto (no
-  varios), sin autosugerencias mientras escribe. Texto libre.
-- **B2 · Pegar CV base en texto.** Recortado respecto a la idea original
+- **B1 · Pegar CV base en texto.** Recortado respecto a la idea original
   de subir archivo: **solo textarea de texto plano**, sin subida de PDF.
   Evita depender de que un PDF se lea bien — menos piezas que puedan
   fallar, sin perder la función.
+- **B2 · Propuesta automática de puesto y palabras clave.** Vuelve al MVP
+  en forma distinta a como se aparcó: en vez de autosugerencias mientras
+  se escribe, el sistema propone puesto y palabras clave **una vez, al
+  leer el CV pegado**, y la usuaria las edita (añade/quita). Mar lo pide
+  explícitamente para que el trámite del formulario le lleve poco tiempo
+  — cubre el mismo objetivo que las autosugerencias con menos piezas que
+  construir.
+- **B3 · Años de experiencia.** Único campo del perfil que se sigue
+  rellenando a mano — el sistema no puede proponerlo con fiabilidad desde
+  el texto del CV.
 - **C1 · Lanzar búsqueda.** Corregido: "Buscar" filtra el pool ya traído
   por la ingesta compartida (G2), no dispara ninguna llamada nueva —
   respuesta en segundos, sin lógica de duplicados ni paralelismo que
@@ -105,8 +116,9 @@ ahora la carta) a cada oferta.
 
 Lo que queda fuera del MVP porque el recorrido crítico funciona sin ello:
 
-- **B1 · Autosugerencias de puesto mientras se escribe, y varios puestos a
-  la vez.** Azúcar de UX, cero impacto en si el producto funciona.
+- **B2 · Varios puestos a la vez en un mismo perfil**, y sugerencias
+  mientras se escribe letra a letra (la propuesta automática al pegar el
+  CV, ver arriba, ya cubre el objetivo de fondo con menos esfuerzo).
 - **C1 · Búsquedas en paralelo cuando no hay campos duplicados.** Lógica
   fina que no aporta nada si de partida solo se permite una búsqueda a la
   vez por usuaria.
@@ -141,8 +153,8 @@ MVP, no construir el pipeline desde cero):
 
 | Bloque | Días estimados |
 | :---- | :---- |
-| Login con magic link (sin registro, sin contraseña, sin recuperación) | 0,5–1 |
-| Formulario + textarea de CV + guardado de perfil | 1 |
+| Login con magic link (sin registro, sin contraseña, caduca a los 15 días) | 0,5–1 |
+| Textarea de CV + propuesta automática de puesto/palabras clave (vía IA) + edición y guardado de perfil | 1–1,5 |
 | Conectar el botón "Buscar" al webhook + estado de espera | 1–2 |
 | Lista de ofertas + selección "me interesa" + disparo de generación | 1–2 |
 | Generación conjunta de CV + carta (prompt) y archivo único con salto de página forzado entre ambos | 0,5–1 |
@@ -152,9 +164,11 @@ MVP, no construir el pipeline desde cero):
 | Mensajes de error/sin resultados mínimos | 0,5 |
 | Pruebas con la clase real y arreglos | 1–2 |
 
-**Total estimado: 6,5–10,5 días** de trabajo enfocado (no necesariamente
-jornada completa), con apoyo de Claude Code en cada tarea del Paso 9 —
-frente a los 9–13 días de la versión anterior de este documento.
+**Total estimado: 6,5–11 días** de trabajo enfocado (no necesariamente
+jornada completa), con apoyo de Claude Code en cada tarea del Paso 9. La
+propuesta automática de puesto/palabras clave añade algo de esfuerzo
+respecto a la versión anterior (6,5–10,5 días), pero sigue lejos de los
+9–13 días de antes del consenso.
 
 ## 6. Veredicto
 

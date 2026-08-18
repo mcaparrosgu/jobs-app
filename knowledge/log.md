@@ -1,6 +1,20 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Actualizacion**: `docs/03-spec.md`, `docs/01-historias.md`,
+  `docs/02-mvp.md` — Mar resuelve las 2 preguntas abiertas que quedaban
+  y anade una funcionalidad nueva. Puesto y palabras clave ahora se
+  **proponen automaticamente al pegar el CV** (no autosugerencias en
+  vivo mientras se escribe) y la usuaria las edita; nueva historia B2,
+  B1 pasa a ser solo "pegar CV", anos de experiencia se separa en B3.
+  Acceso caduca a los 15 dias de inactividad (ademas de por uso unico),
+  requiriendo nueva verificacion por email. Retencion de datos: 1 mes
+  tras generarse. Zona horaria de la ingesta: 13:00 hora de Espana.
+  Esfuerzo sube ligeramente a 6,5-11 dias por la extraccion automatica
+  via IA. Preferencia de Mar por modelo de IA gratuito y de codigo
+  abierto (menciona "opencode go") registrada en
+  preferencias-tecnicas-paso5.md — aclarado en conversacion que Claude
+  no anade marcas de agua a documentos generados.
 * **Creacion**: `docs/03-spec.md` (Paso 4) — especificacion funcional sin
   mencionar tecnologia. Antes de escribirla se corrigieron 3
   inconsistencias entre historias y MVP: "Buscar" ya no dispara ingesta

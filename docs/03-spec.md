@@ -33,8 +33,9 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
 - Accede sin crear ni recordar ninguna contraseña: pide acceder con su
   email y entra a través de un enlace de un solo uso que le llega a esa
   bandeja de entrada. Una vez dentro, permanece identificada en ese
-  dispositivo durante varios días, sin tener que repetir ese paso cada vez
-  que vuelve.
+  dispositivo hasta 15 días sin usarlo, sin tener que repetir ese paso
+  cada vez que vuelve; pasado ese tiempo de inactividad, tiene que pedir
+  un enlace nuevo y verificarlo otra vez por email.
 
 ## 3. Recorridos
 
@@ -46,12 +47,16 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
    uso. Al pulsarlo, entra al sistema y queda identificada en ese
    dispositivo para las próximas visitas.
 3. **Contar su perfil** (solo la primera vez, o cuando quiera actualizarlo
-   más adelante). Ve un formulario corto: el puesto que busca, palabras
-   clave que la describen, sus años de experiencia, y un espacio donde
-   pega el texto de su CV actual. También puede indicar si quiere que, a
-   la hora de valorar qué ofertas encajan con ella, se tenga en cuenta la
-   experiencia que aparece en ese CV pegado (además de las palabras
-   clave).
+   más adelante) — pensado para llevarle poco tiempo. Pega el texto de su
+   CV actual en un espacio de texto, y el sistema **le propone
+   automáticamente** un puesto y unas palabras clave a partir de lo que
+   lee en ese CV, en vez de pedirle que los escriba de cero. La usuaria
+   solo tiene que revisar esa propuesta: quitar lo que no le representa y
+   añadir lo que falte. También puede indicar si quiere que, a la hora de
+   valorar qué ofertas encajan con ella, se tenga en cuenta la experiencia
+   que aparece en ese CV pegado (además de las palabras clave). Los años
+   de experiencia se rellenan a mano, es el único dato que no se propone
+   solo.
 4. **Ver ofertas.** Pulsa "Buscar" y, en cuestión de segundos, ve una
    lista de ofertas de empleo remoto asalariado que coinciden con su
    puesto y sus palabras clave — de cualquier sector, no solo tecnología.
@@ -102,12 +107,14 @@ En lenguaje natural, lo que el sistema necesita recordar:
 
 - **Identidad de la usuaria**: su email, que es también lo único que la
   identifica (no hay nombre de usuario ni contraseña que guardar).
-- **Perfil de búsqueda**, por usuaria: el puesto que busca, sus palabras
-  clave, sus años de experiencia, el texto de su CV tal como lo pegó, y si
-  quiere o no que ese CV se tenga en cuenta al valorar qué ofertas le
-  encajan. Un perfil por usuaria — al actualizarlo, sustituye al anterior
-  para las búsquedas futuras (no afecta a lo que ya se generó, ver más
-  abajo).
+- **Perfil de búsqueda**, por usuaria: el puesto que busca y sus palabras
+  clave (propuestos automáticamente al leer el CV pegado, y luego
+  editables por la usuaria — puede añadir o quitar los que quiera), sus
+  años de experiencia (este sí se escribe a mano), el texto de su CV tal
+  como lo pegó, y si quiere o no que ese CV se tenga en cuenta al valorar
+  qué ofertas le encajan. Un perfil por usuaria — al actualizarlo,
+  sustituye al anterior para las búsquedas futuras (no afecta a lo que ya
+  se generó, ver más abajo).
 - **Ofertas de empleo**: compartidas entre todas las usuarias (no son
   propiedad de una persona), con al menos título, empresa y enlace al
   anuncio original. Se renuevan una vez al día.
@@ -132,27 +139,40 @@ En lenguaje natural, lo que el sistema necesita recordar:
    interesa" explícitamente.** No se genera nada por defecto ni de forma
    automática al aparecer en la lista.
 3. **El emparejamiento entre perfil y ofertas se basa en el puesto y las
-   palabras clave** que la usuaria puso en su perfil, más —si ella lo pide
-   explícitamente— la experiencia que aparece en el CV que pegó. Los años
-   de experiencia se muestran pero no participan en ese emparejamiento.
-4. **Existe un máximo de 5 CVs+cartas generados por usuaria y día.**
+   palabras clave** que queden en el perfil de la usuaria, más —si ella lo
+   pide explícitamente— la experiencia que aparece en el CV que pegó. Los
+   años de experiencia se muestran pero no participan en ese
+   emparejamiento.
+4. **El puesto y las palabras clave se proponen automáticamente al pegar
+   el CV**, para que la usuaria no tenga que escribirlos desde cero. La
+   usuaria tiene la última palabra: puede añadir o quitar cualquiera antes
+   de guardar su perfil, y lo que quede guardado es lo único que se usa
+   para emparejar con las ofertas.
+5. **Existe un máximo de 5 CVs+cartas generados por usuaria y día.**
    Alcanzado ese máximo, el sistema impide generar más ese día y se lo
    explica a la usuaria; por debajo del máximo, la generación funciona con
    normalidad. Esta regla existe para mantener acotado el coste variable
    de generar cada documento.
-5. **La renovación de ofertas ocurre una única vez al día, para todas las
-   usuarias a la vez** — ninguna acción individual de una usuaria dispara
-   una renovación nueva; todas comparten el mismo conjunto de ofertas del
-   día, cada una viendo solo las que coinciden con su propio perfil.
-6. **Un CV/carta generado es definitivo en el momento en que se genera.**
+6. **La renovación de ofertas ocurre una única vez al día, a las 13:00
+   hora de España, para todas las usuarias a la vez** — ninguna acción
+   individual de una usuaria dispara una renovación nueva; todas comparten
+   el mismo conjunto de ofertas del día, cada una viendo solo las que
+   coinciden con su propio perfil.
+7. **Un CV/carta generado es definitivo en el momento en que se genera.**
    Cambios posteriores en el perfil o el CV pegado no regeneran
    automáticamente lo que ya existía.
-7. **El aviso por email solo se envía si, ese día, hay ofertas nuevas Y la
+8. **El aviso por email solo se envía si, ese día, hay ofertas nuevas Y la
    usuaria ya tiene un perfil guardado.** Si falta cualquiera de las dos
    condiciones, no se envía nada ese día.
-8. **El acceso solo es válido una vez y caduca.** Un enlace de acceso ya
-   usado, o que ha pasado demasiado tiempo sin usarse, deja de funcionar;
-   la usuaria puede pedir uno nuevo en cualquier momento.
+9. **El acceso caduca a los 15 días sin usarse.** Un enlace de acceso ya
+   usado deja de funcionar de inmediato. Si pasan 15 días sin que la
+   usuaria vuelva a entrar, su acceso también caduca por inactividad; en
+   cualquiera de los dos casos, para volver a entrar tiene que pedir un
+   enlace nuevo y verificarlo de nuevo por email — no hay forma de saltarse
+   esa verificación.
+10. **Los datos de cada usuaria se conservan durante un mes** (perfil, CV
+    pegado, CVs/cartas generados); pasado ese tiempo se eliminan
+    automáticamente.
 
 ## 6. Casos límite
 
@@ -201,8 +221,11 @@ En lenguaje natural, lo que el sistema necesita recordar:
   minutos) y el sistema debe comunicarlo con un indicador visible mientras
   ocurre, para que no se perciba como una avería.
 - **Continuidad de sesión**: una vez que la usuaria entra, permanece
-  identificada en ese dispositivo durante varios días, sin tener que
-  repetir el acceso en cada visita.
+  identificada en ese dispositivo hasta 15 días sin usarlo; pasado ese
+  tiempo, necesita un enlace nuevo verificado por email.
+- **Retención de datos**: los datos de cada usuaria se conservan un mes y
+  se eliminan automáticamente después — más que suficiente margen sobre
+  la duración prevista del periodo de prueba con la clase.
 - **Accesibilidad de perfil técnico**: pensado para personas sin
   experiencia técnica previa — sin jerga, con mensajes de error que se
   entienden sin contexto adicional.
@@ -212,7 +235,9 @@ En lenguaje natural, lo que el sistema necesita recordar:
 Remitido en detalle a `docs/02-mvp.md` sección 3 (Versión 2). En resumen,
 quedan fuera de este MVP:
 
-- Autosugerencias de puesto mientras se escribe, y varios puestos a la
+- Sugerencias de puesto mientras la usuaria escribe letra a letra (la
+  propuesta automática de puesto y palabras clave ocurre una vez, al
+  pegar el CV — no es un autocompletado en vivo), y varios puestos a la
   vez en un mismo perfil.
 - Permitir varias búsquedas o generaciones en paralelo con lógica de
   detección de duplicados.
@@ -232,16 +257,14 @@ quedan fuera de este MVP:
 
 ## 9. Preguntas abiertas
 
-Estas no bloquean dar el Paso 4 por cerrado, pero sí deben resolverse
-antes o durante el Paso 5 (plan técnico):
+No quedan preguntas abiertas funcionales pendientes en este documento —
+las dos que había (zona horaria de la renovación diaria, retención de
+datos) se resolvieron en esta revisión (reglas de negocio 6 y 10).
 
-1. **Zona horaria de la renovación diaria de ofertas**: ¿hora de España o
-   la que use el sistema por defecto? No tiene impacto funcional visible
-   para la usuaria salvo en el momento exacto en que ve ofertas nuevas.
-2. **Retención de datos**: cuánto tiempo se conservan el perfil, el CV
-   pegado y los CVs/cartas generados de cada usuaria tras acabar el
-   periodo de prueba — no se ha decidido si se borran, durante cuánto
-   tiempo se guardan, o si la usuaria puede pedir su borrado.
+Sigue pendiente, pero es una decisión de **tecnología** y por tanto no
+bloquea este documento: qué modelo de IA usar para generar los CVs y
+cartas (preferencia de Mar: gratuito y de código abierto) — ver
+`knowledge/preferencias-tecnicas-paso5.md`, a resolver en el Paso 5.
 
 ## Relacionado
 
