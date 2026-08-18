@@ -1,6 +1,15 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/02-mvp.md` (Paso 3) — recorte al recorrido critico:
+  login simple sin auto-registro, un solo puesto, CV solo en PDF, una
+  busqueda a la vez, seleccion "me interesa" mantenida (control de coste),
+  CV sin carta de presentacion, limite de uso hardcodeado. Estimado en
+  7-10 dias. Veredicto: sigue siendo grande para un principiante; se
+  propone un MVP v0 aun mas reducido (textarea en vez de PDF, generacion
+  automatica de las 3 primeras ofertas sin pantalla de seleccion) como
+  opcion, manteniendo el login con contrasena por ser decision no
+  negociable de Mar.
 * **Creacion**: `docs/01-historias.md` (Paso 2) — historias de usuario
   agrupadas en Identificacion, Perfil, Busqueda/generacion de CV, Espera,
   Resultados, Errores y Control de uso/coste. Huecos detectados: mecanismo
