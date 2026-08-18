@@ -1,6 +1,11 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `hito-1-base-de-datos.md` — concepto de cierre del Hito 1
+  (T09-T14): resume las cuatro tablas creadas en Supabase y el diseño de
+  RLS (privacidad por usuaria en `perfiles`/`intereses`/`generaciones`,
+  lectura compartida y escritura solo-n8n en `ofertas`). Enlazado desde
+  `index.md`.
 * **Pendiente**: verificar en la practica el criterio de T14 ("una
   escritura de prueba desde el navegador da error de permiso" en
   `ofertas`). Mar no sabe hacerlo manualmente todavia (requiere consola
