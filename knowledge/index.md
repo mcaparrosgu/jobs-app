@@ -33,6 +33,8 @@ existe en produccion y no se toca desde aqui.
   Paso 5: con que tecnologias se construye la web y por que.
 - [decision-rol-ia.md](decision-rol-ia.md) — decision tomada en el Paso 6:
   que usa IA, que no, y como se contienen los fallos del modelo.
+- [decision-tareas-mvp.md](decision-tareas-mvp.md) — decision tomada en el
+  Paso 7: como se trocea el MVP en 74 tareas verificables.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

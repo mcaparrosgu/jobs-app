@@ -1,0 +1,204 @@
+# 06 · Tareas de implementación
+
+> Basado en `docs/03-spec.md` (qué hace el producto), `docs/04-plan-tecnico.md`
+> (con qué se construye) y `docs/05-ia.md` (qué partes usan IA). Es la lista
+> de tareas del **Paso 9**: la construcción real con Claude Code.
+
+## Cómo leer este documento
+
+- Cada tarea cabe en **menos de una hora**.
+- **"Cómo compruebo que está bien"** es algo que tú, sin programar, puedes
+  hacer con tus propios ojos: abrir una página, mirar un panel, pulsar un
+  botón. Cuando una tarea es puramente interna (un archivo que otro archivo
+  usa por dentro, sin nada que ver todavía en pantalla), lo dice
+  explícitamente y te remite a la tarea donde sí se ve el resultado.
+- **"Depende de"** son las tareas que tienen que estar hechas antes.
+  Hazlas en orden; saltarte una casi siempre te deja algo a medio montar.
+- Marca la casilla `[ ]` → `[x]` según las vayas completando con Claude
+  Code en el Paso 9.
+- 74 tareas en total, agrupadas en 10 hitos. Cada hito termina con algo
+  visible en pantalla — es la forma de saber que vas avanzando de verdad y
+  no solo escribiendo código que no hace nada todavía.
+
+## Resumen de hitos
+
+| Hito | Qué ves al terminarlo |
+| :-- | :---- |
+| 0 · Entorno | Una página propia funcionando en tu ordenador (`localhost`) |
+| 1 · Base de datos | Las 4 tablas creadas en Supabase, con el candado de privacidad puesto |
+| 2 · Entrar | Pides acceso con tu email, recibes el enlace, entras |
+| 3 · Perfil | Pegas tu CV y ves el puesto y las palabras clave que propone la IA |
+| 4 · n8n → Supabase | La tabla `ofertas` se rellena sola, sin tocar la web |
+| 5 · Ver ofertas | Lista de ofertas filtrada por tu perfil, con botón "me interesa" |
+| 6 · Generar con IA | Al marcar "me interesa" se genera el CV y la carta |
+| 7 · PDF | Descargas un documento con tu CV y tu carta, en páginas separadas |
+| 8 · Aviso por email | Te llega un correo cuando hay ofertas nuevas |
+| 9 · Publicar | La web tiene una dirección pública, no solo `localhost` |
+
+---
+
+## Hito 0 · El ordenador preparado, la web arrancando en local
+
+**Al terminar este hito verás**: una página con tu propio texto en
+`http://localhost:3000`, aunque todavía no haga nada.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T01 | Instalar Node.js si no está instalado | — (el sistema) | Ejecutar `node --version` en la terminal: aparece un número como `v20.x.x`, no un error | — | [ ] |
+| T02 | Crear el proyecto Next.js en esta carpeta | todo `app/`, `package.json`, config base | Ejecutar `npm run dev` y abrir `localhost:3000`: se ve la página de bienvenida de Next.js | T01 | [ ] |
+| T03 | Confirmar que `node_modules/` y `.env.local` están en `.gitignore` | `.gitignore` | Abrir el archivo y ver esas dos líneas | T02 | [ ] |
+| T04 | Sustituir la página de bienvenida por un texto propio | `app/page.tsx` | Recargar `localhost:3000`: se ve "Jobs App" en vez del logo de Next.js | T02 | [ ] |
+| T05 | Primer commit del proyecto Next.js | todos los nuevos | `git log` muestra un commit nuevo con esos archivos | T03, T04 | [ ] |
+
+## Hito 1 · La base de datos creada, con el candado de privacidad puesto
+
+**Al terminar este hito verás**: en el panel de Supabase, las 4 tablas
+(`perfiles`, `ofertas`, `intereses`, `generaciones`) creadas y vacías, cada
+una con el icono verde de RLS activado.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T06 | Crear la cuenta y el proyecto en Supabase | — (supabase.com) | Entras con tu cuenta y ves un proyecto llamado "jobs-app" en el panel | — | [ ] |
+| T07 | Guardar la URL y la clave pública en `.env.local` | `.env.local` | El archivo tiene `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` rellenas | T06 | [ ] |
+| T08 | Crear el archivo de conexión a Supabase | `lib/supabase/client.ts` | Interno — se verifica junto con T09 | T07 | [ ] |
+| T09 | Migración: tabla `perfiles` | `supabase/migrations/0001_perfiles.sql` | En Supabase → Table Editor aparece `perfiles` con sus columnas | T08 | [ ] |
+| T10 | Migración: tabla `ofertas`, única por `fuente`+`id_externo` | `supabase/migrations/0002_ofertas.sql` | Aparece `ofertas`; intentar insertar dos filas con el mismo `fuente`+`id_externo` da error | T08 | [ ] |
+| T11 | Migración: tabla `intereses` | `supabase/migrations/0003_intereses.sql` | Aparece `intereses` en Table Editor | T09, T10 | [ ] |
+| T12 | Migración: tabla `generaciones` | `supabase/migrations/0004_generaciones.sql` | Aparece `generaciones` en Table Editor | T11 | [ ] |
+| T13 | Activar RLS: "cada una ve solo lo suyo" en `perfiles`, `intereses`, `generaciones` | `supabase/migrations/0005_rls_privacidad.sql` | Las 3 tablas muestran el icono verde "RLS enabled" | T09, T11, T12 | [ ] |
+| T14 | RLS en `ofertas`: lectura para todas, escritura para nadie desde la web | `supabase/migrations/0006_rls_ofertas.sql` | Mismo icono verde en `ofertas`; una escritura de prueba desde el navegador da error de permiso | T10 | [ ] |
+
+## Hito 2 · Entrar con el enlace de email
+
+**Al terminar este hito verás**: pides acceso con tu email, te llega un
+correo, pinchas el enlace y aparece una pantalla que te reconoce.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T15 | Activar el envío de emails por Gmail en Supabase Auth | — (panel de Supabase) | Authentication → SMTP Settings muestra los datos de Gmail y "conexión correcta" | T06 | [ ] |
+| T16 | Configurar la caducidad de sesión a 15 días de inactividad (regla 9) | — (panel de Supabase) | El valor de expiración de sesión en Authentication → Settings está en 15 días | T15 | [ ] |
+| T17 | Crear la página para pedir acceso | `app/page.tsx` | En `localhost:3000` hay una caja para el email y un botón "Entrar" | T04 | [ ] |
+| T18 | Conectar el botón "Entrar" al envío del enlace | `app/page.tsx` | Escribes tu email, pulsas "Entrar", y te llega un correo con un enlace | T16, T17 | [ ] |
+| T19 | Crear la página que recibe el enlace | `app/auth/callback/route.ts` | Pinchas el enlace del correo y no da error 404 | T18 | [ ] |
+| T20 | Pantalla provisional "ya has entrado" | `app/perfil/page.tsx` (versión mínima) | Tras pinchar el enlace, ves un texto con tu email | T19 | [ ] |
+| T21 | Comprobar que la sesión persiste al cerrar el navegador | — (prueba manual) | Cierras la pestaña, la reabres en `/perfil`, sigues dentro sin pedir el enlace otra vez | T20 | [ ] |
+| T22 | Probar un enlace ya usado o caducado | — (prueba manual) | Usas el mismo enlace dos veces: la segunda ves un mensaje claro de caducado, no una pantalla en blanco | T19 | [ ] |
+
+## Hito 3 · Contar tu perfil: el CV y las palabras clave que propone la IA
+
+**Al terminar este hito verás**: pegas tu CV, esperas unos segundos y ves un
+puesto y una lista de palabras clave ya propuestos, que puedes editar y
+guardar.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T23 | Crear la cuenta en Groq y guardar la clave | `.env.local` | El archivo tiene `GROQ_API_KEY` rellena | T07 | [ ] |
+| T24 | Activar Zero Data Retention en Groq | — (panel de Groq) | Data Controls muestra la opción activada | T23 | [ ] |
+| T25 | Escribir la función que llama a Groq para extraer perfil | `lib/groq.ts` | Interno — se verifica junto con T29 | T24 | [ ] |
+| T26 | Definir el esquema de salida (puesto, palabras_clave, empresas_cv, titulos_cv) | `lib/groq.ts` | Interno — se verifica junto con T29 | T25 | [ ] |
+| T27 | Crear el endpoint que recibe el CV y llama a Groq | `app/api/extraer-perfil/route.ts` | Interno — se verifica junto con T29 | T26 | [ ] |
+| T28 | Construir la pantalla de perfil: caja de texto y botón "Continuar" | `app/perfil/page.tsx` | Se ve una caja de texto grande y un botón | T20 | [ ] |
+| T29 | Conectar el botón al endpoint y mostrar los resultados, editables | `app/perfil/page.tsx` | Pegas tu CV real, pulsas "Continuar" y en segundos ves puesto + palabras clave que puedes borrar o añadir | T27, T28 | [ ] |
+| T30 | Añadir años de experiencia y la casilla "tener en cuenta mi CV" | `app/perfil/page.tsx` | Ves un campo numérico y una casilla junto a la propuesta de la IA | T29 | [ ] |
+| T31 | Guardar el perfil al pulsar "Guardar" | `app/perfil/page.tsx`, `app/api/perfil/route.ts` | Pulsas "Guardar", recargas la página y ves los mismos datos que guardaste | T30, T13 | [ ] |
+
+## Hito 4 · n8n empieza a alimentar la base de datos compartida de ofertas
+
+**Al terminar este hito verás**: en Supabase, la tabla `ofertas` tiene filas
+reales, sin haber tocado la web para nada.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T32 | Añadir credenciales de Supabase en n8n | — (n8n → Credentials) | La credencial nueva existe y "Probar conexión" da correcto | T10 | [ ] |
+| T33 | Añadir un nodo a `Jobs · ingesta` que escriba cada oferta en Supabase | workflow n8n `Jobs · ingesta` | Tras una ejecución de prueba, aparecen filas nuevas en Table Editor → `ofertas` | T32 | [ ] |
+| T34 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas la ingesta dos veces seguidas y el número de filas no se duplica | T33 | [ ] |
+| T35 | Añadir un paso de borrado de datos con más de 30 días (regla 10) | workflow n8n `Jobs · ingesta` | Insertas una fila de prueba con fecha antigua y, tras ejecutar ese paso, ha desaparecido | T33 | [ ] |
+| T36 | Publicar el workflow modificado | — (n8n) | `Jobs · ingesta` aparece "Activo" con la última versión | T34, T35 | [ ] |
+| T37 | Revisar el vigilante de Healthchecks tras el cambio | — | La ejecución de las 13:00 sigue enviando el ping, sin avisos de fallo | T36 | [ ] |
+| T38 | Insertar ofertas de prueba a mano, por si la ingesta real tarda en dar resultados útiles para probar el resto | — (Supabase Table Editor) | Ves esas filas de prueba en la tabla `ofertas` | T10 | [ ] |
+
+## Hito 5 · Ver ofertas y marcar "me interesa"
+
+**Al terminar este hito verás**: entras en `/ofertas`, ves una lista
+filtrada por tu perfil, y puedes marcar una oferta como "me interesa".
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T39 | Crear la pantalla de ofertas | `app/ofertas/page.tsx` | Se abre `localhost:3000/ofertas` sin error, aunque esté vacía | T20 | [ ] |
+| T40 | Consultar las ofertas que coinciden con puesto/palabras clave del perfil | `app/api/ofertas/route.ts` | Con las ofertas de prueba (T38), ves en pantalla solo las que coinciden con tu perfil guardado | T31, T38 | [ ] |
+| T41 | Mostrar título, empresa y enlace en tarjetas | `components/TarjetaOferta.tsx` | Cada oferta se ve como una tarjeta legible, no como texto plano | T40 | [ ] |
+| T42 | Mensaje de "no hay ofertas que coincidan" con la lista vacía | `app/ofertas/page.tsx` | Cambias tus palabras clave a algo que no coincide con nada y ves el mensaje, no una pantalla en blanco | T40 | [ ] |
+| T43 | Añadir el botón "me interesa" en cada tarjeta | `components/TarjetaOferta.tsx` | Cada tarjeta muestra el botón | T41 | [ ] |
+| T44 | Guardar el interés al pulsar el botón | `app/api/interes/route.ts` | Pulsas el botón, recargas la página y sigue marcado como pulsado | T43, T13 | [ ] |
+| T45 | Impedir marcar la misma oferta dos veces | `app/api/interes/route.ts` | Pulsas el botón dos veces seguidas: no hay duplicado ni error visible | T44, T11 | [ ] |
+
+## Hito 6 · Generar el CV y la carta con IA
+
+**Al terminar este hito verás**: al marcar "me interesa" aparece un
+indicador de "generando…" y, poco después, el botón de descargar se
+activa solo.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T46 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/groq.ts` | Interno — se verifica junto con T50 | T26 | [ ] |
+| T47 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T50 | — | [ ] |
+| T48 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/groq.ts` | Interno — se verifica junto con T50 | T46, T47 | [ ] |
+| T49 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T50 | T48, T12 | [ ] |
+| T50 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Marcas "me interesa" en una oferta real y ves de inmediato "generando" en pantalla | T44, T49 | [ ] |
+| T51 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Esperas unos segundos y el estado cambia solo a "listo", sin recargar a mano | T50 | [ ] |
+| T52 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Interno — pruébalo generando un CV para una oferta y revisando que no aparecen cifras nuevas | T51 | [ ] |
+| T53 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Interno — mismo tipo de prueba que T52, con nombres de empresa | T52, T29 | [ ] |
+| T54 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts` | Generas 5 CVs seguidos (con ofertas de prueba) y el sexto intento muestra el mensaje del límite, no un error críptico | T51 | [ ] |
+| T55 | Manejar el fallo de Groq: reintento + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T51 | [ ] |
+
+## Hito 7 · Descargar el documento en PDF
+
+**Al terminar este hito verás**: pulsas "Descargar" y se abre un PDF con tu
+CV en la primera página y la carta empezando en una página nueva.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T56 | Crear la plantilla del PDF, diseño sobrio | `lib/pdf.ts` | Interno — se verifica junto con T58 | — | [ ] |
+| T57 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.ts` | Interno — se verifica junto con T58 | T56 | [ ] |
+| T58 | Crear el endpoint de descarga | `app/api/descargar/[id]/route.ts` | Con una generación en estado "listo", entras a la URL de descarga y se abre un PDF sin error | T51, T57 | [ ] |
+| T59 | Botón "Descargar", desactivado hasta que esté listo | `components/TarjetaOferta.tsx` | Con estado "generando" el botón está gris; en "listo" se activa | T58, T51 | [ ] |
+| T60 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T59 | [ ] |
+
+## Hito 8 · Aviso por email cuando hay ofertas nuevas
+
+**Al terminar este hito verás**: al día siguiente de una ingesta con
+ofertas nuevas, te llega un correo con un enlace de vuelta a la app.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T61 | Contar cuántas ofertas nuevas entraron hoy | workflow n8n `Jobs · ingesta` | En una ejecución de prueba, ese paso muestra un número | T34 | [ ] |
+| T62 | Consultar en Supabase qué usuarias tienen perfil guardado | workflow n8n | La ejecución de prueba devuelve tu email si ya tienes perfil guardado | T32, T31 | [ ] |
+| T63 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | workflow n8n | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T61, T62 | [ ] |
+| T64 | Redactar la plantilla fija del email de aviso, en castellano | workflow n8n (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T63 | [ ] |
+| T65 | Enviar el email a cada usuaria con perfil | workflow n8n | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T64 | [ ] |
+| T66 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T65 | [ ] |
+
+## Hito 9 · Publicar en internet
+
+**Al terminar este hito verás**: la web tiene una dirección pública de
+verdad, ya no solo `localhost`.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T67 | Repasar que toda la interfaz, mensajes de error y el email están en castellano | — (prueba manual) | Recorres cada pantalla y no encuentras ningún texto en otro idioma | T60, T66 | [ ] |
+| T68 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T67 | [ ] |
+| T69 | ⚠️ Pedir tu permiso explícito antes de subir nada a GitHub | — | Confirmación tuya, por escrito, antes de continuar | T68 | [ ] |
+| T70 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T69 | [ ] |
+| T71 | Crear el repositorio en GitHub y subir el código | — | Recargas la página del repositorio en GitHub y ves los archivos | T70 | [ ] |
+| T72 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T71 | [ ] |
+| T73 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T72 | [ ] |
+| T74 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T73 | [ ] |
+
+## Relacionado
+
+- [`docs/03-spec.md`](03-spec.md) — qué hace el producto; cada regla de
+  negocio está cubierta por al menos una tarea de este documento.
+- [`docs/04-plan-tecnico.md`](04-plan-tecnico.md) — con qué se construye
+  cada pieza.
+- [`docs/05-ia.md`](05-ia.md) — el detalle de las verificaciones de IA de
+  T52, T53 y T55.

@@ -1,6 +1,19 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/06-tareas.md` (Paso 7) y `decision-tareas-mvp.md` —
+  74 tareas (T01-T74) en 10 hitos, cada una de menos de una hora, con
+  archivos, verificacion sin programar, dependencias y casilla. Cada hito
+  termina con algo visible en pantalla (de "pagina en localhost" a
+  "recorrido completo en produccion"). Hallazgo importante: el workflow
+  real `Jobs · ingesta` escribe hoy en Google Sheets, no en Supabase como
+  asume `04-plan-tecnico.md` — se anadieron tareas explicitas (T32-T38,
+  T61-T66) para migrarlo a escribir en Supabase, anadir el borrado a 30
+  dias (regla 10) y el aviso condicional por email (regla 8), ninguno de
+  los cuales existia ya construido. Cada regla de negocio de
+  `docs/03-spec.md` queda trazada a al menos una tarea. Ultimo hito
+  (Publicar) incluye parada explicita pidiendo permiso antes de subir a
+  GitHub, como ya quedo acordado en el Paso 5.
 * **Creacion**: `docs/05-ia.md` (Paso 6) y `decision-rol-ia.md` — se acota
   el papel de la IA. **Solo dos cosas usan IA, ambas en peldano 1**:
   extraer puesto/palabras clave del CV, y redactar CV+carta. Todo lo demas
