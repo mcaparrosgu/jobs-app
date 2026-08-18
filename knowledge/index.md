@@ -31,6 +31,8 @@ existe en produccion y no se toca desde aqui.
   preferencias de tecnologia (email, modelo de IA) para el Paso 5.
 - [decision-stack-mvp.md](decision-stack-mvp.md) — decision tomada en el
   Paso 5: con que tecnologias se construye la web y por que.
+- [decision-rol-ia.md](decision-rol-ia.md) — decision tomada en el Paso 6:
+  que usa IA, que no, y como se contienen los fallos del modelo.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

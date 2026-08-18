@@ -45,7 +45,8 @@ motivos, en orden de importancia para tu caso concreto:
    hecho de fábrica, y la base de datos también. No hay que programarlos.
 4. **Groq cumple tu requisito de IA gratuita y de código abierto** sin
    tener que montar ningún servidor. Ejecuta modelos de peso abierto
-   (Llama, Qwen, Mistral) y su capa gratuita no pide tarjeta.
+   (Llama, Qwen, Kimi, Mistral) y su capa gratuita no pide tarjeta. El
+   modelo concreto se elige en el Paso 6 — ver [`05-ia.md`](05-ia.md).
 5. **Aprendes de verdad.** Siendo tu primer proyecto estructurado, salir
    de aquí entendiendo qué es una base de datos y cómo se publica una web
    vale más que la web en sí.
@@ -183,6 +184,8 @@ bastidor de un coche.
 | `anios_experiencia` | número | único campo que se escribe a mano |
 | `cv_texto` | texto largo | el CV tal como lo pegó |
 | `usar_experiencia_cv` | sí/no | si se tiene en cuenta al emparejar (regla 3) |
+| `empresas_cv` | lista de textos | empresas que aparecen en el CV — **solo para verificar** que la IA no invente otras (ver `05-ia.md` §6.2). La usuaria no las ve |
+| `titulos_cv` | lista de textos | ídem con las titulaciones |
 | `actualizado_en` | fecha y hora | para el borrado al mes (regla 10) |
 
 **`ofertas`** — compartidas por todas, no son de nadie (regla 6)
@@ -359,13 +362,14 @@ mismo minuto, la segunda recibe un error de "demasiadas peticiones" —
 justo el escenario que ocurre cuando enseñas la app a toda la clase a la
 vez.
 
-**Mitigación**, por orden de esfuerzo:
+**Mitigación**, por orden de esfuerzo (detalle en
+[`05-ia.md`](05-ia.md) §6.7):
 
 1. Reintentar automáticamente tras unos segundos (unas líneas de código) y
    mostrar el estado `generando` mientras tanto — como la spec ya exige un
    indicador de espera, la usuaria ni se entera.
-2. Procesar las generaciones **de una en una** por usuaria en vez de todas
-   a la vez.
+2. Procesar las generaciones **en cola, de una en una**, para que dos
+   personas que marcan "me interesa" a la vez no choquen entre sí.
 3. Si aun así molesta: usar un modelo más pequeño para la extracción de
    palabras clave (que es tarea fácil) y reservar el grande para redactar.
 
@@ -376,17 +380,30 @@ insuficiente") y sigue vivo. Un modelo de peso abierto redacta bien, pero
 puede **inventarse experiencia que no está en el CV** — algo grave cuando
 el documento va a una empresa real.
 
-**Mitigación**:
+**Mitigación** — reforzada en el Paso 6, ver [`05-ia.md`](05-ia.md) §6.2
+para el detalle completo:
 
-1. Instrucciones explícitas al modelo: *"usa únicamente información
+1. **Verificación automática de cifras**: toda cifra del CV generado
+   (años, porcentajes, tamaños de equipo) tiene que aparecer en el CV
+   original. Comprobación con código, no con prompt.
+2. **Verificación automática de empresas y titulaciones**, usando las
+   listas que la extracción de perfil ya guarda en `perfiles` (§3.4). Sin
+   llamadas ni coste extra.
+3. Cambiar el encargo: *"reordena y reformula"* en vez de *"redacta"* —
+   adaptar, no crear.
+4. Instrucciones explícitas al modelo: *"usa únicamente información
    presente en el CV; no inventes empresas, fechas ni títulos"*.
-2. **Probarlo con tu propio CV antes de enseñárselo a nadie.** Es la
+5. **Probarlo con tu propio CV antes de enseñárselo a nadie.** Es la
    prueba de fuego y cuesta 10 minutos.
-3. Si no da la talla: el código de las llamadas a la IA está concentrado
+6. Si no da la talla: el código de las llamadas a la IA está concentrado
    en `lib/groq.ts`, así que cambiar de modelo (o de proveedor) se toca en
    **un solo archivo**. Por eso está aislado ahí desde el principio.
-4. Avisar en la propia web de que hay que revisar el documento antes de
+7. Avisar en la propia web de que hay que revisar el documento antes de
    enviarlo. Honestidad barata que evita un disgusto.
+
+Aun con todo esto, **el riesgo se reduce mucho pero no desaparece**: una
+responsabilidad inventada que suene plausible y no lleve cifras ni nombres
+propios no la caza ninguna verificación automática.
 
 ## Relacionado
 

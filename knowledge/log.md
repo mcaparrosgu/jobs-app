@@ -1,6 +1,32 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/05-ia.md` (Paso 6) y `decision-rol-ia.md` — se acota
+  el papel de la IA. **Solo dos cosas usan IA, ambas en peldano 1**:
+  extraer puesto/palabras clave del CV, y redactar CV+carta. Todo lo demas
+  es codigo determinista; en particular **el boton "Buscar" no lleva IA**
+  (romperia el "en segundos" de la spec y le quitaria a la usuaria el
+  control de la regla 4). **La IA no tiene ninguna herramienta**: recibe
+  texto y devuelve texto, no toca la base de datos ni envia nada.
+  Mar planteo que un prompt excelente bastaria para evitar los 6 fallos
+  posibles; se corrigio que **un prompt es una peticion, no una
+  garantia**, y se definieron cuatro defensas por orden de fuerza
+  (quitarle la decision > encajonar la salida > verificar con codigo >
+  prompt). Resultado: 5 de 6 fallos resueltos, y **solo uno gracias al
+  prompt**. El idioma se elimina como fallo quitandole la decision al
+  modelo; la estructura, con salidas estructuradas en vez de los
+  marcadores `===CV===` del workflow n8n (que tienen fallo conocido).
+  **La alucinacion se reduce mucho pero NO se elimina** — se anaden dos
+  verificaciones automaticas (cifras contra el CV original, empresas
+  contra una lista que la extraccion ya guarda, sin coste extra) y por
+  ello la tabla `perfiles` gana los campos `empresas_cv` y `titulos_cv`.
+  Privacidad verificada: Groq **no entrena** con los datos ni en el plan
+  gratuito; pendiente activar **Zero Data Retention** antes de que ninguna
+  companera pegue su CV. **Mar decide no usar tecnologia de OpenAI por
+  motivos eticos**, lo que descarta los modelos `gpt-oss` y con ellos el
+  modo `strict` de salidas estructuradas — de ahi que la validacion por
+  codigo de la estructura no sea opcional. Coste: **0 €** tanto en volumen
+  realista (~60 generaciones/mes) como en el techo teorico (750).
 * **Actualizacion**: `docs/04-plan-tecnico.md` (nueva seccion 2.1) y
   `decision-stack-mvp.md` — Mar **confirma explicitamente la Opcion 1**
   tras contrastar tres variantes mas que planteo ella. Se descartan con
