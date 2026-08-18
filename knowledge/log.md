@@ -1,6 +1,19 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/03-spec.md` (Paso 4) — especificacion funcional sin
+  mencionar tecnologia. Antes de escribirla se corrigieron 3
+  inconsistencias entre historias y MVP: "Buscar" ya no dispara ingesta
+  (solo filtra el pool compartido de las 13:00, respuesta en segundos);
+  la sesion tras el magic link dura varios dias; los CVs/cartas generados
+  quedan como snapshot, no se regeneran solos. Se resolvieron ademas los
+  huecos pendientes: formato de descarga (PDF, diseno sobrio y
+  minimalista), limite de uso (5 CVs+cartas por usuaria y dia), campos
+  que definen el perfil para filtrar (puesto + palabras clave). Dos
+  respuestas eran decisiones de tecnologia (Gmail, modelo de IA gratis) y
+  se guardaron aparte en `preferencias-tecnicas-paso5.md` para el Paso 5,
+  no en la spec. Quedan 2 preguntas abiertas no bloqueantes: zona horaria
+  de la renovacion diaria y politica de retencion de datos.
 * **Actualizacion**: `docs/01-historias.md` (C4) y `docs/02-mvp.md` — se
   especifica que CV y carta de presentacion deben ir en **paginas
   separadas** dentro del archivo unico descargable (la carta siempre

@@ -19,15 +19,17 @@ para que el producto tenga algún valor:
 2. **Rellena el formulario**: puesto que busca, palabras clave, años de
    experiencia, y **pega el texto de su CV** en un campo de texto (sin
    subir archivo).
-3. **Pulsa "Buscar"**. Espera viendo un indicador de "buscando" mientras
-   corre la ingesta.
+3. **Pulsa "Buscar"**. En segundos ve las ofertas que coinciden con su
+   puesto y palabras clave — "Buscar" solo filtra el pool que ya trajo la
+   ingesta compartida de las 13:00, no dispara ninguna llamada nueva.
 4. **Ve la lista de ofertas** remotas asalariadas encontradas.
 5. **Marca "me interesa"** en las ofertas que quiere. Espera viendo
    "generando" mientras se crean el CV y la carta de presentación
-   adaptados, en una sola llamada.
-6. **Descarga un único archivo** con el CV y la carta de presentación de
-   esa oferta, **cada uno en su propia página** (la carta siempre empieza
-   en página nueva, sin importar cuánto ocupe el CV).
+   adaptados, en una sola llamada — esta es la espera real del recorrido.
+6. **Descarga un único PDF**, con diseño sobrio y cuidado, con el CV y la
+   carta de presentación de esa oferta, **cada uno en su propia página**
+   (la carta siempre empieza en página nueva, sin importar cuánto ocupe
+   el CV).
 7. Lo envía ella misma a la empresa (fuera del producto).
 
 Además, **por fuera** de este recorrido (pero igual de necesario para que
@@ -63,9 +65,10 @@ ahora la carta) a cada oferta.
   de subir archivo: **solo textarea de texto plano**, sin subida de PDF.
   Evita depender de que un PDF se lea bien — menos piezas que puedan
   fallar, sin perder la función.
-- **C1 · Lanzar búsqueda.** Recortado: mientras haya una búsqueda en curso
-  para esa usuaria, el botón "Buscar" se deshabilita — no hay lógica de
-  detectar duplicados por campo ni de permitir paralelas. Una a la vez.
+- **C1 · Lanzar búsqueda.** Corregido: "Buscar" filtra el pool ya traído
+  por la ingesta compartida (G2), no dispara ninguna llamada nueva —
+  respuesta en segundos, sin lógica de duplicados ni paralelismo que
+  gestionar (esa preocupación ya no aplica).
 - **E1 · Ver lista de ofertas.** Tal cual, es el corazón del recorrido.
 - **C2 · Seleccionar "me interesa".** Tal cual: sin esto no hay forma de
   decidir qué generar, y es lo que mantiene bajo control el coste (riesgo
@@ -76,20 +79,20 @@ ahora la carta) a cada oferta.
   (marketing, educación, traducción) y para quien está en transición de
   carrera. Se generan en **una sola llamada** al modelo (mismo contexto,
   mismo prompt) — no duplica coste como se pensaba en el primer recorte.
-- **C4 · Descargar CV + carta en un único archivo, páginas separadas.**
-  Vuelve ampliada: CV y carta en el mismo archivo, pero **cada uno en su
-  propia página** — la carta siempre arranca en página nueva, sin
-  importar cuánto ocupe el CV. No se fija un número de página exacto para
-  el CV (podría ser 1, 2 o más), solo que no se mezclen en la misma
-  página con la carta.
+- **C4 · Descargar CV + carta en un único PDF, páginas separadas, diseño
+  cuidado.** Vuelve ampliada: **PDF** con diseño sobrio y minimalista (no
+  plantilla genérica), CV y carta en el mismo archivo, cada uno en su
+  propia página — la carta siempre arranca en página nueva, sin importar
+  cuánto ocupe el CV. No se fija un número de página exacto para el CV.
 - **D1 + D2 · Espera.** Fusionadas en un único estado simple: "procesando"
   mientras dura cualquiera de las dos fases (búsqueda o generación).
 - **F1 + F2 · Sin resultados / error.** Fusionadas en un mensaje mínimo:
   "no se encontraron ofertas" o "algo falló, inténtalo de nuevo" — sin
   sugerencias accionables ni botón de reintento automático.
-- **G1 · Límite de uso.** Recortado a lo mínimo: un número fijo
-  hardcodeado (a decidir en el Paso 5) de búsquedas/generaciones por
-  usuaria y día. Sin panel, sin aviso proactivo.
+- **G1 · Límite de uso.** Decidido: **5 CVs+cartas por usuaria y día**
+  como máximo, hardcodeado. Se aplica solo a la generación — "Buscar" no
+  consume cuota (ya no dispara llamadas externas). Sin panel, sin aviso
+  proactivo.
 - **G2 · Ingesta compartida automática a las 13:00.** Tal cual: vía
   schedule/trigger de n8n, reutilizando el cron que el backend ya tiene
   montado — Mar confirma que debe ser automático, no manual.

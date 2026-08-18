@@ -27,6 +27,8 @@ existe en produccion y no se toca desde aqui.
   decision tomada en el Paso 1: el MVP se acota a trabajo remoto asalariado.
 - [concepto-mvp.md](concepto-mvp.md) — explicacion didactica de que es un
   MVP y por que el alcance actual no es permanente.
+- [preferencias-tecnicas-paso5.md](preferencias-tecnicas-paso5.md) —
+  preferencias de tecnologia (email, modelo de IA) para el Paso 5.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

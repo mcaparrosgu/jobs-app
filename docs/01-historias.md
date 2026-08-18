@@ -30,6 +30,11 @@ que una contraseña, sin tener que gestionar contraseñas).
 > "recuperar contraseña" — si alguien no recibe el email, el problema es
 > de entrega de correo, no de contraseña olvidada (ver F2).
 
+> Nota sobre duración de la sesión: una vez dentro, la usuaria queda
+> conectada en ese navegador varios días — no necesita pedir un enlace
+> nuevo cada vez que vuelve a abrir la web (relevante para A3 y para
+> cuando llega desde el email de aviso G3).
+
 ### A3. Volver a acceder a mis resultados sin repetir la búsqueda
 **IMPORTANTE**
 
@@ -82,18 +87,21 @@ experiencia real y no de cero, sin depender de que un PDF se lea bien.
 **IMPRESCINDIBLE**
 
 Como usuaria, quiero pulsar un botón de "Buscar" tras rellenar mi perfil,
-para que se dispare la ingesta de ofertas remotas (Adzuna, Jooble, Apify)
-ya existente en el backend de n8n.
+para que el sistema me muestre las ofertas remotas ya encontradas por la
+ingesta compartida (G2) que coinciden con mi puesto y mis palabras clave.
+**"Buscar" no dispara una ingesta nueva** — filtra el conjunto de ofertas
+que ya trajo la última ingesta compartida de las 13:00, así que la
+respuesta es prácticamente inmediata (ver D1).
 
-- Dado que ya rellené mi perfil, cuando pulso "Buscar", ¿se llama al
-  webhook de n8n con mis datos? Sí/No.
-- Dado que ya tengo una búsqueda en curso con el mismo puesto u otros
-  datos importantes duplicados, cuando pulso "Buscar" otra vez con esos
-  mismos datos, ¿el sistema evita lanzar una segunda búsqueda duplicada?
-  Sí/No.
-- Dado que ya tengo una búsqueda en curso pero lanzo otra con un puesto o
-  datos distintos (no duplicados), ¿el sistema permite que ambas búsquedas
-  corran en paralelo? Sí/No.
+- Dado que ya rellené mi perfil, cuando pulso "Buscar", ¿veo en segundos
+  las ofertas del pool compartido que coinciden con mi puesto y mis
+  palabras clave? Sí/No.
+- Dado que pulso "Buscar" varias veces seguidas con el mismo perfil,
+  ¿obtengo el mismo resultado sin que se dispare ninguna llamada nueva a
+  las fuentes externas? Sí/No.
+- Dado que aún no ha corrido ninguna ingesta compartida ese día (p. ej.
+  antes de las 13:00 del primer día), ¿el sistema me lo indica en vez de
+  mostrar una lista vacía sin explicación? Sí/No.
 
 ### C2. Seleccionar las ofertas que me interesan
 **IMPRESCINDIBLE**
@@ -128,16 +136,20 @@ escribirlos yo misma oferta por oferta.
 ### C4. Descargar el CV y la carta de presentación en un único archivo, en páginas separadas
 **IMPRESCINDIBLE**
 
-Como usuaria, quiero descargar un único archivo con el CV y la carta de
-presentación de una oferta que seleccioné, **cada uno empezando en su
-propia página** (sin mezclarse en la misma página), para poder enviarlo
-yo misma a la empresa como un documento legible y bien separado, sin
-tener que adjuntar dos archivos por separado.
+Como usuaria, quiero descargar un único archivo **en PDF, con un diseño
+sobrio, minimalista y cuidado** (no una plantilla genérica de letra Arial
+y negritas sueltas), con el CV y la carta de presentación de una oferta
+que seleccioné, **cada uno empezando en su propia página**, para poder
+enviarlo yo misma a la empresa como un documento que se vea profesional,
+sin tener que adjuntar dos archivos por separado.
 
 - Dado que ya se generaron el CV y la carta para una oferta seleccionada,
-  cuando pulso "Descargar", ¿obtengo un único archivo con el CV primero y
-  la carta después, empezando esta última siempre en una página nueva
-  (sin depender de cuánto ocupe el CV)? Sí/No.
+  cuando pulso "Descargar", ¿obtengo un único PDF con el CV primero y la
+  carta después, empezando esta última siempre en una página nueva (sin
+  depender de cuánto ocupe el CV)? Sí/No.
+- Dado que abro el PDF descargado, ¿su diseño es simple y cuidado —
+  tipografía legible, buen espaciado, sin adornos ni plantilla recargada—
+  en vez de un documento de texto plano sin ningún cuidado visual? Sí/No.
 - Dado que el CV ocupa más de una página, cuando reviso el archivo
   descargado, ¿la carta sigue empezando en una página propia y no a mitad
   de la última página del CV? Sí/No.
@@ -148,18 +160,21 @@ tener que adjuntar dos archivos por separado.
 ## D. Espera y estado
 
 ### D1. Saber que mi búsqueda está en curso
-**IMPRESCINDIBLE**
+**DESEABLE**
 
-Como usuaria, quiero ver un indicador de progreso mientras se ejecuta la
-ingesta de ofertas, para saber que el sistema está trabajando y no se ha
-quedado colgado.
+Como usuaria, quiero ver un breve indicador mientras el sistema filtra las
+ofertas del pool compartido contra mi perfil, para que la pantalla no se
+sienta rota en el instante entre pulsar "Buscar" y ver la lista.
 
-- Dado que acabo de pulsar "Buscar", cuando el proceso está en marcha,
-  ¿veo un estado visible de "buscando" en vez de una pantalla en blanco?
-  Sí/No.
-- Dado que el proceso lleva varios minutos, cuando sigo en la página,
-  ¿el estado se actualiza (aunque sea de forma aproximada) en vez de
-  quedarse estático todo el tiempo? Sí/No.
+- Dado que acabo de pulsar "Buscar", ¿la lista de ofertas aparece en
+  segundos (no minutos), ya que no se dispara ninguna ingesta nueva —
+  solo se filtra el pool ya traído por G2? Sí/No.
+- Dado que el filtrado tarda un instante perceptible, ¿veo algún indicador
+  breve en vez de una pantalla en blanco durante ese instante? Sí/No.
+
+> Nota: esta historia baja de IMPRESCINDIBLE a DESEABLE tras corregir C1 —
+> como "Buscar" ya no dispara una ingesta larga, la espera real que
+> importa es la de D2 (generación de CV+carta), no esta.
 
 ### D2. Saber que se está generando mi CV y carta de presentación
 **IMPORTANTE**
@@ -221,10 +236,12 @@ qué puedo intentar.
 ### G1. Limitar el uso para no disparar el coste variable
 **IMPRESCINDIBLE**
 
-Como responsable del proyecto (Mar), quiero limitar cuántas búsquedas y
-generaciones de CV/carta puede lanzar cada usuaria en el periodo de
-prueba, para que el coste de Apify y Anthropic no se dispare sin control
-(riesgo ya identificado en el Paso 1).
+Como responsable del proyecto (Mar), quiero limitar a **5 CVs+cartas
+generados por usuaria y día** (como máximo), para que el coste variable
+no se dispare sin control (riesgo ya identificado en el Paso 1). El límite
+se aplica solo a la generación (C2/C3) — "Buscar" (C1) no consume cuota
+porque ya no dispara ninguna llamada externa, solo filtra el pool
+compartido.
 
 - Dado que una usuaria ya alcanzó el límite permitido, cuando intenta
   lanzar otra búsqueda o generación, ¿el sistema se lo impide y se lo
@@ -274,21 +291,14 @@ abandone a mitad de la búsqueda de empleo por no acordarse de volver).
 
 ## HUECOS
 
-Cosas que quedan por decidir antes o durante el Paso 4 (spec):
+Todos los huecos de identificación funcional quedaron resueltos en esta
+revisión (ver abajo). Quedan dos huecos puramente técnicos, sin efecto en
+`docs/03-spec.md` (que no menciona tecnología), a decidir en el Paso 5:
 
-1. **Formato exacto del archivo descargado** (C4): PDF con formato,
-   Word, o texto plano — el contenido y el orden (CV seguido de la carta)
-   ya están decididos, falta el formato de archivo.
-2. **Valor exacto del límite de uso** (G1): el Paso 1 identifica el riesgo
-   de coste pero no da un número de búsquedas/generaciones permitidas por
-   usuaria. Se decide en el Paso 5 (plan técnico).
-3. **Qué "datos importantes" cuentan como duplicado** (C1): se acordó que
-   dos búsquedas en paralelo se bloquean solo si el puesto u "otros datos
-   importantes" coinciden — falta definir exactamente qué campos entran
-   en esa comparación (¿solo el puesto? ¿también palabras clave?).
-4. **Proveedor de email** (G3): qué servicio envía el correo de aviso
-   (¿el mismo n8n con un nodo de email? ¿un servicio externo tipo Resend?)
-   — se decide en el Paso 5.
+1. **Zona horaria de las 13:00** (G2): ¿hora de España, hora del servidor?
+   No se ha concretado.
+2. **Cuánto tiempo se conservan los datos** de cada usuaria tras acabar el
+   periodo de prueba (retención/borrado) — pendiente de decidir.
 
 ## Resuelto en esta revisión (ya no son huecos)
 
@@ -298,11 +308,18 @@ Cosas que quedan por decidir antes o durante el Paso 4 (spec):
   nadie más de la clase) sin el coste de construir registro, validación de
   contraseña y recuperación de contraseña — todo eso desaparece porque no
   hay contraseña que gestionar.
-- **Formato del archivo combinado**: CV seguido de la carta de
-  presentación en un mismo archivo, **cada uno en páginas separadas**
-  (la carta siempre empieza en página nueva, sin importar cuánto ocupe el
-  CV) — no se exige un número de página fijo para el CV, pero sí que no
-  se mezclen en la misma página (C4).
+- **Formato del archivo combinado**: **PDF**, con **diseño sobrio,
+  minimalista y cuidado** (nada de plantilla genérica de Arial y
+  negritas sueltas) — CV seguido de la carta de presentación, **cada uno
+  en páginas separadas** (la carta siempre empieza en página nueva, sin
+  importar cuánto ocupe el CV); no se exige un número de página fijo para
+  el CV, solo que no se mezcle con la carta en la misma página (C4).
+- **Valor del límite de uso**: **5 CVs+cartas por usuaria y día** como
+  máximo (G1). Se aplica solo a la generación, no a "Buscar" (que ya no
+  consume llamadas externas tras la corrección de C1).
+- **Qué campos definen el perfil para filtrar**: puesto y palabras clave
+  (C1) — los mismos que ya definían "relevante" en B1; años de
+  experiencia se muestra pero no participa en el filtrado.
 - **Alcance del email de aviso**: aviso genérico ("hay ofertas nuevas,
   entra a verlas") a las 5 si la ingesta encontró algo ese día, sin
   calcular relevancia por persona dentro del propio cron (G3) — la
