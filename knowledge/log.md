@@ -1,6 +1,13 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Construccion**: T09 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0001_perfiles.sql` crea la tabla `perfiles` con
+  los campos de `docs/04-plan-tecnico.md` §3.4 (`user_id` unico contra
+  `auth.users`, `palabras_clave`/`empresas_cv`/`titulos_cv` como listas
+  de texto, `usar_experiencia_cv` booleano, `actualizado_en` para el
+  borrado al mes). RLS se deja fuera a proposito: es la tarea T13,
+  aparte, para no adelantar trabajo que no le toca a esta tarea.
 * **Construccion**: Hito 0 de `docs/06-tareas.md` terminado (T01-T05,
   Paso 9). Proyecto Next.js 16 con TypeScript y Tailwind generado con
   `create-next-app`; `npm run build` compila sin errores. **Obstaculo
