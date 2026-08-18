@@ -16,9 +16,16 @@
   Hazlas en orden; saltarte una casi siempre te deja algo a medio montar.
 - Marca la casilla `[ ]` → `[x]` según las vayas completando con Claude
   Code en el Paso 9.
-- 74 tareas en total, agrupadas en 10 hitos. Cada hito termina con algo
+- 76 tareas en total, agrupadas en 10 hitos. Cada hito termina con algo
   visible en pantalla — es la forma de saber que vas avanzando de verdad y
   no solo escribiendo código que no hace nada todavía.
+
+> ⚠️ **Regla que atraviesa todo el documento**: los workflows `Jobs` que
+> ya tienes en n8n (`Jobs · ingesta`, `Jobs · generación CV`,
+> `Jobs · seguimiento`, `Jobs · archivado`) son la búsqueda de empleo real
+> de Mar, en producción, y **no se tocan en ninguna tarea**. Jobs App usa
+> un workflow **nuevo e independiente**, `Jobs App · ingesta`, creado
+> copiando el JSON del existente y adaptando solo su parte final.
 
 ## Resumen de hitos
 
@@ -102,20 +109,31 @@ guardar.
 | T30 | Añadir años de experiencia y la casilla "tener en cuenta mi CV" | `app/perfil/page.tsx` | Ves un campo numérico y una casilla junto a la propuesta de la IA | T29 | [ ] |
 | T31 | Guardar el perfil al pulsar "Guardar" | `app/perfil/page.tsx`, `app/api/perfil/route.ts` | Pulsas "Guardar", recargas la página y ves los mismos datos que guardaste | T30, T13 | [ ] |
 
-## Hito 4 · n8n empieza a alimentar la base de datos compartida de ofertas
+## Hito 4 · Un workflow nuevo de n8n alimenta la base de datos de ofertas
+
+> ⚠️ **Los workflows `Jobs` actuales NO se tocan.** `Jobs · ingesta`,
+> `Jobs · generación CV`, `Jobs · seguimiento` y `Jobs · archivado` son la
+> búsqueda de empleo real de Mar, en producción. Se queda todo como está.
+>
+> Lo que se hace es **exportar el JSON de `Jobs · ingesta`, importarlo como
+> workflow nuevo** llamado `Jobs App · ingesta`, y adaptar solo su parte
+> final. Las 11 fuentes de ofertas y sus normalizadores vienen ya hechos en
+> la copia: el trabajo real es cambiar dónde escribe. Estimado: ~30 minutos.
 
 **Al terminar este hito verás**: en Supabase, la tabla `ofertas` tiene filas
-reales, sin haber tocado la web para nada.
+reales, sin haber tocado la web ni ninguno de tus workflows actuales.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T32 | Añadir credenciales de Supabase en n8n | — (n8n → Credentials) | La credencial nueva existe y "Probar conexión" da correcto | T10 | [ ] |
-| T33 | Añadir un nodo a `Jobs · ingesta` que escriba cada oferta en Supabase | workflow n8n `Jobs · ingesta` | Tras una ejecución de prueba, aparecen filas nuevas en Table Editor → `ofertas` | T32 | [ ] |
-| T34 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas la ingesta dos veces seguidas y el número de filas no se duplica | T33 | [ ] |
-| T35 | Añadir un paso de borrado de datos con más de 30 días (regla 10) | workflow n8n `Jobs · ingesta` | Insertas una fila de prueba con fecha antigua y, tras ejecutar ese paso, ha desaparecido | T33 | [ ] |
-| T36 | Publicar el workflow modificado | — (n8n) | `Jobs · ingesta` aparece "Activo" con la última versión | T34, T35 | [ ] |
-| T37 | Revisar el vigilante de Healthchecks tras el cambio | — | La ejecución de las 13:00 sigue enviando el ping, sin avisos de fallo | T36 | [ ] |
-| T38 | Insertar ofertas de prueba a mano, por si la ingesta real tarda en dar resultados útiles para probar el resto | — (Supabase Table Editor) | Ves esas filas de prueba en la tabla `ofertas` | T10 | [ ] |
+| T33 | Exportar el JSON de `Jobs · ingesta` e importarlo como workflow nuevo `Jobs App · ingesta`, **desactivado** | — (n8n) | En la lista de workflows aparecen los dos por separado; el nuevo está inactivo y el original sigue activo e intacto | — | [ ] |
+| T34 | Quitar del workflow nuevo todo lo que no sea ingesta (archivado, escritura en Google Sheets) | workflow `Jobs App · ingesta` | El lienzo del workflow nuevo ya no tiene nodos de Google Sheets | T33 | [ ] |
+| T35 | Sustituir la salida por un nodo que escriba cada oferta en Supabase | workflow `Jobs App · ingesta` | Ejecución manual de prueba: aparecen filas nuevas en Table Editor → `ofertas` | T32, T34 | [ ] |
+| T36 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas el workflow nuevo dos veces seguidas y el número de filas no se duplica | T35 | [ ] |
+| T37 | Añadir un paso de borrado de datos con más de 30 días (regla 10) | workflow `Jobs App · ingesta` | Insertas una fila de prueba con fecha antigua y, tras ejecutar ese paso, ha desaparecido | T35 | [ ] |
+| T38 | Poner su propio Schedule Trigger a las 13:00 y su propio vigilante de Healthchecks | workflow `Jobs App · ingesta` | El workflow nuevo tiene su check propio en Healthchecks, distinto del de `Jobs · ingesta` | T37 | [ ] |
+| T39 | Activar y publicar el workflow nuevo | — (n8n) | `Jobs App · ingesta` aparece "Activo"; `Jobs · ingesta` sigue activo y sin cambios | T38 | [ ] |
+| T40 | Insertar ofertas de prueba a mano, por si la ingesta real tarda en dar resultados útiles para probar el resto | — (Supabase Table Editor) | Ves esas filas de prueba en la tabla `ofertas` | T10 | [ ] |
 
 ## Hito 5 · Ver ofertas y marcar "me interesa"
 
@@ -124,13 +142,13 @@ filtrada por tu perfil, y puedes marcar una oferta como "me interesa".
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T39 | Crear la pantalla de ofertas | `app/ofertas/page.tsx` | Se abre `localhost:3000/ofertas` sin error, aunque esté vacía | T20 | [ ] |
-| T40 | Consultar las ofertas que coinciden con puesto/palabras clave del perfil | `app/api/ofertas/route.ts` | Con las ofertas de prueba (T38), ves en pantalla solo las que coinciden con tu perfil guardado | T31, T38 | [ ] |
-| T41 | Mostrar título, empresa y enlace en tarjetas | `components/TarjetaOferta.tsx` | Cada oferta se ve como una tarjeta legible, no como texto plano | T40 | [ ] |
-| T42 | Mensaje de "no hay ofertas que coincidan" con la lista vacía | `app/ofertas/page.tsx` | Cambias tus palabras clave a algo que no coincide con nada y ves el mensaje, no una pantalla en blanco | T40 | [ ] |
-| T43 | Añadir el botón "me interesa" en cada tarjeta | `components/TarjetaOferta.tsx` | Cada tarjeta muestra el botón | T41 | [ ] |
-| T44 | Guardar el interés al pulsar el botón | `app/api/interes/route.ts` | Pulsas el botón, recargas la página y sigue marcado como pulsado | T43, T13 | [ ] |
-| T45 | Impedir marcar la misma oferta dos veces | `app/api/interes/route.ts` | Pulsas el botón dos veces seguidas: no hay duplicado ni error visible | T44, T11 | [ ] |
+| T41 | Crear la pantalla de ofertas | `app/ofertas/page.tsx` | Se abre `localhost:3000/ofertas` sin error, aunque esté vacía | T20 | [ ] |
+| T42 | Consultar las ofertas que coinciden con puesto/palabras clave del perfil | `app/api/ofertas/route.ts` | Con las ofertas de prueba (T40), ves en pantalla solo las que coinciden con tu perfil guardado | T31, T40 | [ ] |
+| T43 | Mostrar título, empresa y enlace en tarjetas | `components/TarjetaOferta.tsx` | Cada oferta se ve como una tarjeta legible, no como texto plano | T42 | [ ] |
+| T44 | Mensaje de "no hay ofertas que coincidan" con la lista vacía | `app/ofertas/page.tsx` | Cambias tus palabras clave a algo que no coincide con nada y ves el mensaje, no una pantalla en blanco | T42 | [ ] |
+| T45 | Añadir el botón "me interesa" en cada tarjeta | `components/TarjetaOferta.tsx` | Cada tarjeta muestra el botón | T43 | [ ] |
+| T46 | Guardar el interés al pulsar el botón | `app/api/interes/route.ts` | Pulsas el botón, recargas la página y sigue marcado como pulsado | T45, T13 | [ ] |
+| T47 | Impedir marcar la misma oferta dos veces | `app/api/interes/route.ts` | Pulsas el botón dos veces seguidas: no hay duplicado ni error visible | T46, T11 | [ ] |
 
 ## Hito 6 · Generar el CV y la carta con IA
 
@@ -140,16 +158,16 @@ activa solo.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T46 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/groq.ts` | Interno — se verifica junto con T50 | T26 | [ ] |
-| T47 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T50 | — | [ ] |
-| T48 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/groq.ts` | Interno — se verifica junto con T50 | T46, T47 | [ ] |
-| T49 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T50 | T48, T12 | [ ] |
-| T50 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Marcas "me interesa" en una oferta real y ves de inmediato "generando" en pantalla | T44, T49 | [ ] |
-| T51 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Esperas unos segundos y el estado cambia solo a "listo", sin recargar a mano | T50 | [ ] |
-| T52 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Interno — pruébalo generando un CV para una oferta y revisando que no aparecen cifras nuevas | T51 | [ ] |
-| T53 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Interno — mismo tipo de prueba que T52, con nombres de empresa | T52, T29 | [ ] |
-| T54 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts` | Generas 5 CVs seguidos (con ofertas de prueba) y el sexto intento muestra el mensaje del límite, no un error críptico | T51 | [ ] |
-| T55 | Manejar el fallo de Groq: reintento + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T51 | [ ] |
+| T48 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/groq.ts` | Interno — se verifica junto con T52 | T26 | [ ] |
+| T49 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T52 | — | [ ] |
+| T50 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/groq.ts` | Interno — se verifica junto con T52 | T48, T49 | [ ] |
+| T51 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T52 | T50, T12 | [ ] |
+| T52 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Marcas "me interesa" en una oferta real y ves de inmediato "generando" en pantalla | T46, T51 | [ ] |
+| T53 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Esperas unos segundos y el estado cambia solo a "listo", sin recargar a mano | T52 | [ ] |
+| T54 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Interno — pruébalo generando un CV para una oferta y revisando que no aparecen cifras nuevas | T53 | [ ] |
+| T55 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Interno — mismo tipo de prueba que T54, con nombres de empresa | T54, T29 | [ ] |
+| T56 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts` | Generas 5 CVs seguidos (con ofertas de prueba) y el sexto intento muestra el mensaje del límite, no un error críptico | T53 | [ ] |
+| T57 | Manejar el fallo de Groq: reintento + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T53 | [ ] |
 
 ## Hito 7 · Descargar el documento en PDF
 
@@ -158,25 +176,28 @@ CV en la primera página y la carta empezando en una página nueva.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T56 | Crear la plantilla del PDF, diseño sobrio | `lib/pdf.ts` | Interno — se verifica junto con T58 | — | [ ] |
-| T57 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.ts` | Interno — se verifica junto con T58 | T56 | [ ] |
-| T58 | Crear el endpoint de descarga | `app/api/descargar/[id]/route.ts` | Con una generación en estado "listo", entras a la URL de descarga y se abre un PDF sin error | T51, T57 | [ ] |
-| T59 | Botón "Descargar", desactivado hasta que esté listo | `components/TarjetaOferta.tsx` | Con estado "generando" el botón está gris; en "listo" se activa | T58, T51 | [ ] |
-| T60 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T59 | [ ] |
+| T58 | Crear la plantilla del PDF, diseño sobrio | `lib/pdf.ts` | Interno — se verifica junto con T60 | — | [ ] |
+| T59 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.ts` | Interno — se verifica junto con T60 | T58 | [ ] |
+| T60 | Crear el endpoint de descarga | `app/api/descargar/[id]/route.ts` | Con una generación en estado "listo", entras a la URL de descarga y se abre un PDF sin error | T53, T59 | [ ] |
+| T61 | Botón "Descargar", desactivado hasta que esté listo | `components/TarjetaOferta.tsx` | Con estado "generando" el botón está gris; en "listo" se activa | T60, T53 | [ ] |
+| T62 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T61 | [ ] |
 
 ## Hito 8 · Aviso por email cuando hay ofertas nuevas
 
 **Al terminar este hito verás**: al día siguiente de una ingesta con
 ofertas nuevas, te llega un correo con un enlace de vuelta a la app.
 
+> Todo este hito ocurre dentro de `Jobs App · ingesta`, el workflow nuevo
+> del Hito 4. Los workflows `Jobs` originales **siguen sin tocarse**.
+
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T61 | Contar cuántas ofertas nuevas entraron hoy | workflow n8n `Jobs · ingesta` | En una ejecución de prueba, ese paso muestra un número | T34 | [ ] |
-| T62 | Consultar en Supabase qué usuarias tienen perfil guardado | workflow n8n | La ejecución de prueba devuelve tu email si ya tienes perfil guardado | T32, T31 | [ ] |
-| T63 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | workflow n8n | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T61, T62 | [ ] |
-| T64 | Redactar la plantilla fija del email de aviso, en castellano | workflow n8n (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T63 | [ ] |
-| T65 | Enviar el email a cada usuaria con perfil | workflow n8n | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T64 | [ ] |
-| T66 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T65 | [ ] |
+| T63 | Contar cuántas ofertas nuevas entraron hoy | `Jobs App · ingesta` | En una ejecución de prueba, ese paso muestra un número | T36 | [ ] |
+| T64 | Consultar en Supabase qué usuarias tienen perfil guardado | `Jobs App · ingesta` | La ejecución de prueba devuelve tu email si ya tienes perfil guardado | T32, T31 | [ ] |
+| T65 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | `Jobs App · ingesta` | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T63, T64 | [ ] |
+| T66 | Redactar la plantilla fija del email de aviso, en castellano | `Jobs App · ingesta` (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T65 | [ ] |
+| T67 | Enviar el email a cada usuaria con perfil | `Jobs App · ingesta` | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T66 | [ ] |
+| T68 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T67 | [ ] |
 
 ## Hito 9 · Publicar en internet
 
@@ -185,14 +206,14 @@ verdad, ya no solo `localhost`.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T67 | Repasar que toda la interfaz, mensajes de error y el email están en castellano | — (prueba manual) | Recorres cada pantalla y no encuentras ningún texto en otro idioma | T60, T66 | [ ] |
-| T68 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T67 | [ ] |
-| T69 | ⚠️ Pedir tu permiso explícito antes de subir nada a GitHub | — | Confirmación tuya, por escrito, antes de continuar | T68 | [ ] |
-| T70 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T69 | [ ] |
-| T71 | Crear el repositorio en GitHub y subir el código | — | Recargas la página del repositorio en GitHub y ves los archivos | T70 | [ ] |
-| T72 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T71 | [ ] |
-| T73 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T72 | [ ] |
-| T74 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T73 | [ ] |
+| T69 | Repasar que toda la interfaz, mensajes de error y el email están en castellano | — (prueba manual) | Recorres cada pantalla y no encuentras ningún texto en otro idioma | T62, T68 | [ ] |
+| T70 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T69 | [ ] |
+| T71 | ⚠️ Pedir tu permiso explícito antes de subir nada a GitHub | — | Confirmación tuya, por escrito, antes de continuar | T70 | [ ] |
+| T72 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T71 | [ ] |
+| T73 | Crear el repositorio en GitHub y subir el código | — | Recargas la página del repositorio en GitHub y ves los archivos | T72 | [ ] |
+| T74 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T73 | [ ] |
+| T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
+| T76 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T75 | [ ] |
 
 ## Relacionado
 
@@ -201,4 +222,7 @@ verdad, ya no solo `localhost`.
 - [`docs/04-plan-tecnico.md`](04-plan-tecnico.md) — con qué se construye
   cada pieza.
 - [`docs/05-ia.md`](05-ia.md) — el detalle de las verificaciones de IA de
-  T52, T53 y T55.
+  T54, T55 y T57.
+- `Docker n8n/knowledge/workflows/jobs/` — la documentación de los
+  workflows originales que **no se tocan**, y de donde sale el JSON que se
+  copia en T33.

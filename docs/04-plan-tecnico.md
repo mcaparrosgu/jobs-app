@@ -112,8 +112,17 @@ del flujo original.
   puesto y palabras clave, y la que redacta el CV y la carta adaptados.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
   el sitio con dirección pública al que entran tus compañeras.
-- **n8n (el que ya tienes)** — sigue haciendo lo que ya hace: traer
-  ofertas cada día a las 13:00 y enviar los emails de aviso por Gmail.
+- **n8n** — un workflow **nuevo e independiente**, `Jobs App · ingesta`,
+  que trae ofertas cada día a las 13:00 y envía los emails de aviso por
+  Gmail. Se crea copiando el JSON de tu `Jobs · ingesta` actual y
+  adaptando solo su parte final (unos 30 minutos): las 11 fuentes y sus
+  normalizadores vienen ya hechos en la copia.
+
+> ⚠️ **Tus workflows `Jobs` actuales no se tocan.** `Jobs · ingesta`,
+> `Jobs · generación CV`, `Jobs · seguimiento` y `Jobs · archivado` son tu
+> búsqueda de empleo real, en producción, y siguen funcionando igual.
+> Jobs App es un producto distinto para 5 personas y vive en su propio
+> workflow, con su propio Schedule Trigger y su propio vigilante.
 
 ### 3.2 Cómo se conectan (lo importante)
 
@@ -121,9 +130,9 @@ La decisión que más simplifica todo: **n8n y la web no se hablan entre
 sí. Los dos hablan con la misma base de datos.**
 
 ```text
-    n8n (13:00)  ──escribe ofertas──►  ┌──────────┐
-    n8n (Gmail)  ──lee quién tiene──►  │ Supabase │
-                    perfil             └──────────┘
+  Jobs App · ingesta (13:00) ──escribe ofertas──►  ┌──────────┐
+  Jobs App · ingesta (Gmail) ──lee quién tiene──►  │ Supabase │
+                                perfil            └──────────┘
                                             ▲
                                             │ lee y escribe
                                             │
@@ -230,9 +239,9 @@ preguntando "¿cuántas filas hay en `generaciones` de esta usuaria con
 fecha de hoy?". Un cajón menos que mantener sincronizado, y es imposible
 que se descuadre.
 
-**El borrado al mes (regla 10)** lo hace el propio n8n: un paso más en el
-flujo de las 13:00 que borra lo que tenga más de 30 días. Cero
-infraestructura nueva.
+**El borrado al mes (regla 10)** lo hace el propio n8n: un paso más en
+`Jobs App · ingesta`, el flujo de las 13:00, que borra lo que tenga más de
+30 días. Cero infraestructura nueva.
 
 ### 3.5 Usuarios y permisos
 
@@ -347,8 +356,8 @@ apaga y hay que despertarla a mano desde el panel. Con una clase que no
 entra a diario, es probable que pase — y da mucho susto, porque la web
 parece rota sin motivo.
 
-**Mitigación**: ya la tienes montada sin saberlo. El flujo de n8n de las
-13:00 escribe ofertas en Supabase **todos los días**, así que el proyecto
+**Mitigación**: viene resuelta de serie. `Jobs App · ingesta` escribe
+ofertas en Supabase **todos los días** a las 13:00, así que el proyecto
 nunca llega a estar 7 días inactivo. Aun así, apúntate que si alguna vez
 ves "proyecto pausado", se arregla con dos clics y no has perdido nada.
 

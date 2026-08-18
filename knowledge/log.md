@@ -1,16 +1,23 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Correccion**: `docs/06-tareas.md`, `docs/04-plan-tecnico.md` y
+  `decision-tareas-mvp.md` — **los workflows `Jobs` de n8n no se tocan**.
+  La primera version del Paso 7 planteaba modificar `Jobs · ingesta` para
+  que escribiera en Supabase; Mar lo corrigio expresamente: son su
+  busqueda de empleo real en produccion. Se copia el JSON y se adapta un
+  workflow **nuevo e independiente**, `Jobs App · ingesta`, con Schedule
+  Trigger y vigilante propios (~30 min segun su estimacion, porque las 11
+  fuentes vienen hechas en la copia). Renumeracion: 74 → **76 tareas**
+  (T01-T76). Ventaja en retrospectiva: la busqueda de empleo real de Mar
+  no puede romperse por un fallo del proyecto de clase.
 * **Creacion**: `docs/06-tareas.md` (Paso 7) y `decision-tareas-mvp.md` —
-  74 tareas (T01-T74) en 10 hitos, cada una de menos de una hora, con
-  archivos, verificacion sin programar, dependencias y casilla. Cada hito
-  termina con algo visible en pantalla (de "pagina en localhost" a
-  "recorrido completo en produccion"). Hallazgo importante: el workflow
-  real `Jobs · ingesta` escribe hoy en Google Sheets, no en Supabase como
-  asume `04-plan-tecnico.md` — se anadieron tareas explicitas (T32-T38,
-  T61-T66) para migrarlo a escribir en Supabase, anadir el borrado a 30
-  dias (regla 10) y el aviso condicional por email (regla 8), ninguno de
-  los cuales existia ya construido. Cada regla de negocio de
+  tareas en 10 hitos, cada una de menos de una hora, con archivos,
+  verificacion sin programar, dependencias y casilla. Cada hito termina
+  con algo visible en pantalla (de "pagina en localhost" a "recorrido
+  completo en produccion"). Se detecto que el borrado a 30 dias (regla 10)
+  y el aviso condicional por email (regla 8) no existian construidos en
+  ningun sitio, y se anadieron como tareas. Cada regla de negocio de
   `docs/03-spec.md` queda trazada a al menos una tarea. Ultimo hito
   (Publicar) incluye parada explicita pidiendo permiso antes de subir a
   GitHub, como ya quedo acordado en el Paso 5.
