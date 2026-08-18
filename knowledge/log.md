@@ -1,6 +1,15 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Construccion**: T12 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0004_generaciones.sql` crea la tabla `generaciones`
+  (regla de negocio 7): `user_id` + `oferta_id` con `unique` (un solo
+  documento por oferta), `estado` restringido por `check` a `generando` /
+  `listo` / `error` (por defecto `generando`), `cv_texto`/`carta_texto`
+  como resultado congelado y `error_mensaje` para el caso limite de
+  fallo. Migracion escrita, pendiente de aplicarla en Supabase (mismo
+  procedimiento de T09-T11: SQL en una linea, "Run without RLS"; RLS
+  llega en T13).
 * **Construccion**: T11 de `docs/06-tareas.md` (Paso 9) —
   `supabase/migrations/0003_intereses.sql` crea la tabla `intereses`
   (regla de negocio 2): `user_id` + `oferta_id` referencian a
