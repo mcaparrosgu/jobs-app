@@ -1,6 +1,12 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Pendiente**: verificar en la practica el criterio de T14 ("una
+  escritura de prueba desde el navegador da error de permiso" en
+  `ofertas`). Mar no sabe hacerlo manualmente todavia (requiere consola
+  del navegador con sesion iniciada); se retoma mas adelante, cuando haya
+  una pantalla real de la web que hable con Supabase (a partir del Hito
+  2/3) y sea mas facil de probar sin pasos sueltos de consola.
 * **Creacion**: `Profesora Claude/Por que Supabase y no Google Docs.md`
   en el vault `wiki` de Obsidian de Mar — informe didactico (modo
   profesora) sobre por que la base de datos de Jobs App es Supabase y no
