@@ -54,6 +54,44 @@ motivos, en orden de importancia para tu caso concreto:
 duras que con Lovable, porque verás archivos y comandos que no te dicen
 nada todavía. Es una inversión, no una pérdida.
 
+### 2.1 Alternativas que se miraron después y se descartaron
+
+Antes de confirmar la Opción 1 se contrastaron tres variantes más. Se
+dejan aquí registradas para no volver a plantearlas sin motivo nuevo:
+
+- **v0 (de Vercel) en lugar de Lovable, dentro de la Opción 2.** Peor, no
+  mejor: su capa gratuita son 5 $/mes de créditos con tope de ~7 mensajes
+  al día (varias reseñas de 2026 lo describen como un *trial*, no como
+  algo con lo que construir de forma sostenida), y **Supabase no viene
+  integrado de fábrica** como sí ocurre en Lovable — hay hilos abiertos en
+  el propio foro de Vercel sobre cómo hacer funcionar el login de Supabase
+  en v0. Justo la pieza que más días ahorra es la que más fricción da.
+- **Lovable Pro (25 $/mes, 100 créditos).** Resuelve el riesgo de quedarse
+  sin cuota a media construcción, pero **no acelera la construcción**: el
+  cuello de botella de quien construye por primera vez no es cuántos
+  intentos tiene disponibles, sino cuántos intentos hacen falta para
+  arreglar algo cuyo código no entiende. Pagar no reduce ese número.
+  Además el hosting de Lovable Cloud se factura **aparte, por uso**: es un
+  segundo grifo de gasto, no solo la cuota fija. Y es una factura
+  recurrente mientras la app viva, no un coste puntual del MVP.
+- **Copiar y adaptar el workflow `Jobs · generación CV` que ya existe en
+  n8n.** No es una cuarta opción: es la Opción 3 con un punto de partida,
+  y el punto de partida no arregla lo que la descarta. Ese flujo es de una
+  sola persona (no hay login ni separación entre usuarias), usa una hoja
+  de Google Sheets como almacén — inaceptable para 5 CVs con datos de
+  contacto, por el requisito de privacidad de la spec — y llama a la **API
+  de pago de Anthropic**, lo que rompe el presupuesto de 0 €. Adaptarlo
+  para 5 personas obligaría a construir dentro de n8n exactamente lo que
+  n8n no sabe hacer.
+
+**Lo que sí se aprovecha de ese workflow**: la lógica del prompt, que ya
+está probada en producción — combina el CV base con la oferta y separa la
+respuesta del modelo con marcadores `===IDIOMA===` / `===CV===` /
+`===CARTA===`. Esa estructura se traduce a la llamada a Groq en
+`lib/groq.ts` (ver §3.3) en vez de reinventar el prompt desde cero. Es
+tiempo real ahorrado en el Paso 9, sin heredar ninguno de los problemas
+del flujo original.
+
 ## 3. Plan técnico
 
 ### 3.1 Qué es cada pieza
@@ -81,7 +119,7 @@ nada todavía. Es una inversión, no una pérdida.
 La decisión que más simplifica todo: **n8n y la web no se hablan entre
 sí. Los dos hablan con la misma base de datos.**
 
-```
+```text
     n8n (13:00)  ──escribe ofertas──►  ┌──────────┐
     n8n (Gmail)  ──lee quién tiene──►  │ Supabase │
                     perfil             └──────────┘
@@ -105,7 +143,7 @@ El único servicio externo al que llama la web es Groq.
 
 ### 3.3 Estructura de carpetas
 
-```
+```text
 jobs-app/
 ├── app/                          # cada carpeta = una dirección de la web
 │   ├── page.tsx                  # "/"           → pedir acceso con el email
@@ -322,6 +360,7 @@ justo el escenario que ocurre cuando enseñas la app a toda la clase a la
 vez.
 
 **Mitigación**, por orden de esfuerzo:
+
 1. Reintentar automáticamente tras unos segundos (unas líneas de código) y
    mostrar el estado `generando` mientras tanto — como la spec ya exige un
    indicador de espera, la usuaria ni se entera.
@@ -338,6 +377,7 @@ puede **inventarse experiencia que no está en el CV** — algo grave cuando
 el documento va a una empresa real.
 
 **Mitigación**:
+
 1. Instrucciones explícitas al modelo: *"usa únicamente información
    presente en el CV; no inventes empresas, fechas ni títulos"*.
 2. **Probarlo con tu propio CV antes de enseñárselo a nadie.** Es la

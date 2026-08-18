@@ -1,6 +1,26 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Actualizacion**: `docs/04-plan-tecnico.md` (nueva seccion 2.1) y
+  `decision-stack-mvp.md` — Mar **confirma explicitamente la Opcion 1**
+  tras contrastar tres variantes mas que planteo ella. Se descartan con
+  datos verificados: **v0 de Vercel** (peor que Lovable — 5 $/mes de
+  creditos, ~7 mensajes/dia, y sin Supabase integrado de fabrica, que es
+  justo la pieza que mas dias ahorra), **Lovable Pro a 25 $/mes** (quita
+  el riesgo de bloqueo por cuota pero no acelera la construccion: el
+  cuello de botella es cuantos intentos hacen falta para arreglar codigo
+  que no se entiende, no cuantos hay disponibles; ademas el hosting se
+  factura aparte por uso y es recurrente) y **copiar el workflow
+  `Jobs · generacion CV` existente** (no es una cuarta opcion sino la
+  Opcion 3 con punto de partida: usuaria unica, Sheets como almacen —
+  incompatible con la privacidad exigida — y API de pago de Anthropic).
+  Hallazgo aprovechable: el **prompt** de ese workflow si se reutiliza en
+  `lib/groq.ts` (marcadores `===IDIOMA===`/`===CV===`/`===CARTA===`).
+  Nota de proceso: Mar senalo que en el Paso 5 no se le pregunto
+  explicitamente que opcion prefería — las opciones se presentaron con
+  recomendacion dentro de un plan que ella aprobo en bloque, lo que no
+  equivale a elegir. Corregido y registrado como regla para los pasos
+  siguientes.
 * **Creacion**: `docs/04-plan-tecnico.md` (Paso 5) y
   `decision-stack-mvp.md` — se elige el stack: Next.js + Supabase + Groq +
   Vercel, sobre el n8n existente. Mar fija **presupuesto 0 euros/mes**

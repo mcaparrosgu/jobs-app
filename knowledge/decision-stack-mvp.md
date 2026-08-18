@@ -26,6 +26,9 @@ Mar confirmo en el Paso 5:
 - Se manejan datos sensibles (CV, email, datos de contacto).
 - Solo web, no movil.
 
+La opcion fue **elegida explicitamente por Mar** tras contrastarla con
+las variantes de abajo, no solo aprobada dentro de un plan.
+
 Ademas arrastraba las preferencias ya registradas en
 [preferencias-tecnicas-paso5.md](preferencias-tecnicas-paso5.md): Gmail
 como proveedor de email y modelo de IA gratuito y de codigo abierto.
@@ -44,6 +47,31 @@ como proveedor de email y modelo de IA gratuito y de codigo abierto.
   n8n sabe hacer. El riesgo no es un bug, es descubrir a media
   construccion que la herramienta no llega.
 
+Tras presentar estas tres, Mar planteo tres variantes mas. Las tres se
+contrastaron con datos verificados antes de descartarlas:
+
+- **v0 (Vercel) en lugar de Lovable** — peor que Lovable, no mejor: capa
+  gratuita de 5 $/mes con tope de ~7 mensajes diarios (descrita en
+  resenas de 2026 como un *trial*, no como algo con lo que construir de
+  forma sostenida), y **sin Supabase integrado de fabrica** — el login y
+  la base de datos, que es justo lo que mas dias ahorra, exigen wiring
+  manual.
+- **Lovable Pro (25 $/mes, 100 creditos)** — elimina el riesgo de bloqueo
+  por cuota, pero **no acelera la construccion**: el cuello de botella de
+  quien construye por primera vez es cuantos intentos hacen falta para
+  arreglar codigo que no entiende, no cuantos intentos tiene disponibles.
+  Ademas el hosting (Lovable Cloud) se factura aparte por uso, y es una
+  factura recurrente, no un coste puntual del MVP. Rompia la restriccion
+  de 0 euros por un motivo — cubrirse ante un bloqueo — que la Opcion 1
+  ya resuelve gratis.
+- **Copiar y adaptar el workflow `Jobs · generacion CV` existente** — no
+  es una cuarta opcion, es la Opcion 3 con punto de partida. Ese flujo es
+  de una sola usuaria (sin login ni aislamiento), usa Google Sheets como
+  almacen (incompatible con el requisito de privacidad para 5 CVs con
+  datos de contacto) y llama a la **API de pago de Anthropic** (rompe el
+  presupuesto 0). Ver
+  `../../Docker n8n/knowledge/workflows/jobs/jobs-generacion-cv.md`.
+
 # Por que esta y no otra
 
 1. Unica de las tres que cubre el 100% de `../docs/03-spec.md` sin
@@ -58,6 +86,16 @@ como proveedor de email y modelo de IA gratuito y de codigo abierto.
    tener que autoalojar nada (autoalojar si tendria coste de servidor, y
    el presupuesto es 0).
 5. Mar aprende viendo el codigo, no delegandolo.
+
+# Lo unico reutilizable del pipeline existente
+
+Aunque el workflow `Jobs · generacion CV` no sirve como base, **su prompt
+si**: esta probado en produccion y combina el CV base con la oferta,
+separando la respuesta del modelo con marcadores `===IDIOMA===` /
+`===CV===` / `===CARTA===`. Esa estructura se traslada a `lib/groq.ts` en
+el Paso 9 en vez de reinventar el prompt desde cero — tiempo real
+ahorrado sin heredar los problemas del flujo original (usuaria unica,
+Sheets como almacen, API de pago).
 
 # Decision de arquitectura que simplifica el proyecto
 
