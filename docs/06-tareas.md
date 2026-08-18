@@ -67,7 +67,7 @@ una con el icono verde de RLS activado.
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T06 | Crear la cuenta y el proyecto en Supabase | — (supabase.com) | Entras con tu cuenta y ves un proyecto llamado "jobs-app" en el panel | — | [x] |
 | T07 | Guardar la URL y la clave pública en `.env.local` | `.env.local` | El archivo tiene `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` rellenas | T06 | [x] |
-| T08 | Crear el archivo de conexión a Supabase | `lib/supabase/client.ts` | Interno — se verifica junto con T09 | T07 | [ ] |
+| T08 | Crear el archivo de conexión a Supabase | `lib/supabase/client.ts` | Interno — se verifica junto con T09 | T07 | [x] |
 | T09 | Migración: tabla `perfiles` | `supabase/migrations/0001_perfiles.sql` | En Supabase → Table Editor aparece `perfiles` con sus columnas | T08 | [ ] |
 | T10 | Migración: tabla `ofertas`, única por `fuente`+`id_externo` | `supabase/migrations/0002_ofertas.sql` | Aparece `ofertas`; intentar insertar dos filas con el mismo `fuente`+`id_externo` da error | T08 | [ ] |
 | T11 | Migración: tabla `intereses` | `supabase/migrations/0003_intereses.sql` | Aparece `intereses` en Table Editor | T09, T10 | [ ] |
