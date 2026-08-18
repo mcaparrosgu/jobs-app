@@ -72,7 +72,7 @@ una con el icono verde de RLS activado.
 | T10 | Migración: tabla `ofertas`, única por `fuente`+`id_externo` | `supabase/migrations/0002_ofertas.sql` | Aparece `ofertas`; intentar insertar dos filas con el mismo `fuente`+`id_externo` da error | T08 | [x] |
 | T11 | Migración: tabla `intereses` | `supabase/migrations/0003_intereses.sql` | Aparece `intereses` en Table Editor | T09, T10 | [x] |
 | T12 | Migración: tabla `generaciones` | `supabase/migrations/0004_generaciones.sql` | Aparece `generaciones` en Table Editor | T11 | [x] |
-| T13 | Activar RLS: "cada una ve solo lo suyo" en `perfiles`, `intereses`, `generaciones` | `supabase/migrations/0005_rls_privacidad.sql` | Las 3 tablas muestran el icono verde "RLS enabled" | T09, T11, T12 | [ ] |
+| T13 | Activar RLS: "cada una ve solo lo suyo" en `perfiles`, `intereses`, `generaciones` | `supabase/migrations/0005_rls_privacidad.sql` | Las 3 tablas muestran el icono verde "RLS enabled" | T09, T11, T12 | [x] |
 | T14 | RLS en `ofertas`: lectura para todas, escritura para nadie desde la web | `supabase/migrations/0006_rls_ofertas.sql` | Mismo icono verde en `ofertas`; una escritura de prueba desde el navegador da error de permiso | T10 | [ ] |
 
 ## Hito 2 · Entrar con el enlace de email

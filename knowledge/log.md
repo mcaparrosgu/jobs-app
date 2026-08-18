@@ -1,5 +1,15 @@
 # Registro de cambios del bundle
 
+## 2026-08-19
+* **Construccion**: T13 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0005_rls_privacidad.sql` activa RLS (regla de
+  negocio 1) en `perfiles`, `intereses` y `generaciones`: cuatro
+  politicas por tabla (`select`/`insert`/`update`/`delete`) con la
+  condicion `auth.uid() = user_id`, para que cada usuaria solo pueda ver
+  y modificar sus propias filas aunque el codigo de la web tuviera un
+  fallo. `ofertas` se deja fuera a proposito, es la tarea T14, con reglas
+  distintas (lectura para todas, escritura para nadie desde la web).
+
 ## 2026-08-18
 * **Construccion**: T12 de `docs/06-tareas.md` (Paso 9) —
   `supabase/migrations/0004_generaciones.sql` crea la tabla `generaciones`
