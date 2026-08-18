@@ -1,6 +1,21 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `Profesora Claude/Por que Supabase y no Google Docs.md`
+  en el vault `wiki` de Obsidian de Mar — informe didactico (modo
+  profesora) sobre por que la base de datos de Jobs App es Supabase y no
+  Google Docs/Sheets, apoyado en el precedente real del workflow n8n
+  existente (usaba Sheets con una sola usuaria, incompatible con
+  privacidad para 5 personas) y en lo que Supabase resuelve de fabrica
+  (magic link + RLS). Generado por un subagente, subido a la carpeta
+  "Profesora Claude" ya existente en ese vault.
+* **Construccion**: T14 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0006_rls_ofertas.sql` activa RLS en `ofertas` con
+  una unica politica `select` para cualquier usuaria autenticada; sin
+  politicas de `insert`/`update`/`delete`, asi que con RLS activo nadie
+  desde la web (clave publica) puede escribir. n8n sigue escribiendo
+  porque usa la service role key, que ignora RLS por diseno de Supabase.
+  Cierra el Hito 1 (T09-T14).
 * **Construccion**: T13 de `docs/06-tareas.md` (Paso 9) —
   `supabase/migrations/0005_rls_privacidad.sql` activa RLS (regla de
   negocio 1) en `perfiles`, `intereses` y `generaciones`: cuatro
