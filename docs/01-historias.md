@@ -7,39 +7,28 @@
 
 ## A. Identificación
 
-### A1. Registrarme y entrar con email y contraseña
+### A1. Entrar con un enlace de un solo uso enviado a mi email (magic link)
 **IMPRESCINDIBLE**
 
-Como usuaria, quiero crear una cuenta con mi email y una contraseña, y
-entrar con esas mismas credenciales, para que mis resultados sean míos y
-nadie más de la clase pueda entrar a verlos ni modificarlos (nos conocemos
-todos los emails, así que sin contraseña cualquiera podría entrar como
-otra persona).
+Como usuaria, quiero entrar escribiendo solo mi email y pulsando el enlace
+de un solo uso que me llega, sin crear ni recordar ninguna contraseña,
+para que mis resultados sean míos y nadie más de la clase pueda entrar a
+verlos (solo quien tiene acceso a ese email puede entrar, igual de privado
+que una contraseña, sin tener que gestionar contraseñas).
 
-- Dado que abro la web por primera vez, cuando me registro con un email y
-  una contraseña, ¿queda creada mi cuenta y puedo entrar con esas
-  credenciales? Sí/No.
-- Dado que ya tengo cuenta, cuando entro con mi email y mi contraseña
-  correcta, ¿veo mis propios resultados y no los de otra persona? Sí/No.
-- Dado que escribo un email con formato inválido o una contraseña que no
-  cumple el mínimo exigido, cuando intento registrarme, ¿me lo impide y me
-  explica qué está mal? Sí/No.
-- Dado que introduzco una contraseña incorrecta para un email ya
-  registrado, cuando intento entrar, ¿me deniega el acceso sin decirme si
-  el fallo es el email o la contraseña (para no facilitar averiguar qué
-  emails están registrados)? Sí/No.
+- Dado que escribo mi email y pido entrar, ¿recibo un enlace de un solo
+  uso en ese email que me deja entrar al pulsarlo? Sí/No.
+- Dado que ya entré antes con mi email, cuando vuelvo a pedir un enlace y
+  lo uso, ¿veo mis propios resultados y no los de otra persona? Sí/No.
+- Dado que escribo un email con formato inválido, cuando pido el enlace,
+  ¿me lo impide y me explica qué está mal? Sí/No.
+- Dado que intento usar un enlace ya usado antes o caducado, ¿me deniega
+  el acceso y me deja pedir uno nuevo? Sí/No.
 
-### A2. Recuperar el acceso si olvido mi contraseña
-**IMPORTANTE**
-
-Como usuaria, quiero poder restablecer mi contraseña si la olvido, para no
-quedarme fuera de mi cuenta y mis resultados guardados.
-
-- Dado que olvidé mi contraseña, cuando pido restablecerla con mi email,
-  ¿recibo un enlace o código para crear una contraseña nueva? Sí/No.
-- Dado que uso ese enlace o código para poner una contraseña nueva, cuando
-  vuelvo a entrar con ella, ¿funciona y la contraseña anterior deja de
-  ser válida? Sí/No.
+> Nota: esto sustituye al login con contraseña de la primera versión de
+> este documento. Sin contraseña no hace falta una historia de
+> "recuperar contraseña" — si alguien no recibe el email, el problema es
+> de entrega de correo, no de contraseña olvidada (ver F2).
 
 ### A3. Volver a acceder a mis resultados sin repetir la búsqueda
 **IMPORTANTE**
@@ -139,15 +128,14 @@ escribirlos yo misma oferta por oferta.
 ### C4. Descargar el CV y la carta de presentación en un único archivo
 **IMPRESCINDIBLE**
 
-Como usuaria, quiero descargar un único archivo con el CV (1-2 páginas) y
-la carta de presentación (página 3) de una oferta que seleccioné, para
-poder enviarlo yo misma a la empresa sin tener que adjuntar dos archivos
-por separado.
+Como usuaria, quiero descargar un único archivo con el CV seguido de la
+carta de presentación de una oferta que seleccioné, para poder enviarlo yo
+misma a la empresa sin tener que adjuntar dos archivos por separado.
 
 - Dado que ya se generaron el CV y la carta para una oferta seleccionada,
   cuando pulso "Descargar", ¿obtengo un único archivo legible y listo para
-  enviar, con el CV en las primeras 1-2 páginas y la carta en la página
-  siguiente? Sí/No.
+  enviar, con el CV primero y la carta a continuación (sin exigir un
+  número de página exacto para cada uno)? Sí/No.
 - Dado que el CV o la carta aún se están generando, cuando intento
   descargar, ¿el botón de descarga permanece deshabilitado en vez de
   darme un archivo vacío o roto? Sí/No.
@@ -260,27 +248,32 @@ variable.
 **IMPRESCINDIBLE**
 
 Como usuaria, quiero recibir un email corto cuando la ingesta compartida de
-las 13:00 encuentra ofertas nuevas que coinciden con mi perfil, con un
-enlace a mis resultados, para no tener que entrar a la web activamente
+las 13:00 encuentra ofertas nuevas, con un enlace a la web para ver las
+que coinciden con mi perfil, para no tener que entrar a la web activamente
 cada día a comprobar si hay algo nuevo (reduce el riesgo de que alguien
 abandone a mitad de la búsqueda de empleo por no acordarse de volver).
 
-- Dado que la ingesta de las 13:00 encuentra ofertas nuevas que coinciden
-  con mi perfil guardado, ¿recibo un email ese mismo día con un aviso
-  corto y un enlace directo a mis resultados? Sí/No.
-- Dado que la ingesta de las 13:00 no encuentra ninguna oferta nueva para
-  mi perfil, ¿NO recibo email ese día (para no generar ruido)? Sí/No.
+- Dado que la ingesta de las 13:00 encuentra al menos una oferta nueva
+  (para cualquier perfil, no solo el mío), ¿recibo ese mismo día un email
+  con un aviso corto y un enlace directo a la web? Sí/No.
+- Dado que la ingesta de las 13:00 no encuentra ninguna oferta nueva ese
+  día, ¿NO recibo email (para no generar ruido)? Sí/No.
 - Dado que aún no he rellenado mi perfil cuando se ejecuta la ingesta de
-  las 13:00, ¿el sistema no me envía email ese día (no hay con qué
-  comparar relevancia)? Sí/No.
+  las 13:00, ¿el sistema no me envía email ese día (no tiene a dónde
+  mandarlo ni perfil que mostrar)? Sí/No.
+
+> Nota: el filtrado por relevancia a mi perfil ocurre cuando entro a la
+> web (igual que en cualquier búsqueda), no dentro del propio email ni en
+> el cálculo del cron — así no hay que correr la lógica de coincidencia
+> dos veces.
 
 ## HUECOS
 
 Cosas que quedan por decidir antes o durante el Paso 4 (spec):
 
 1. **Formato exacto del archivo descargado** (C4): PDF con formato,
-   Word, o texto plano — el contenido y el orden (CV 1-2 páginas + carta
-   en página 3) ya están decididos, falta el formato de archivo.
+   Word, o texto plano — el contenido y el orden (CV seguido de la carta)
+   ya están decididos, falta el formato de archivo.
 2. **Valor exacto del límite de uso** (G1): el Paso 1 identifica el riesgo
    de coste pero no da un número de búsquedas/generaciones permitidas por
    usuaria. Se decide en el Paso 5 (plan técnico).
@@ -294,10 +287,19 @@ Cosas que quedan por decidir antes o durante el Paso 4 (spec):
 
 ## Resuelto en esta revisión (ya no son huecos)
 
-- **Mecanismo de identificación**: email + contraseña, **autorregistro por
-  cada usuaria** (no cuentas creadas por Mar) — decisión explícita de Mar
-  por privacidad y protección de datos: cada persona debe crear y controlar
-  su propia contraseña. Incluye recuperación de contraseña (A1, A2).
+- **Mecanismo de identificación**: **magic link** — entrar con email y un
+  enlace de un solo uso, sin contraseña (A1). Decisión de consenso: cubre
+  el objetivo de privacidad de Mar (solo quien controla el email entra,
+  nadie más de la clase) sin el coste de construir registro, validación de
+  contraseña y recuperación de contraseña — todo eso desaparece porque no
+  hay contraseña que gestionar.
+- **Formato del archivo combinado**: CV seguido de la carta de
+  presentación en un mismo archivo, **sin exigir un número de página
+  exacto** para cada uno (C4) — reduce la complejidad de ensamblado.
+- **Alcance del email de aviso**: aviso genérico ("hay ofertas nuevas,
+  entra a verlas") a las 5 si la ingesta encontró algo ese día, sin
+  calcular relevancia por persona dentro del propio cron (G3) — la
+  relevancia se sigue filtrando en la web, no se duplica esa lógica.
 - **Definición de "relevante"**: coincidencia con las palabras clave que
   puso la usuaria en su perfil (B1), más una pregunta opcional a la
   usuaria sobre si quiere que se tenga en cuenta la experiencia pasada que

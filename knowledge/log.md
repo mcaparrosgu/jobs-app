@@ -1,6 +1,17 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Actualizacion**: `docs/01-historias.md` y `docs/02-mvp.md` — ronda de
+  consenso para recortar tiempo de construccion sin revertir las
+  decisiones de fondo de Mar. Cambios de "como" (no de "que"): login con
+  contrasena pasa a magic link (elimina A2 por completo, no hay
+  contrasena que recuperar); archivo combinado CV+carta ya no exige
+  paginacion exacta (CV pag 1-2 + carta pag 3), solo concatenacion en
+  orden; email de aviso (G3) pasa de personalizado-por-perfil-en-el-cron a
+  generico ("hay ofertas nuevas"), la relevancia se sigue filtrando en la
+  web. Esfuerzo estimado baja de 9-13 a 6,5-10,5 dias, cerca de la
+  estimacion original pero manteniendo carta de presentacion, login
+  privado e historial.
 * **Actualizacion**: `docs/01-historias.md` y `docs/02-mvp.md` — segunda
   vuelta de decisiones con Mar. Vuelven al MVP: autorregistro (privacidad,
   cada usuaria crea su propia contrasena), carta de presentacion junto al
