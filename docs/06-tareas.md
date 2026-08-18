@@ -53,9 +53,9 @@
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T01 | Instalar Node.js si no está instalado | — (el sistema) | Ejecutar `node --version` en la terminal: aparece un número como `v20.x.x`, no un error | — | [x] |
 | T02 | Crear el proyecto Next.js en esta carpeta | todo `app/`, `package.json`, config base | Ejecutar `npm run dev` y abrir `localhost:3000`: se ve la página de bienvenida de Next.js | T01 | [x] |
-| T03 | Confirmar que `node_modules/` y `.env.local` están en `.gitignore` | `.gitignore` | Abrir el archivo y ver esas dos líneas | T02 | [ ] |
-| T04 | Sustituir la página de bienvenida por un texto propio | `app/page.tsx` | Recargar `localhost:3000`: se ve "Jobs App" en vez del logo de Next.js | T02 | [ ] |
-| T05 | Primer commit del proyecto Next.js | todos los nuevos | `git log` muestra un commit nuevo con esos archivos | T03, T04 | [ ] |
+| T03 | Confirmar que `node_modules/` y `.env.local` están en `.gitignore` | `.gitignore` | Abrir el archivo y ver esas dos líneas | T02 | [x] |
+| T04 | Sustituir la página de bienvenida por un texto propio | `app/page.tsx` | Recargar `localhost:3000`: se ve "Jobs App" en vez del logo de Next.js | T02 | [x] |
+| T05 | Primer commit del proyecto Next.js | todos los nuevos | `git log` muestra un commit nuevo con esos archivos | T03, T04 | [x] |
 
 ## Hito 1 · La base de datos creada, con el candado de privacidad puesto
 
