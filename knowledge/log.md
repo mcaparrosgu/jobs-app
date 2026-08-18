@@ -1,6 +1,14 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Construccion**: T11 de `docs/06-tareas.md` (Paso 9) —
+  `supabase/migrations/0003_intereses.sql` crea la tabla `intereses`
+  (regla de negocio 2): `user_id` + `oferta_id` referencian a
+  `auth.users` y `public.ofertas` respectivamente, con restriccion
+  `unique (user_id, oferta_id)` para que no se pueda marcar la misma
+  oferta dos veces. Aplicada en Supabase (supervisado en Chrome), mismo
+  procedimiento de T09/T10: SQL en una linea, "Run without RLS" (RLS
+  llega en T13).
 * **Construccion**: T10 de `docs/06-tareas.md` (Paso 9) —
   `supabase/migrations/0002_ofertas.sql` crea la tabla `ofertas` con los
   campos de `docs/04-plan-tecnico.md` §3.4 (`titulo`, `empresa`, `enlace`,
