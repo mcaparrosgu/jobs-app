@@ -1,6 +1,16 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Construccion**: Hito 0 de `docs/06-tareas.md` terminado (T01-T05,
+  Paso 9). Proyecto Next.js 16 con TypeScript y Tailwind generado con
+  `create-next-app`; `npm run build` compila sin errores. **Obstaculo
+  encontrado**: npm rechaza el nombre de paquete "Jobs App" (espacio y
+  mayusculas), asi que se genero el andamiaje en un directorio temporal
+  y se copiaron solo los archivos deseados — sin pisar el `.gitignore`,
+  `CLAUDE.md` ni `README.md` propios, que `create-next-app` habria
+  sobrescrito con los suyos. `app/page.tsx` sustituido por una portada
+  propia. Pendiente menor: `app/layout.tsx` conserva `lang="en"` y el
+  titulo de pestana "Create Next App", ambos del andamiaje.
 * **Creacion**: `CLAUDE.md`, `README.md`, `.env.example` y carpetas
   `lib/`, `components/`, `supabase/migrations/` (Paso 8) — se prepara el
   terreno antes de construir. El `.gitignore` pasa de 1 linea a proteger
