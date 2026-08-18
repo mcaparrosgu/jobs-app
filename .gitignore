@@ -1,1 +1,48 @@
+# ─────────────────────────────────────────────────────────────
+#  CLAVES Y SECRETOS — lo más importante de este archivo.
+#  Si algo de esto llega a GitHub, cualquiera puede gastar
+#  con tus cuentas de Supabase y Groq.
+# ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencias (miles de archivos de librerías, no son código tuyo)
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js (archivos temporales que se regeneran solos)
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Supabase (trabajo temporal de la herramienta local)
+.branches
+.temp
+
+# Claude Code (ajustes personales de esta máquina)
 .claude/settings.local.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Registros
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
