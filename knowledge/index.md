@@ -29,6 +29,8 @@ existe en produccion y no se toca desde aqui.
   MVP y por que el alcance actual no es permanente.
 - [preferencias-tecnicas-paso5.md](preferencias-tecnicas-paso5.md) —
   preferencias de tecnologia (email, modelo de IA) para el Paso 5.
+- [decision-stack-mvp.md](decision-stack-mvp.md) — decision tomada en el
+  Paso 5: con que tecnologias se construye la web y por que.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -1,6 +1,25 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `docs/04-plan-tecnico.md` (Paso 5) y
+  `decision-stack-mvp.md` — se elige el stack: Next.js + Supabase + Groq +
+  Vercel, sobre el n8n existente. Mar fija **presupuesto 0 euros/mes**
+  como restriccion dura. Se descartan Lovable (plan gratis de 5 acciones
+  al dia, insuficiente para construir e iterar) y "todo en n8n" (no cubre
+  sesion de 15 dias, edicion de palabras clave ni lista interactiva).
+  Groq resuelve la preferencia de IA gratuita y de codigo abierto
+  (modelos de peso abierto, sin tarjeta, sin autoalojar) que quedaba
+  abierta desde el Paso 4 — "opencode go" no llego a concretarse como
+  opcion viable. Decision de arquitectura clave: **n8n y la web no se
+  hablan entre si, ambos escriben/leen en Supabase**, lo que elimina el
+  bloque de 1-2 dias de "conectar Buscar al webhook" de `docs/02-mvp.md`.
+  El contador de uso diario se calcula por consulta en vez de tener tabla
+  propia, y el borrado al mes lo hace el cron de n8n existente. Riesgos
+  documentados: pausa de Supabase a los 7 dias (mitigada por el propio
+  cron diario), limite de ~6.000 tokens/min de Groq, calidad del modelo
+  gratuito, y credito de Apify como unico coste ajustado. Publicar
+  requerira subir a GitHub — pendiente de permiso explicito de Mar en el
+  Paso 9.
 * **Actualizacion**: `docs/03-spec.md`, `docs/01-historias.md`,
   `docs/02-mvp.md` — Mar resuelve las 2 preguntas abiertas que quedaban
   y anade una funcionalidad nueva. Puesto y palabras clave ahora se
