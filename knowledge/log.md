@@ -1,6 +1,21 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Creacion**: `CLAUDE.md`, `README.md`, `.env.example` y carpetas
+  `lib/`, `components/`, `supabase/migrations/` (Paso 8) — se prepara el
+  terreno antes de construir. El `.gitignore` pasa de 1 linea a proteger
+  `.env*.local`, `node_modules/`, `.next/` y `.vercel`. **Verificado en
+  la practica**: se creo un `.env.local` de prueba y `git status` no lo
+  vio; `git check-ignore` confirmo la regla. `.env.example` documenta cada
+  variable y donde va su valor real (Vercel Environment Variables,
+  Supabase SMTP Settings, n8n Credentials), sin ningun valor real.
+  `CLAUDE.md` recoge las 7 prohibiciones acumuladas del proyecto:
+  secretos fuera del codigo, nunca `NEXT_PUBLIC_` en un secreto, nada a
+  GitHub sin permiso explicito, no tocar los workflows `Jobs`, no proponer
+  OpenAI, no reestructurar `docs/`, y no dar por elegida una opcion sin
+  preguntarla. **`app/` y `package.json` se dejan deliberadamente para el
+  Paso 9**, donde los genera `create-next-app` — crearlos a mano ahora
+  provocaria un choque con ese comando.
 * **Correccion**: `docs/06-tareas.md`, `docs/04-plan-tecnico.md` y
   `decision-tareas-mvp.md` — **los workflows `Jobs` de n8n no se tocan**.
   La primera version del Paso 7 planteaba modificar `Jobs · ingesta` para
