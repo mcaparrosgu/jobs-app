@@ -125,17 +125,22 @@ escribirlos yo misma oferta por oferta.
   ¿cada una recibe su propio CV y carta, sin mezclarse entre ofertas?
   Sí/No.
 
-### C4. Descargar el CV y la carta de presentación en un único archivo
+### C4. Descargar el CV y la carta de presentación en un único archivo, en páginas separadas
 **IMPRESCINDIBLE**
 
-Como usuaria, quiero descargar un único archivo con el CV seguido de la
-carta de presentación de una oferta que seleccioné, para poder enviarlo yo
-misma a la empresa sin tener que adjuntar dos archivos por separado.
+Como usuaria, quiero descargar un único archivo con el CV y la carta de
+presentación de una oferta que seleccioné, **cada uno empezando en su
+propia página** (sin mezclarse en la misma página), para poder enviarlo
+yo misma a la empresa como un documento legible y bien separado, sin
+tener que adjuntar dos archivos por separado.
 
 - Dado que ya se generaron el CV y la carta para una oferta seleccionada,
-  cuando pulso "Descargar", ¿obtengo un único archivo legible y listo para
-  enviar, con el CV primero y la carta a continuación (sin exigir un
-  número de página exacto para cada uno)? Sí/No.
+  cuando pulso "Descargar", ¿obtengo un único archivo con el CV primero y
+  la carta después, empezando esta última siempre en una página nueva
+  (sin depender de cuánto ocupe el CV)? Sí/No.
+- Dado que el CV ocupa más de una página, cuando reviso el archivo
+  descargado, ¿la carta sigue empezando en una página propia y no a mitad
+  de la última página del CV? Sí/No.
 - Dado que el CV o la carta aún se están generando, cuando intento
   descargar, ¿el botón de descarga permanece deshabilitado en vez de
   darme un archivo vacío o roto? Sí/No.
@@ -294,8 +299,10 @@ Cosas que quedan por decidir antes o durante el Paso 4 (spec):
   contraseña y recuperación de contraseña — todo eso desaparece porque no
   hay contraseña que gestionar.
 - **Formato del archivo combinado**: CV seguido de la carta de
-  presentación en un mismo archivo, **sin exigir un número de página
-  exacto** para cada uno (C4) — reduce la complejidad de ensamblado.
+  presentación en un mismo archivo, **cada uno en páginas separadas**
+  (la carta siempre empieza en página nueva, sin importar cuánto ocupe el
+  CV) — no se exige un número de página fijo para el CV, pero sí que no
+  se mezclen en la misma página (C4).
 - **Alcance del email de aviso**: aviso genérico ("hay ofertas nuevas,
   entra a verlas") a las 5 si la ingesta encontró algo ese día, sin
   calcular relevancia por persona dentro del propio cron (G3) — la

@@ -1,6 +1,15 @@
 # Registro de cambios del bundle
 
 ## 2026-08-18
+* **Actualizacion**: `docs/01-historias.md` (C4) y `docs/02-mvp.md` — se
+  especifica que CV y carta de presentacion deben ir en **paginas
+  separadas** dentro del archivo unico descargable (la carta siempre
+  empieza en pagina nueva, sin importar cuanto ocupe el CV). Es un punto
+  intermedio entre la version original (paginacion exacta: CV 1-2 pag +
+  carta pag 3) y la simplificacion del consenso anterior (sin ningun
+  control de pagina) — mantiene la separacion visual sin fijar cuantas
+  paginas ocupa el CV. Esfuerzo sin cambios significativos (salto de
+  pagina forzado es trivial comparado con paginacion exacta).
 * **Actualizacion**: `docs/01-historias.md` y `docs/02-mvp.md` — ronda de
   consenso para recortar tiempo de construccion sin revertir las
   decisiones de fondo de Mar. Cambios de "como" (no de "que"): login con

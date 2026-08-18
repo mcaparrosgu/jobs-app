@@ -25,9 +25,9 @@ para que el producto tenga algún valor:
 5. **Marca "me interesa"** en las ofertas que quiere. Espera viendo
    "generando" mientras se crean el CV y la carta de presentación
    adaptados, en una sola llamada.
-6. **Descarga un único archivo** con el CV seguido de la carta de
-   presentación (sin exigir un número de página exacto para cada uno) de
-   esa oferta.
+6. **Descarga un único archivo** con el CV y la carta de presentación de
+   esa oferta, **cada uno en su propia página** (la carta siempre empieza
+   en página nueva, sin importar cuánto ocupe el CV).
 7. Lo envía ella misma a la empresa (fuera del producto).
 
 Además, **por fuera** de este recorrido (pero igual de necesario para que
@@ -76,10 +76,12 @@ ahora la carta) a cada oferta.
   (marketing, educación, traducción) y para quien está en transición de
   carrera. Se generan en **una sola llamada** al modelo (mismo contexto,
   mismo prompt) — no duplica coste como se pensaba en el primer recorte.
-- **C4 · Descargar CV + carta en un único archivo.** Vuelve ampliada: CV
-  seguido de la carta, un solo archivo descargable — sin exigir un número
-  de página exacto para cada uno (consenso: reduce la complejidad de
-  ensamblado sin perder el "un solo archivo" que pedía Mar).
+- **C4 · Descargar CV + carta en un único archivo, páginas separadas.**
+  Vuelve ampliada: CV y carta en el mismo archivo, pero **cada uno en su
+  propia página** — la carta siempre arranca en página nueva, sin
+  importar cuánto ocupe el CV. No se fija un número de página exacto para
+  el CV (podría ser 1, 2 o más), solo que no se mezclen en la misma
+  página con la carta.
 - **D1 + D2 · Espera.** Fusionadas en un único estado simple: "procesando"
   mientras dura cualquiera de las dos fases (búsqueda o generación).
 - **F1 + F2 · Sin resultados / error.** Fusionadas en un mensaje mínimo:
@@ -140,7 +142,7 @@ MVP, no construir el pipeline desde cero):
 | Formulario + textarea de CV + guardado de perfil | 1 |
 | Conectar el botón "Buscar" al webhook + estado de espera | 1–2 |
 | Lista de ofertas + selección "me interesa" + disparo de generación | 1–2 |
-| Generación conjunta de CV + carta (prompt) y archivo único (CV + carta, sin paginación fija) | 0,5–1 |
+| Generación conjunta de CV + carta (prompt) y archivo único con salto de página forzado entre ambos | 0,5–1 |
 | Ver resultados anteriores al volver a entrar (persistencia simple) | 0,5–1 |
 | Adaptar el nodo n8n de ingesta de empleo al schedule de las 13:00 + email de aviso genérico | 0,5–1 |
 | Límite de uso por usuaria/día | 0,5 |
@@ -163,8 +165,10 @@ por la versión más barata que cumple el mismo objetivo:
 
 - Login con contraseña → **magic link**: mismo nivel de privacidad, sin
   registro/validación/recuperación de contraseña.
-- Archivo con paginación exacta → **CV + carta concatenados**, sin
-  controlar página: mismo "un solo archivo", sin lógica de maquetación.
+- Archivo con paginación exacta (CV 1-2 páginas + carta en página 3
+  concreta) → **CV + carta en páginas separadas, sin fijar cuántas
+  ocupa el CV**: mismo "un solo archivo, cada documento en su página",
+  con solo un salto de página forzado en vez de contar páginas exactas.
 - Email con relevancia calculada en el cron → **aviso genérico**: mismo
   efecto de traer de vuelta a la usuaria, sin duplicar la lógica de
   coincidencia en dos sitios.
