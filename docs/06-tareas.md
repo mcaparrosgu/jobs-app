@@ -142,13 +142,13 @@ filtrada por tu perfil, y puedes marcar una oferta como "me interesa".
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T41 | Crear la pantalla de ofertas | `app/ofertas/page.tsx` | Se abre `localhost:3000/ofertas` sin error, aunque esté vacía | T20 | [ ] |
-| T42 | Consultar las ofertas que coinciden con puesto/palabras clave del perfil | `app/api/ofertas/route.ts` | Con las ofertas de prueba (T40), ves en pantalla solo las que coinciden con tu perfil guardado | T31, T40 | [ ] |
-| T43 | Mostrar título, empresa y enlace en tarjetas | `components/TarjetaOferta.tsx` | Cada oferta se ve como una tarjeta legible, no como texto plano | T42 | [ ] |
-| T44 | Mensaje de "no hay ofertas que coincidan" con la lista vacía | `app/ofertas/page.tsx` | Cambias tus palabras clave a algo que no coincide con nada y ves el mensaje, no una pantalla en blanco | T42 | [ ] |
-| T45 | Añadir el botón "me interesa" en cada tarjeta | `components/TarjetaOferta.tsx` | Cada tarjeta muestra el botón | T43 | [ ] |
-| T46 | Guardar el interés al pulsar el botón | `app/api/interes/route.ts` | Pulsas el botón, recargas la página y sigue marcado como pulsado | T45, T13 | [ ] |
-| T47 | Impedir marcar la misma oferta dos veces | `app/api/interes/route.ts` | Pulsas el botón dos veces seguidas: no hay duplicado ni error visible | T46, T11 | [ ] |
+| T41 | Crear la pantalla de ofertas | `app/ofertas/page.tsx` | Se abre `localhost:3000/ofertas` sin error, aunque esté vacía | T20 | [x] |
+| T42 | Consultar las ofertas que coinciden con puesto/palabras clave del perfil | `app/api/ofertas/route.ts` | Con las ofertas de prueba (T40), ves en pantalla solo las que coinciden con tu perfil guardado | T31, T40 | [x] |
+| T43 | Mostrar título, empresa y enlace en tarjetas | `components/TarjetaOferta.tsx` | Cada oferta se ve como una tarjeta legible, no como texto plano | T42 | [x] |
+| T44 | Mensaje de "no hay ofertas que coincidan" con la lista vacía | `app/ofertas/page.tsx` | Cambias tus palabras clave a algo que no coincide con nada y ves el mensaje, no una pantalla en blanco | T42 | [x] |
+| T45 | Añadir el botón "me interesa" en cada tarjeta | `components/TarjetaOferta.tsx` | Cada tarjeta muestra el botón | T43 | [x] |
+| T46 | Guardar el interés al pulsar el botón | `app/api/interes/route.ts` | Pulsas el botón, recargas la página y sigue marcado como pulsado | T45, T13 | [x] |
+| T47 | Impedir marcar la misma oferta dos veces | `app/api/interes/route.ts` | Pulsas el botón dos veces seguidas: no hay duplicado ni error visible | T46, T11 | [x] |
 
 ## Hito 6 · Generar el CV y la carta con IA
 

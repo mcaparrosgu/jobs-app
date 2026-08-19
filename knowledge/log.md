@@ -1,6 +1,33 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Hito 5 cerrado** (T41-T47, Paso 9): pantalla `app/ofertas/page.tsx`
+  con cinco estados (cargando, sin perfil, sin ingesta hoy, sin
+  coincidencias, lista), endpoint `app/api/ofertas/route.ts` que
+  reemplaza al botón "Buscar" con una consulta de código —sin IA, tal
+  como fija `docs/05-ia.md`— comparando puesto+palabras_clave (y, si
+  `usar_experiencia_cv` está marcado, también empresas_cv/titulos_cv) con
+  `ilike` contra título y descripción de `ofertas`, componente
+  `components/TarjetaOferta.tsx` con el botón "me interesa" y endpoint
+  `app/api/interes/route.ts` con `upsert` + `ignoreDuplicates` sobre el
+  `unique(user_id, oferta_id)` de T11 para que pulsar dos veces no
+  duplique ni dé error. **Verificado en Chrome** con permiso de Mar: con
+  su perfil real (palabras clave largas, de la prueba del Hito 3) salió
+  correctamente el mensaje de "no hay ofertas que coincidan" — hallazgo
+  de paso: esas palabras clave son demasiado largas para que un `ilike`
+  las encuentre nunca en un título de oferta real (fallo 2 de
+  `docs/05-ia.md` §6.3), anotado para si hace falta revisar el prompt de
+  extracción del Hito 3 más adelante, sin tocarlo en este hito. Para
+  probar el camino con coincidencias se añadió temporalmente la palabra
+  clave "Operations" (aparece en varias de las 20 ofertas de prueba del
+  Hito 4), se marcó "me interesa" con un clic simple y con un doble clic,
+  se confirmó tras recargar que el estado persiste, y se verificó
+  directamente en Supabase que `intereses` tenía exactamente 2 filas (no
+  3) pese al doble clic — T47 confirmado a nivel de base de datos, no
+  solo por el botón deshabilitado en el cliente. Datos de prueba
+  limpiados al terminar (palabra clave y las 2 filas de interés), perfil
+  de Mar restaurado tal como estaba. Detalle completo en
+  `hito-5-ver-ofertas.md`.
 * **Hito 4 cerrado** (T32-T40, Paso 9): workflow nuevo `Jobs App · ingesta`
   en n8n, duplicado de `Jobs · ingesta` sin tocar el original. Quitados los
   nodos de Google Sheets y su cadena de aviso; nuevos nodos

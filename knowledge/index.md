@@ -59,6 +59,10 @@ existe en produccion y no se toca desde aqui.
   (Paso 9, T32-T40): workflow nuevo `Jobs App · ingesta` en n8n, escribe en
   Supabase, fuentes de pago de Apify desactivadas, vigilante propio de
   Healthchecks.
+- [hito-5-ver-ofertas.md](hito-5-ver-ofertas.md) — cierre del Hito 5
+  (Paso 9, T41-T47): pantalla `/ofertas`, emparejamiento por codigo sin IA
+  contra puesto/palabras clave del perfil, boton "me interesa" con dedupe
+  a nivel de base de datos.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
