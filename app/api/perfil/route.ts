@@ -13,7 +13,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('perfiles')
-    .select('puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('nombre, puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -36,8 +36,11 @@ export async function POST(request: Request) {
   }
 
   const cuerpo = await request.json();
-  const { puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv } = cuerpo;
+  const { nombre, puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv } = cuerpo;
 
+  if (typeof nombre !== 'string' || nombre.trim().length === 0) {
+    return NextResponse.json({ error: 'Falta tu nombre completo' }, { status: 400 });
+  }
   if (typeof puesto !== 'string' || puesto.trim().length === 0) {
     return NextResponse.json({ error: 'Falta el puesto' }, { status: 400 });
   }
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from('perfiles').upsert(
     {
       user_id: user.id,
+      nombre: nombre.trim(),
       puesto,
       palabras_clave,
       cv_texto: cv_texto ?? null,

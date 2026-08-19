@@ -1,6 +1,23 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Rediseño del PDF (T58-T62, T82-T83)**: Mar probó el primer diseño
+  (T58-T59, Helvetica a palo seco) y lo calificó de "lamentable,
+  impresentable". Señaló una plantilla de referencia (Adobe Stock, "Minimal
+  Resume Layout") y pidió un diseño elegante, sofisticado y a prueba de
+  ATS. Se adopta el lenguaje visual de la referencia (nombre grande en
+  serif, secciones en mayúsculas espaciadas, viñetas finas, blanco y negro)
+  pero **sin** su franja de contacto girada 90° — es la pieza que de
+  verdad arriesgaba el orden de lectura de un ATS —, sustituida por una
+  raya vertical decorativa sin texto. Se incrustan dos fuentes libres
+  (Playfair Display + Jost, licencia SIL OFL) copiadas a `public/fonts/`.
+  De paso apareció **T82**: faltaba el nombre completo en el perfil
+  (columna `nombre` nueva en `perfiles`, migración `0009`) — imprescindible
+  para que un ATS identifique el documento. Detalle completo en
+  `decision-diseno-pdf.md`. **Pendiente para Mar**: ejecutar la migración
+  `0009_perfiles_nombre.sql` en el SQL Editor de Supabase, volver a guardar
+  su perfil con su nombre, y hacer la revisión visual de T62 sobre el
+  diseño nuevo.
 * **Palabras clave cortas (cierra el aviso abierto del Hito 6)**: la
   pantalla de ofertas salia vacia porque cada palabra clave se busca de forma
   literal (`ilike`) y las que proponia la IA eran frases enteras. Se arreglan

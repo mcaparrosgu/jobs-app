@@ -15,7 +15,7 @@ export default async function Perfil() {
 
   const { data: perfilGuardado } = await supabase
     .from('perfiles')
-    .select('puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('nombre, puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 

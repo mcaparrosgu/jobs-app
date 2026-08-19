@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { esPalabraClaveLarga } from '@/lib/palabras-clave';
 
 type PerfilGuardado = {
+  nombre: string | null;
   puesto: string | null;
   palabras_clave: string[];
   empresas_cv: string[];
@@ -15,6 +16,7 @@ type PerfilGuardado = {
 
 export default function FormularioPerfil({ perfilInicial }: { perfilInicial: PerfilGuardado | null }) {
   const [cvTexto, setCvTexto] = useState(perfilInicial?.cv_texto ?? '');
+  const [nombre, setNombre] = useState(perfilInicial?.nombre ?? '');
   const [puesto, setPuesto] = useState(perfilInicial?.puesto ?? '');
   const [palabrasClave, setPalabrasClave] = useState<string[]>(perfilInicial?.palabras_clave ?? []);
   const [empresasCv, setEmpresasCv] = useState<string[]>(perfilInicial?.empresas_cv ?? []);
@@ -75,6 +77,10 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
   }
 
   async function guardarPerfil() {
+    if (nombre.trim().length === 0) {
+      setMensaje({ tipo: 'error', texto: 'Escribe tu nombre completo: es lo primero que verá quien lea tu CV.' });
+      return;
+    }
     if (puesto.trim().length === 0 || palabrasClave.length === 0) {
       setMensaje({ tipo: 'error', texto: 'Analiza tu CV primero, o rellena el puesto y al menos una palabra clave.' });
       return;
@@ -87,6 +93,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          nombre,
           puesto,
           palabras_clave: palabrasClave,
           empresas_cv: empresasCv,
@@ -109,7 +116,19 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
 
   return (
     <div className="mt-8 w-full max-w-xl text-left">
-      <label htmlFor="cv" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <label htmlFor="nombre" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        Tu nombre completo
+      </label>
+      <input
+        id="nombre"
+        type="text"
+        value={nombre}
+        onChange={(evento) => setNombre(evento.target.value)}
+        placeholder="Como quieres que aparezca en tu CV y tu carta"
+        className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+      />
+
+      <label htmlFor="cv" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Tu CV
       </label>
       <textarea

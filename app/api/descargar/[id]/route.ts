@@ -27,12 +27,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   // RLS ya limita esta fila a las de `user_id = user.id`; el .eq de aquí es
   // además la forma de pedir la oferta concreta, no una capa de seguridad
   // extra.
-  const { data: generacion, error } = await supabase
-    .from('generaciones')
-    .select('estado, cv_texto, carta_texto, ofertas(titulo)')
-    .eq('user_id', user.id)
-    .eq('oferta_id', ofertaId)
-    .maybeSingle();
+  const [{ data: generacion, error }, { data: perfil }] = await Promise.all([
+    supabase
+      .from('generaciones')
+      .select('estado, cv_texto, carta_texto, ofertas(titulo)')
+      .eq('user_id', user.id)
+      .eq('oferta_id', ofertaId)
+      .maybeSingle(),
+    supabase.from('perfiles').select('nombre, puesto').eq('user_id', user.id).maybeSingle(),
+  ]);
 
   if (error) {
     console.error('Error leyendo la generación para descargar:', error);
@@ -44,7 +47,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const pdf = await renderToBuffer(
-    DocumentoGeneracion({ cvTexto: generacion.cv_texto, cartaTexto: generacion.carta_texto }),
+    DocumentoGeneracion({
+      cvTexto: generacion.cv_texto,
+      cartaTexto: generacion.carta_texto,
+      nombre: perfil?.nombre ?? '',
+      puesto: perfil?.puesto ?? '',
+      email: user.email ?? '',
+    }),
   );
 
   const oferta = Array.isArray(generacion.ofertas) ? generacion.ofertas[0] : generacion.ofertas;

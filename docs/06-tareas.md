@@ -251,6 +251,22 @@ verdad, ya no solo `localhost`.
 | T80 | Guía de dos pasos y salida clara del perfil | `components/GuiaPasos.tsx`, `components/FormularioPerfil.tsx`, `app/perfil/page.tsx`, `app/ofertas/page.tsx` | Sin perfil guardado ves "1. Pega tu CV → 2. Mira tus ofertas" y desaparece al guardarlo; al pulsar "Guardar" sale "Perfil guardado. Ver mis ofertas →" y el enlace funciona | T77, T31 | [x] |
 | T81 | ⚠️ Exigir sesión para analizar el CV con la IA | `app/api/extraer-perfil/route.ts` | Era el único endpoint sin comprobar quién llama: cualquiera con la URL podía gastar la cuota de OpenRouter. Comprobado que sin sesión responde "No has iniciado sesión" y que con sesión el botón "Analizar con la IA" sigue funcionando igual | T23 | [x] |
 
+## Añadido durante el Hito 7 · El nombre en el perfil y el rediseño del PDF
+
+> Tampoco estaban en el plan original. Salieron de la revisión visual de
+> T62: el primer diseño del PDF (T58-T59) le pareció a Mar pobre e
+> impresentable. Pidió uno elegante y a prueba de ATS, inspirado en una
+> plantilla de referencia. Revisando eso apareció **T82**, que no es de
+> diseño: un CV a prueba de ATS necesita el nombre real de la candidata
+> arriba, y el perfil no lo guardaba en ningún sitio — solo el email de la
+> cuenta. Se numeran a continuación de T81 para no renumerar nada de lo ya
+> hecho. Detalle en `knowledge/decision-diseno-pdf.md`.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T82 | Añadir el nombre completo al perfil | `supabase/migrations/0009_perfiles_nombre.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `app/perfil/page.tsx` | En `/perfil` escribes tu nombre completo, guardas, recargas la página y sigue ahí | T31 | [ ] |
+| T83 | Rediseño elegante del PDF, a prueba de ATS | `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts`, `public/fonts/` | Descargas un CV: tu nombre arriba en una tipografía elegante, el puesto y tu email debajo, secciones en mayúsculas espaciadas con una línea fina, viñetas finas — todo en una sola columna de lectura (nada de texto girado ni columnas paralelas, para que un lector automático no lo desordene) | T82, T60 | [ ] |
+
 ## Relacionado
 
 - [`docs/03-spec.md`](03-spec.md) — qué hace el producto; cada regla de

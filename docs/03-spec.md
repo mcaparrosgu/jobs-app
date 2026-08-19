@@ -125,11 +125,13 @@ En lenguaje natural, lo que el sistema necesita recordar:
 
 - **Identidad de la usuaria**: su email, que es también lo único que la
   identifica (no hay nombre de usuario ni contraseña que guardar).
-- **Perfil de búsqueda**, por usuaria: el puesto que busca y sus palabras
-  clave (propuestos automáticamente al leer el CV pegado, y luego
-  editables por la usuaria — puede añadir o quitar los que quiera), el
-  texto de su CV tal como lo pegó, y si quiere o no que ese CV se tenga en
-  cuenta al valorar qué ofertas le encajan. Un perfil por usuaria — al actualizarlo,
+- **Perfil de búsqueda**, por usuaria: su nombre completo (tal como debe
+  aparecer en el CV y la carta que se generen — un dato suyo, no algo que
+  la IA adivine), el puesto que busca y sus palabras clave (propuestos
+  automáticamente al leer el CV pegado, y luego editables por la usuaria
+  — puede añadir o quitar los que quiera), el texto de su CV tal como lo
+  pegó, y si quiere o no que ese CV se tenga en cuenta al valorar qué
+  ofertas le encajan. Un perfil por usuaria — al actualizarlo,
   sustituye al anterior para las búsquedas futuras (no afecta a lo que ya
   se generó, ver más abajo).
 - **Ofertas de empleo**: compartidas entre todas las usuarias (no son

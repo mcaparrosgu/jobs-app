@@ -1,0 +1,11 @@
+Fuentes usadas en el PDF (lib/pdf.tsx): Playfair Display y Jost.
+
+Las dos son de Google Fonts, licencia SIL Open Font License 1.1 (libre,
+permite incrustar en documentos generados y redistribuir sin coste).
+Texto completo de la licencia:
+
+  node_modules/@fontsource/playfair-display/LICENSE
+  node_modules/@fontsource/jost/LICENSE
+
+Los archivos .woff de esta carpeta son una copia directa de esos paquetes
+npm (@fontsource/playfair-display, @fontsource/jost), sin modificar.

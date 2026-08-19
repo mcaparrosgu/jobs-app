@@ -78,6 +78,11 @@ existe en produccion y no se toca desde aqui.
   literalmente, y por eso la pantalla de ofertas salia vacia; se corrigen el
   prompt, el esquema y la validacion en codigo, y los terminos largos se
   recortan al nucleo.
+- [decision-diseno-pdf.md](decision-diseno-pdf.md) — T58-T62 y T82-T83:
+  rediseno del PDF tras revision visual de Mar, inspirado en una plantilla
+  de referencia pero sin columnas paralelas ni texto girado (arriesgan la
+  lectura de un ATS), fuentes incrustadas (Playfair Display + Jost) y el
+  nombre completo anadido al perfil.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
