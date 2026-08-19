@@ -1,6 +1,13 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T71 (Hito 9): permiso explícito de Mar para subir el código a GitHub.**
+  Preguntado por escrito (regla 3 de `CLAUDE.md`, que exige permiso
+  explícito cada vez): confirmó "Sí, adelante" y eligió repositorio
+  **privado** para T73 — se manejan CVs, emails y datos de contacto de sus
+  compañeras de clase, aunque no vayan en el propio código. Anotado junto a
+  T73 en `docs/06-tareas.md`. T68 queda deliberadamente sin marcar hasta
+  mañana; el resto de Hito 9 continúa sin esperarlo, a petición de Mar.
 * **T70 (Hito 9): los cuatro casos límite se comportan como pide la spec.**
   Email inválido: comprobado en vivo por Mar (campo `type="email" required`
   en `app/page.tsx`) — Chrome bloquea el envío y muestra su aviso nativo
