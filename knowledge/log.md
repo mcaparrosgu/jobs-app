@@ -1,6 +1,20 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T70 (Hito 9): los cuatro casos límite se comportan como pide la spec.**
+  Email inválido: comprobado en vivo por Mar (campo `type="email" required`
+  en `app/page.tsx`) — Chrome bloquea el envío y muestra su aviso nativo
+  pidiendo el "@", sin llegar a llamar a Supabase. Los otros tres casos ya
+  tenían evidencia real de sesiones anteriores, reutilizada aquí para no
+  gastar cuota de IA sin necesidad: sin ofertas que coincidan (T44, mensaje
+  explícito en `app/ofertas/page.tsx`), límite diario a mitad de sesión
+  (T56, probado con el cupo lleno de verdad), descargar antes de tiempo
+  (T61, botón deshabilitado mientras el estado es "generando"). La
+  automatización del navegador (Claude in Chrome) falló de forma repetida
+  al intentar reproducir el caso de email inválido (capturas colgadas,
+  campo que no recogía el texto); se resolvió pidiéndole a Mar que lo
+  probara ella misma en su navegador en vez de insistir con la
+  automatización.
 * **T69 (Hito 9): repaso de idioma, sin hallazgos.** Revisadas todas las
   pantallas (`app/`), componentes, mensajes de error de las rutas API y la
   plantilla del email de `Jobs App · ingesta` — todo en castellano. El único

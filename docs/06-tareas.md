@@ -224,7 +224,7 @@ verdad, ya no solo `localhost`.
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T69 | Repasar que toda la interfaz, mensajes de error y el email están en castellano | — (prueba manual) | Recorres cada pantalla y no encuentras ningún texto en otro idioma | T62, T68 | [x] |
-| T70 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T69 | [ ] |
+| T70 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T69 | [x] |
 | T71 | ⚠️ Pedir tu permiso explícito antes de subir nada a GitHub | — | Confirmación tuya, por escrito, antes de continuar | T70 | [ ] |
 | T72 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T71 | [ ] |
 | T73 | Crear el repositorio en GitHub y subir el código | — | Recargas la página del repositorio en GitHub y ves los archivos | T72 | [ ] |
