@@ -1,6 +1,15 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T69 (Hito 9): repaso de idioma, sin hallazgos.** Revisadas todas las
+  pantallas (`app/`), componentes, mensajes de error de las rutas API y la
+  plantilla del email de `Jobs App · ingesta` — todo en castellano. El único
+  texto en inglés que aparece en el código (`COVER LETTER` en `lib/pdf.tsx`)
+  es intencional: el CV y la carta se generan en el idioma de la oferta
+  original (`lib/idioma.ts`, T49), no un descuido. T68 sigue pendiente de
+  que Mar confirme mañana la ejecución real de las 13:00; T69 se adelantó
+  igualmente porque no depende del contenido de esa ejecución, solo de los
+  textos ya escritos.
 * **Hito 8 cerrado (T63-T67): aviso por email de ofertas nuevas.** Cinco
   nodos nuevos en `Jobs App · ingesta` (n8n): cuentan las ofertas nuevas del
   día, consultan qué usuarias tienen perfil guardado y envían un aviso por
