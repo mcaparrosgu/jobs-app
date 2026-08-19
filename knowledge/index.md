@@ -111,6 +111,10 @@ existe en produccion y no se toca desde aqui.
   (`prompts/system.md`) en vez de un system prompt de chat, más 10 casos
   difíciles (`evals/casos-dificiles.md`); `lib/ia.ts` alineado el mismo
   día con la defensa contra inyección de instrucciones.
+- [paso-12-pruebas.md](paso-12-pruebas.md) — Paso 12: 172 pruebas con
+  Vitest sobre la parte determinista (funciones puras, endpoints y
+  componentes clave), con un doble encadenable de Supabase y sin llamar
+  nunca a un modelo de IA real.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

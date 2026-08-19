@@ -1,6 +1,27 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Paso 12: 172 pruebas automáticas con Vitest sobre la parte
+  determinista de la app.** Cubre cada criterio de aceptación de
+  `docs/01-historias.md` que no depende de un modelo de IA: funciones
+  puras (`lib/palabras-clave.ts`, `lib/fechas.ts`, `lib/idioma.ts`,
+  `lib/verificarCv.ts`, `lib/generaciones.ts`, `lib/cola.ts`), los ocho
+  endpoints de `app/api/*` y `app/auth/*` (sesión, validación, permisos,
+  errores de servicio externo) y los componentes con más lógica
+  (`TarjetaOferta`, `FormularioPerfil`, `MenuNavegacion`, `GuiaPasos`).
+  Se construyó un doble encadenable de Supabase
+  (`tests/helpers/supabase-fake.ts`) para no depender de una base de
+  datos de pruebas real, y se comprobó explícitamente el aislamiento
+  entre usuarias: cada consulta de cada endpoint queda registrada y se
+  verifica que siempre va filtrada por el `user_id` de la sesión. Un
+  fallo de una prueba reveló que `lib/cola.ts` guarda su estado a nivel
+  de módulo (compartido entre pruebas del mismo archivo), no de
+  componente — corregido liberando la promesa colgada antes de terminar
+  esa prueba. Deja fuera a propósito: la calidad del texto generado por
+  la IA (Paso 13), RLS real de Supabase (ya verificado a mano en el Hito
+  1), el aspecto visual del PDF (ya verificado a mano en T62/T83) y el
+  workflow de n8n (pruebas propias en los hitos 4 y 8). Detalle en
+  `paso-12-pruebas.md`.
 * **`lib/ia.ts` alineado con `prompts/system.md`: defensa contra
   inyección de instrucciones añadida al código, el mismo día que se
   documentó.** Al cerrar el Paso 10 quedó anotado a propósito que el
