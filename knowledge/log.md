@@ -1,6 +1,18 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **"Ver oferta" como nombre de empresa, arreglado en `Jobs App · ingesta`**:
+  el nodo "Normalizador Get on Board" dejaba `empresa` fijo a `'Ver
+  oferta'`, con un comentario de que la API pública no exponía el nombre.
+  Comprobado en vivo: sí lo expone, en un segundo endpoint
+  (`GET /api/v0/companies/{id}`, a partir del id de relación que sí trae
+  `/search/jobs`). El nodo ahora resuelve el nombre real de cada empresa
+  de la tanda en paralelo, con `try/catch` por empresa para no tirar abajo
+  toda la ingesta si una falla; cae a `'No especificado'` igual que el
+  resto de fuentes. Corregida a mano la única de las tres ofertas ya
+  afectadas con nombre verificable (`BC Tecnología`); las otras dos se
+  dejan para no adivinar, y se borran solas a los 30 días. Detalle en
+  `decision-diseno-pdf.md`.
 * **El PDF "no respiraba" porque la IA dejaba de poner saltos de línea
   (segunda vuelta de T58-T62)**: Mar probó el rediseño con su CV real y
   lo describió como caótico. Comprobado contra la base de datos: el

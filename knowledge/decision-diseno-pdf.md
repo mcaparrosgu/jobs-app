@@ -103,12 +103,34 @@ bien formado.
 hace falta marcar "me interesa" en una oferta **nueva**, todavía sin CV
 generado.
 
-**Aparte, no arreglado aquí**: una de las cartas generadas saludaba a
-"Estimado equipo de Ver oferta" — el campo `empresa` de esa oferta
-concreta contenía literalmente el texto "Ver oferta" en vez del nombre
-real de la empresa. Es un problema de los datos de `ofertas` (el
-normalizador de esa fuente en `Jobs App · ingesta`), no de `lib/ia.ts` ni
-de `lib/pdf.tsx` — pendiente de mirar aparte.
+**Actualización — arreglado en el workflow**: una de las cartas
+generadas saludaba a "Estimado equipo de Ver oferta". Causa: el
+normalizador de Get on Board en `Jobs App · ingesta` (nodo "Normalizador
+Get on Board") dejaba `empresa` fijo al texto `'Ver oferta'`, con un
+comentario que decía que la API pública de Get on Board no exponía el
+nombre de la empresa. Comprobado en vivo contra la API real: **sí lo
+expone**, solo que en un segundo endpoint —
+`GET /api/v0/search/jobs` da un id de relación (`company.data.id`), y
+`GET /api/v0/companies/{id}` resuelve ese id al nombre real (`Cococel`,
+`BC Tecnología`, etc.). El nodo ahora resuelve, en paralelo, el nombre de
+cada empresa única de la tanda con `this.helpers.httpRequest()` dentro
+del propio Code node, con `try/catch` por empresa para que una que falle
+(borrada, 404, timeout) no tire abajo la ingesta entera — cae a
+`'No especificado'`, la misma convención que ya usan el resto de
+normalizadores de fuentes que a veces no traen ese dato.
+
+De las tres ofertas ya afectadas en `ofertas`, se corrigió a mano solo la
+que tenía un nombre verificable con seguridad (`BC Tecnología`, id
+`475e4bda-…`); las otras dos (`91a72924-…`, `41783cfb-…`) no aparecían en
+el listado público de empresas sin adivinar, así que se dejan como están
+— la regla de negocio 10 (borrado a los 30 días) las retira solas, y las
+próximas ejecuciones de `Jobs App · ingesta` ya traerán el nombre
+correcto para ofertas nuevas de esa fuente.
+
+**Nota**: la carta ya generada para la oferta `475e4bda-…` sigue
+teniendo el saludo viejo ("Estimado equipo de Ver oferta") congelado —
+arreglar el dato de la oferta no regenera un documento ya generado
+(regla de negocio 7).
 
 # Tipografía: por qué se incrustan fuentes
 
