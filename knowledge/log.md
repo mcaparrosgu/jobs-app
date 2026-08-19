@@ -1,6 +1,26 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Agujero de seguridad cerrado** (T81, a peticion de Mar en el momento):
+  `app/api/extraer-perfil/route.ts` era el **unico** endpoint que no
+  comprobaba sesion — no llamaba a `getUser()`. Cualquiera que conociera la
+  URL podia hacerle analizar textos y **gastar la cuota gratuita de
+  OpenRouter**, dejando ademas sin servicio a las usuarias reales. Se aplica
+  el mismo patron de los otros tres endpoints (401 si no hay usuaria),
+  colocado **antes de leer el cuerpo y antes de llamar al modelo**, para no
+  gastar nada en quien no deberia estar ahi. Verificado por los dos lados:
+  `401` sin cookies y `200` con la sesion real de Mar (puesto + 20 palabras
+  clave), con el boton "Analizar con la IA" intacto. **Dos notas de metodo
+  para pruebas**: (1) el clic simulado del navegador no disparaba la
+  peticion y parecia un boton roto — no lo era, un `click()` real desde la
+  consola funcionaba y el servidor registro la peticion; antes de dar algo
+  por roto, confirmarlo por una segunda via; (2) habia **servidores
+  `next dev` huerfanos** de sesiones anteriores ocupando el puerto 3000, y
+  `.next/dev/logs/next-development.log` conservaba errores de la madrugada
+  que parecian actuales — al leer un log, mirar primero la marca de tiempo.
+  Observado de paso: esa llamada a la IA tardo **42 segundos**, coherente
+  con la saturacion conocida de la capa gratuita pero lejos del "en
+  segundos" de la spec; anotado, sin tocar.
 * **Navegacion** (T77-T80, añadidas sobre la marcha tras el Hito 5): Mar
   prueba la web y señala que "es muy poco práctica, es incómoda". Al
   revisarlo, el diagnóstico es peor de lo esperado: las tres pantallas

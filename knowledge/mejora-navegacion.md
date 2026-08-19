@@ -1,8 +1,8 @@
 ---
 type: Decision
 title: Menú de navegación y coherencia entre pantallas
-description: Tras el Hito 5 las tres pantallas estaban construidas pero incomunicadas; se añade un menú permanente, cerrar sesión, aterrizaje condicional y guía de dos pasos (T77-T80).
-tags: [jobs-app, next-js, navegacion, ux, okf]
+description: Tras el Hito 5 las tres pantallas estaban construidas pero incomunicadas; se añade un menú permanente, cerrar sesión, aterrizaje condicional y guía de dos pasos (T77-T80), más el cierre de un endpoint de IA sin sesión (T81).
+tags: [jobs-app, next-js, navegacion, ux, seguridad, okf]
 timestamp: 2026-08-19T14:00:00Z
 ---
 
@@ -93,13 +93,44 @@ responde `303` hacia `/`.
 condicional del enlace del email (gastaría un enlace). Las dos quedan para
 que las pruebe ella cuando le venga bien.
 
-# Detectado de paso, sin arreglar aquí
+# Detectado de paso y arreglado en el momento (T81)
 
-`app/api/extraer-perfil/route.ts` es el **único** endpoint que no comprueba
-sesión: no llama a `getUser()`. Cualquiera que conociera la URL podría
-gastar la cuota de OpenRouter. No se toca en este trabajo porque no es
-navegación; encaja en el Paso 14 (guardrails) o como tarea suelta antes de
-enseñar la app a la clase.
+Revisando los endpoints salió que `app/api/extraer-perfil/route.ts` era el
+**único** que no comprobaba sesión: no llamaba a `getUser()`. Cualquiera
+que conociera la URL podía hacerle analizar textos y gastar la cuota de
+OpenRouter (capa gratuita, tope diario) sin haber entrado nunca en la web,
+dejando además a las usuarias reales sin servicio. Se avisó a Mar y pidió
+arreglarlo en el acto, sin esperar al Paso 14.
+
+**El arreglo** es el mismo patrón de los otros tres endpoints
+(`ofertas`, `perfil`, `interes`): `getUser()` y 401 si no hay usuaria. Se
+coloca **antes de leer el cuerpo de la petición y antes de llamar al
+modelo**, para no gastar nada en quien no debería estar ahí.
+
+Verificado por los dos lados: sin cookies responde `401 No has iniciado
+sesión`, y con la sesión real de Mar devuelve `200` con puesto y 20
+palabras clave, con el botón "Analizar con la IA" comportándose igual que
+antes.
+
+> **Nota de método para pruebas con el navegador**: durante esta
+> verificación el clic simulado sobre el botón no llegaba a disparar nada,
+> lo que parecía un botón roto. No lo era — un `click()` real desde la
+> consola sí funcionaba, y el servidor registró la petición. El fallo era
+> de la herramienta de automatización, no de la app. Antes de dar por roto
+> algo que el usuario no ha reportado, conviene confirmarlo por una segunda
+> vía (log del servidor, consola).
+>
+> Segundo tropiezo del mismo tipo: quedaban **servidores `next dev`
+> huérfanos** de sesiones anteriores ocupando el puerto 3000, y
+> `.next/dev/logs/next-development.log` conservaba errores de la madrugada
+> que parecían actuales. Se resolvió matando el proceso por PID y
+> arrancando uno limpio. Al leer un log, mirar primero la marca de tiempo.
+
+Otro dato observado de paso: esa llamada a la IA tardó **42 segundos** en
+responder. Encaja con lo ya sabido de la capa gratuita de OpenRouter
+(modelos saturados, ver `hito-3-perfil.md`), pero está lejos del "en
+segundos" que la spec promete para otras partes. No se toca aquí; conviene
+tenerlo presente antes de enseñar la app a la clase.
 
 # Relacionado
 

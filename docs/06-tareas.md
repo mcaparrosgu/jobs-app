@@ -218,13 +218,15 @@ verdad, ya no solo `localhost`.
 | T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
 | T76 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T75 | [ ] |
 
-## Añadido después del Hito 5 · Navegación
+## Añadido después del Hito 5 · Navegación y un agujero de seguridad
 
 > Estas tareas **no estaban en el plan original de 76**. Salieron al probar
 > la web con el Hito 5 ya cerrado: las pantallas funcionaban una por una,
 > pero estaban incomunicadas entre sí — la única forma de llegar a
-> `/ofertas` era escribir la dirección a mano. Se numeran a continuación de
-> T76 para no renumerar nada de lo ya hecho. Historia A4 de
+> `/ofertas` era escribir la dirección a mano (T77-T80). Revisando ese
+> trabajo apareció además **T81**, que no es de navegación: el endpoint que
+> llama a la IA no comprobaba quién lo llamaba. Se numeran a continuación
+> de T76 para no renumerar nada de lo ya hecho. Historia A4 de
 > `docs/01-historias.md`; detalle en `knowledge/mejora-navegacion.md`.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
@@ -233,6 +235,7 @@ verdad, ya no solo `localhost`.
 | T78 | Cerrar sesión de verdad al pulsar "Salir" | `app/auth/salir/route.ts` | Pulsas "Salir": vuelves a la pantalla de acceso y, si escribes `/perfil` a mano, te devuelve allí. Para volver a entrar hace falta un enlace nuevo del email | T77 | [x] |
 | T79 | Entrar por el enlace del email aterriza donde toca | `app/auth/callback/route.ts` | Con perfil ya guardado, el enlace del email te lleva directa a `/ofertas`; sin perfil todavía, a `/perfil` | T31, T42 | [x] |
 | T80 | Guía de dos pasos y salida clara del perfil | `components/GuiaPasos.tsx`, `components/FormularioPerfil.tsx`, `app/perfil/page.tsx`, `app/ofertas/page.tsx` | Sin perfil guardado ves "1. Pega tu CV → 2. Mira tus ofertas" y desaparece al guardarlo; al pulsar "Guardar" sale "Perfil guardado. Ver mis ofertas →" y el enlace funciona | T77, T31 | [x] |
+| T81 | ⚠️ Exigir sesión para analizar el CV con la IA | `app/api/extraer-perfil/route.ts` | Era el único endpoint sin comprobar quién llama: cualquiera con la URL podía gastar la cuota de OpenRouter. Comprobado que sin sesión responde "No has iniciado sesión" y que con sesión el botón "Analizar con la IA" sigue funcionando igual | T23 | [x] |
 
 ## Relacionado
 
