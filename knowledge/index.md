@@ -42,6 +42,9 @@ existe en produccion y no se toca desde aqui.
   tomada en T16: la caducidad de sesion a 15 dias de inactividad no se
   puede forzar en el plan gratuito de Supabase; se documenta como
   limitacion conocida en vez de pagar el plan Pro.
+- [hito-2-entrar.md](hito-2-entrar.md) — cierre del Hito 2 (Paso 9,
+  T18-T22): magic link de extremo a extremo, sesion persistente, mensaje
+  claro ante enlace caducado.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -1,6 +1,23 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `hito-2-entrar.md` — cierre del Hito 2 (T18-T22, Paso 9).
+  Magic link de Supabase Auth funcionando de extremo a extremo: formulario
+  conectado (T18), ruta de callback que canjea el codigo por sesion (T19),
+  pantalla minima de perfil (T20), sesion verificada tras cerrar pestaña
+  (T21) y mensaje claro ante enlace caducado (T22). Se añadio
+  `@supabase/ssr` (no estaba en el plan original de T08) con tres archivos
+  en `lib/supabase/` (cliente de navegador, cliente de servidor, logica de
+  refresco) y `proxy.ts` en la raiz — Next.js 16 deprecó el fichero
+  `middleware.ts` en favor de `proxy.ts`, se migro directamente para no
+  construir sobre una convencion ya obsoleta. **Incidente durante la
+  prueba real**: el primer enlace enviado al email de Mar dio
+  `otp_expired` al pincharlo — sirvio de paso para verificar T22 en
+  caliente (mensaje claro, no pantalla en blanco). Un segundo enlace,
+  abierto de inmediato, funciono sin problema; no se ha tocado
+  configuracion por este incidente, queda como nota de runbook. Pendiente:
+  T14 (RLS de escritura en `ofertas` bloqueada desde el navegador) sigue
+  sin verificarse en la practica.
 * **Creacion**: `decision-caducidad-sesion.md` y **cierre de T16** de
   `docs/06-tareas.md` (Paso 9). Supervisado en Chrome: Authentication →
   Sessions en Supabase tiene los campos correctos ("Time-box user
