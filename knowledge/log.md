@@ -1,6 +1,22 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Repaso de pendientes: los dos que arrastraba el bundle quedan
+  cerrados.** (1) **La migracion `0007_quitar_anios_experiencia.sql` SI
+  esta aplicada** en Supabase — se anoto como "pendiente de aplicar" al
+  escribirla y nunca se actualizo; comprobado contra la base de datos real,
+  la columna `anios_experiencia` ya no existe en `perfiles`. (2) **T14
+  verificado en la practica**, lo que llevaba pendiente desde el Hito 1
+  ("Mar no sabe hacerlo manualmente todavia"): con la **misma clave publica
+  que viaja al navegador**, insertar en `ofertas` da error explicito de RLS
+  (`new row violates row-level security policy`), y borrar o modificar no
+  da error pero **tampoco toca nada** — sin politica de `delete`/`update`,
+  RLS no deja ninguna fila visible para esas operaciones. La prueba se hizo
+  sobre una fila desechable creada y borrada con la clave de servicio,
+  nunca sobre las ofertas reales, y se confirmo despues que las 20 filas
+  seguian intactas. `hito-1-base-de-datos.md` pasa de tener seccion
+  "Pendiente" a "Verificado en la practica". Las entradas antiguas de este
+  log se dejan como estan: son el registro de lo que era cierto ese dia.
 * **Agujero de seguridad cerrado** (T81, a peticion de Mar en el momento):
   `app/api/extraer-perfil/route.ts` era el **unico** endpoint que no
   comprobaba sesion — no llamaba a `getUser()`. Cualquiera que conociera la

@@ -35,13 +35,23 @@ usuarias no depende de que el codigo de la web este bien escrito — lo
 garantiza la base de datos misma. Aunque hubiera un fallo en Jobs App, no
 podria entregar el CV de una compañera a otra.
 
-# Pendiente
+# Verificado en la practica (2026-08-19, ya no queda pendiente)
 
-- Verificar en la practica el criterio de T14 (una escritura de prueba
-  desde el navegador da error de permiso en `ofertas`). Mar no sabe
-  hacerlo manualmente todavia; se retoma cuando haya una pantalla real
-  de la web que hable con Supabase (Hito 2/3 en adelante), mas facil de
-  probar sin pasos sueltos de consola.
+El criterio de T14 —"una escritura de prueba desde el navegador da error
+de permiso"— quedo sin comprobar al cerrar el Hito 1 y se ha comprobado
+ahora, con la **misma clave publica que viaja al navegador**:
+
+| Intento con la clave publica | Resultado |
+| :---- | :---- |
+| Insertar una oferta | **Bloqueado con error**: `new row violates row-level security policy for table "ofertas"` |
+| Borrar una oferta existente | **Sin efecto**: la fila sigue intacta |
+| Modificar una oferta existente | **Sin efecto**: la fila sigue intacta |
+
+El borrado y la modificacion no dan error, pero tampoco tocan nada: sin
+politica de `delete`/`update`, RLS no deja ninguna fila visible para esas
+operaciones. La prueba se hizo sobre una **fila desechable creada y
+borrada con la clave de servicio**, nunca sobre las ofertas reales, y se
+confirmo despues que las 20 filas seguian intactas.
 
 # Relacionados
 
