@@ -73,9 +73,9 @@ ahora la carta) a cada oferta.
   explícitamente para que el trámite del formulario le lleve poco tiempo
   — cubre el mismo objetivo que las autosugerencias con menos piezas que
   construir.
-- **B3 · Años de experiencia.** Único campo del perfil que se sigue
-  rellenando a mano — el sistema no puede proponerlo con fiabilidad desde
-  el texto del CV.
+- **~~B3 · Años de experiencia~~.** Retirada durante el Paso 9 (T25-T31):
+  el dato no participaba en el emparejamiento con ofertas, así que se
+  quita del formulario en vez de mantenerlo solo para mostrarlo.
 - **C1 · Lanzar búsqueda.** Corregido: "Buscar" filtra el pool ya traído
   por la ingesta compartida (G2), no dispara ninguna llamada nueva —
   respuesta en segundos, sin lógica de duplicados ni paralelismo que

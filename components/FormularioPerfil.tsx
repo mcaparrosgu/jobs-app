@@ -1,49 +1,34 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 
-type PerfilExtraido = {
-  puesto: string;
+type PerfilGuardado = {
+  puesto: string | null;
   palabras_clave: string[];
   empresas_cv: string[];
   titulos_cv: string[];
-};
-
-type PerfilGuardado = PerfilExtraido & {
-  anios_experiencia: number | null;
   cv_texto: string | null;
   usar_experiencia_cv: boolean;
 };
 
 export default function FormularioPerfil({ perfilInicial }: { perfilInicial: PerfilGuardado | null }) {
   const [cvTexto, setCvTexto] = useState(perfilInicial?.cv_texto ?? '');
-  const [perfil, setPerfil] = useState<PerfilExtraido | null>(
-    perfilInicial
-      ? {
-          puesto: perfilInicial.puesto,
-          palabras_clave: perfilInicial.palabras_clave,
-          empresas_cv: perfilInicial.empresas_cv,
-          titulos_cv: perfilInicial.titulos_cv,
-        }
-      : null,
-  );
-  const [nuevaPalabra, setNuevaPalabra] = useState('');
-  const [aniosExperiencia, setAniosExperiencia] = useState(
-    perfilInicial?.anios_experiencia != null ? String(perfilInicial.anios_experiencia) : '',
-  );
+  const [puesto, setPuesto] = useState(perfilInicial?.puesto ?? '');
+  const [palabrasClave, setPalabrasClave] = useState<string[]>(perfilInicial?.palabras_clave ?? []);
+  const [empresasCv, setEmpresasCv] = useState<string[]>(perfilInicial?.empresas_cv ?? []);
+  const [titulosCv, setTitulosCv] = useState<string[]>(perfilInicial?.titulos_cv ?? []);
   const [usarExperienciaCv, setUsarExperienciaCv] = useState(perfilInicial?.usar_experiencia_cv ?? false);
+  const [nuevaPalabra, setNuevaPalabra] = useState('');
 
   const [analizando, setAnalizando] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [guardado, setGuardado] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<{ tipo: 'error' | 'ok'; texto: string } | null>(null);
 
-  async function analizarCv(evento: FormEvent) {
-    evento.preventDefault();
+  async function analizarCv() {
     if (cvTexto.trim().length === 0) return;
 
     setAnalizando(true);
-    setError(null);
+    setMensaje(null);
     try {
       const respuesta = await fetch('/api/extraer-perfil', {
         method: 'POST',
@@ -54,46 +39,49 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       if (!respuesta.ok) {
         throw new Error(datos.error ?? 'No se pudo analizar el CV.');
       }
-      setPerfil(datos);
+      setPuesto(datos.puesto);
+      setPalabrasClave(datos.palabras_clave);
+      setEmpresasCv(datos.empresas_cv);
+      setTitulosCv(datos.titulos_cv);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo analizar el CV.');
+      setMensaje({ tipo: 'error', texto: err instanceof Error ? err.message : 'No se pudo analizar el CV.' });
     } finally {
       setAnalizando(false);
     }
   }
 
   function quitarPalabra(palabra: string) {
-    if (!perfil) return;
-    setPerfil({ ...perfil, palabras_clave: perfil.palabras_clave.filter((p) => p !== palabra) });
+    setPalabrasClave((actuales) => actuales.filter((p) => p !== palabra));
   }
 
   function anadirPalabra() {
     const palabra = nuevaPalabra.trim();
-    if (!perfil || palabra.length === 0 || perfil.palabras_clave.includes(palabra)) {
+    if (palabra.length === 0 || palabrasClave.includes(palabra)) {
       setNuevaPalabra('');
       return;
     }
-    setPerfil({ ...perfil, palabras_clave: [...perfil.palabras_clave, palabra] });
+    setPalabrasClave((actuales) => [...actuales, palabra]);
     setNuevaPalabra('');
   }
 
-  async function guardarPerfil(evento: FormEvent) {
-    evento.preventDefault();
-    if (!perfil) return;
+  async function guardarPerfil() {
+    if (puesto.trim().length === 0 || palabrasClave.length === 0) {
+      setMensaje({ tipo: 'error', texto: 'Analiza tu CV primero, o rellena el puesto y al menos una palabra clave.' });
+      return;
+    }
 
     setGuardando(true);
-    setError(null);
+    setMensaje(null);
     try {
       const respuesta = await fetch('/api/perfil', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          puesto: perfil.puesto,
-          palabras_clave: perfil.palabras_clave,
-          empresas_cv: perfil.empresas_cv,
-          titulos_cv: perfil.titulos_cv,
+          puesto,
+          palabras_clave: palabrasClave,
+          empresas_cv: empresasCv,
+          titulos_cv: titulosCv,
           cv_texto: cvTexto,
-          anios_experiencia: aniosExperiencia === '' ? null : Number(aniosExperiencia),
           usar_experiencia_cv: usarExperienciaCv,
         }),
       });
@@ -101,58 +89,45 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       if (!respuesta.ok) {
         throw new Error(datos.error ?? 'No se pudo guardar el perfil.');
       }
-      setGuardado(true);
+      setMensaje({ tipo: 'ok', texto: 'Perfil guardado.' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar el perfil.');
+      setMensaje({ tipo: 'error', texto: err instanceof Error ? err.message : 'No se pudo guardar el perfil.' });
     } finally {
       setGuardando(false);
     }
   }
 
-  if (!perfil) {
-    return (
-      <form onSubmit={analizarCv} className="mt-8 w-full text-left">
-        <label htmlFor="cv" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Pega aquí el texto de tu CV
-        </label>
-        <textarea
-          id="cv"
-          value={cvTexto}
-          onChange={(evento) => setCvTexto(evento.target.value)}
-          rows={14}
-          placeholder="Pega el contenido completo de tu CV, tal cual lo tengas escrito..."
-          className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-        />
-        {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={cvTexto.trim().length === 0 || analizando}
-          className="mt-4 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
-        >
-          {analizando ? 'Analizando tu CV…' : 'Continuar'}
-        </button>
-      </form>
-    );
-  }
-
-  if (guardado) {
-    return (
-      <p className="mt-8 text-lg text-zinc-600 dark:text-zinc-400">
-        Perfil guardado. Ya puedes cerrar esta pantalla.
-      </p>
-    );
-  }
-
   return (
-    <form onSubmit={guardarPerfil} className="mt-8 w-full text-left">
-      <label htmlFor="puesto" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+    <div className="mt-8 w-full text-left">
+      <label htmlFor="cv" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        Tu CV
+      </label>
+      <textarea
+        id="cv"
+        value={cvTexto}
+        onChange={(evento) => setCvTexto(evento.target.value)}
+        rows={10}
+        placeholder="Pega el contenido completo de tu CV, tal cual lo tengas escrito..."
+        className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+      />
+      <button
+        type="button"
+        onClick={analizarCv}
+        disabled={cvTexto.trim().length === 0 || analizando}
+        className="mt-3 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
+      >
+        {analizando ? 'Analizando tu CV…' : puesto ? 'Volver a analizar con la IA' : 'Analizar con la IA'}
+      </button>
+
+      <label htmlFor="puesto" className="mt-8 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Puesto
       </label>
       <input
         id="puesto"
         type="text"
-        value={perfil.puesto}
-        onChange={(evento) => setPerfil({ ...perfil, puesto: evento.target.value })}
+        value={puesto}
+        onChange={(evento) => setPuesto(evento.target.value)}
+        placeholder="Aparecerá aquí al analizar tu CV"
         className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
       />
 
@@ -160,7 +135,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         Palabras clave
       </label>
       <div className="mt-2 flex flex-wrap gap-2">
-        {perfil.palabras_clave.map((palabra) => (
+        {palabrasClave.map((palabra) => (
           <span
             key={palabra}
             className="flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
@@ -200,18 +175,6 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         </button>
       </div>
 
-      <label htmlFor="anios" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Años de experiencia
-      </label>
-      <input
-        id="anios"
-        type="number"
-        min={0}
-        value={aniosExperiencia}
-        onChange={(evento) => setAniosExperiencia(evento.target.value)}
-        className="mt-2 w-32 rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-      />
-
       <label className="mt-6 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
         <input
           type="checkbox"
@@ -222,15 +185,22 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         Tener en cuenta la experiencia de mi CV al buscar ofertas
       </label>
 
-      {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {mensaje && (
+        <p
+          className={`mt-4 text-sm ${mensaje.tipo === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}
+        >
+          {mensaje.texto}
+        </p>
+      )}
 
       <button
-        type="submit"
+        type="button"
+        onClick={guardarPerfil}
         disabled={guardando}
         className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
       >
         {guardando ? 'Guardando…' : 'Guardar'}
       </button>
-    </form>
+    </div>
   );
 }

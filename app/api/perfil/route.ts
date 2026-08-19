@@ -13,7 +13,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('perfiles')
-    .select('puesto, palabras_clave, anios_experiencia, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 
   const cuerpo = await request.json();
-  const { puesto, palabras_clave, anios_experiencia, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv } = cuerpo;
+  const { puesto, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv } = cuerpo;
 
   if (typeof puesto !== 'string' || puesto.trim().length === 0) {
     return NextResponse.json({ error: 'Falta el puesto' }, { status: 400 });
@@ -50,7 +50,6 @@ export async function POST(request: Request) {
       user_id: user.id,
       puesto,
       palabras_clave,
-      anios_experiencia: anios_experiencia ?? null,
       cv_texto: cv_texto ?? null,
       usar_experiencia_cv: Boolean(usar_experiencia_cv),
       empresas_cv: Array.isArray(empresas_cv) ? empresas_cv : [],

@@ -1,6 +1,36 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Segunda pasada del Hito 3** (mismo dia): Mar prueba `/perfil` con su
+  propio CV (en ingles) y da cuatro correcciones, las cuatro aplicadas —
+  detalle completo en `hito-3-perfil.md`. Resumen: (1) una sola pantalla
+  en vez de dos fases (`FormularioPerfil.tsx` reescrito sin bifurcacion);
+  (2) se retira "anios de experiencia" del formulario — contradecia la
+  historia B3 ("el sistema no puede proponerlo con fiabilidad"), pero como
+  el dato no participaba en el emparejamiento (regla de negocio 3), Mar
+  elige (preguntada explicitamente) quitarlo del todo en vez de que la IA
+  lo intente calcular; retirado de historias/mvp/spec/plan-tecnico y de la
+  tabla `perfiles` (migracion `0007_quitar_anios_experiencia.sql`,
+  pendiente de aplicar en Supabase); (3) `lib/ia.ts` fuerza salida en
+  español siempre, aunque el CV este en otro idioma (mismo principio que
+  ya se aplicaba al idioma de la oferta, docs/05-ia.md §6.5); (4) el
+  esquema de palabras clave sube de 5-10 a 8-20, con el prompt pidiendo
+  explorar variantes/sinonimos de lo que ya esta en el CV, sin inventar.
+  **Bug real encontrado y resuelto**: el error de hidratacion de React que
+  parecia intermitente resulto ser un **Service Worker de otro proyecto**
+  ("spotideezer-v2") registrado en el mismo origen `localhost:3000`,
+  sirviendo JS viejo desde su cache pese a reinicios de servidor y
+  recargas duras — los Service Workers se registran por origen, no por
+  proyecto. Desregistrado y cache borrada; anadido `translate="no"` +meta
+  `notranslate` en `app/layout.tsx` para que el traductor automatico de
+  Chrome tampoco pueda romper la hidratacion. **Rendimiento**: `lib/ia.ts`
+  pasa de probar los 3 modelos en secuencial a probarlos **en paralelo**
+  (`Promise.any` + `AbortController`) tras confirmar en el log del
+  servidor que dos de los tres estaban saturados (**429**,
+  `upstream_provider_shared_pool` — cupo compartido de la capa gratuita de
+  OpenRouter) y el tercero (modelo "razonador", mas lento por diseño) era
+  el unico en responder; en secuencial la suma superaba el minuto o
+  fallaba, en paralelo tarda lo que tarde el mas rapido en responder bien.
 * **Creacion**: `hito-3-perfil.md` — cierre del Hito 3 (T25-T31, Paso 9).
   `lib/ia.ts` llama a OpenRouter con salida estructurada para extraer
   puesto y palabras clave (y, sin coste extra, empresas/titulaciones para

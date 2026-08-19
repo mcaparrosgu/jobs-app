@@ -91,17 +91,14 @@ en este trámite.
 > lo mínimo — con menos piezas que construir que un autocompletado en
 > vivo.
 
-### B3. Contar mis años de experiencia
-**IMPRESCINDIBLE**
+### ~~B3. Contar mis años de experiencia~~ — retirada durante T25-T31 (Paso 9)
 
-Como usuaria, quiero indicar mis años de experiencia a mano (el sistema no
-puede proponerlo automáticamente con fiabilidad), para completar mi
-perfil.
-
-- Dado que relleno mis años de experiencia y guardo el perfil, ¿queda
-  asociado a mi cuenta junto con el puesto y las palabras clave? Sí/No.
-- Dado que intento continuar sin pegar nada en el campo (obligatorio),
-  ¿me lo impide y me indica que hace falta? Sí/No.
+Historia original: indicar los años de experiencia a mano, porque "el
+sistema no puede proponerlo automáticamente con fiabilidad". Al construir
+el Hito 3, Mar decidió quitar el campo del todo en vez de mantenerlo: el
+dato no participa en el emparejamiento con ofertas (regla de negocio 3),
+solo se mostraba, así que perderlo no afecta a la búsqueda y simplifica el
+formulario a una sola pantalla (pegar CV → ver puesto y palabras clave).
 
 ## C. Búsqueda, selección y generación de CV + carta de presentación
 

@@ -201,7 +201,6 @@ bastidor de un coche.
 | `user_id` | identificador, **único** | de quién es este perfil |
 | `puesto` | texto | propuesto por la IA, editable |
 | `palabras_clave` | lista de textos | propuestas por la IA, la usuaria añade/quita |
-| `anios_experiencia` | número | único campo que se escribe a mano |
 | `cv_texto` | texto largo | el CV tal como lo pegó |
 | `usar_experiencia_cv` | sí/no | si se tiene en cuenta al emparejar (regla 3) |
 | `empresas_cv` | lista de textos | empresas que aparecen en el CV — **solo para verificar** que la IA no invente otras (ver `05-ia.md` §6.2). La usuaria no las ve |

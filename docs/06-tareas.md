@@ -106,7 +106,7 @@ guardar.
 | T27 | Crear el endpoint que recibe el CV y llama al modelo de IA | `app/api/extraer-perfil/route.ts` | Interno — se verifica junto con T29 | T26 | [x] |
 | T28 | Construir la pantalla de perfil: caja de texto y botón "Continuar" | `app/perfil/page.tsx` | Se ve una caja de texto grande y un botón | T20 | [x] |
 | T29 | Conectar el botón al endpoint y mostrar los resultados, editables | `app/perfil/page.tsx` | Pegas tu CV real, pulsas "Continuar" y en segundos ves puesto + palabras clave que puedes borrar o añadir | T27, T28 | [x] |
-| T30 | Añadir años de experiencia y la casilla "tener en cuenta mi CV" | `app/perfil/page.tsx` | Ves un campo numérico y una casilla junto a la propuesta de la IA | T29 | [x] |
+| T30 | ~~Añadir años de experiencia y~~ la casilla "tener en cuenta mi CV" (años de experiencia retirado, ver `knowledge/hito-3-perfil.md`) | `app/perfil/page.tsx` | Ves una casilla junto a la propuesta de la IA | T29 | [x] |
 | T31 | Guardar el perfil al pulsar "Guardar" | `app/perfil/page.tsx`, `app/api/perfil/route.ts` | Pulsas "Guardar", recargas la página y ves los mismos datos que guardaste | T30, T13 | [x] |
 
 ## Hito 4 · Un workflow nuevo de n8n alimenta la base de datos de ofertas

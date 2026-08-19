@@ -109,10 +109,9 @@ En lenguaje natural, lo que el sistema necesita recordar:
   identifica (no hay nombre de usuario ni contraseña que guardar).
 - **Perfil de búsqueda**, por usuaria: el puesto que busca y sus palabras
   clave (propuestos automáticamente al leer el CV pegado, y luego
-  editables por la usuaria — puede añadir o quitar los que quiera), sus
-  años de experiencia (este sí se escribe a mano), el texto de su CV tal
-  como lo pegó, y si quiere o no que ese CV se tenga en cuenta al valorar
-  qué ofertas le encajan. Un perfil por usuaria — al actualizarlo,
+  editables por la usuaria — puede añadir o quitar los que quiera), el
+  texto de su CV tal como lo pegó, y si quiere o no que ese CV se tenga en
+  cuenta al valorar qué ofertas le encajan. Un perfil por usuaria — al actualizarlo,
   sustituye al anterior para las búsquedas futuras (no afecta a lo que ya
   se generó, ver más abajo).
 - **Ofertas de empleo**: compartidas entre todas las usuarias (no son
@@ -140,9 +139,7 @@ En lenguaje natural, lo que el sistema necesita recordar:
    automática al aparecer en la lista.
 3. **El emparejamiento entre perfil y ofertas se basa en el puesto y las
    palabras clave** que queden en el perfil de la usuaria, más —si ella lo
-   pide explícitamente— la experiencia que aparece en el CV que pegó. Los
-   años de experiencia se muestran pero no participan en ese
-   emparejamiento.
+   pide explícitamente— la experiencia que aparece en el CV que pegó.
 4. **El puesto y las palabras clave se proponen automáticamente al pegar
    el CV**, para que la usuaria no tenga que escribirlos desde cero. La
    usuaria tiene la última palabra: puede añadir o quitar cualquiera antes

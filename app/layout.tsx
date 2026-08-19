@@ -16,12 +16,16 @@ export const metadata: Metadata = {
   title: "Jobs App",
   description:
     "Ofertas de empleo remoto que encajan con tu CV, y un CV y una carta adaptados a cada una.",
+  other: {
+    google: "notranslate",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
+      translate="no"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
