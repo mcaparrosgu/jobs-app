@@ -169,6 +169,25 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
         </p>
       )}
 
+      {(generacion?.estado === 'generando' || generacion?.estado === 'listo') && (
+        generacion.estado === 'listo' ? (
+          <a
+            href={`/api/descargar/${oferta.id}`}
+            className="mt-3 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
+          >
+            Descargar
+          </a>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="mt-3 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-400 opacity-60 dark:border-zinc-700 dark:text-zinc-500"
+          >
+            Descargar
+          </button>
+        )
+      )}
+
       {generacion?.estado === 'listo' && generacion.avisos.length > 0 && (
         <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
           <p className="font-medium">Revisa esto antes de enviarlo:</p>
