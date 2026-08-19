@@ -100,6 +100,12 @@ existe en produccion y no se toca desde aqui.
   nuevas, consultan usuarias con perfil (vista `perfiles_con_email`, con el
   email que solo vivía en `auth.users`) y envían el aviso por Gmail;
   verificado con una ejecución real.
+- [hito-9-publicar.md](hito-9-publicar.md) — cierre de T69-T76 (Paso 9,
+  Hito 9): repositorio privado en GitHub, proyecto enlazado en Vercel,
+  claves de entorno y primer recorrido completo probado desde el móvil en
+  la dirección pública. El bloqueador encontrado — Site URL/Redirect URLs
+  de Supabase Auth seguían apuntando a `localhost` — resultó ser también la
+  causa de que `APP_URL_JOBS_APP` (Hito 8) siguiera sin actualizar.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

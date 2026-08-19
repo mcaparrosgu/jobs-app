@@ -1,6 +1,16 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Hito 9 cerrado (T69-T76): la web tiene dirección pública.** Mar probó
+  el recorrido completo desde el móvil (pedir acceso → abrir el enlace del
+  email → marcar "me interesa" → descargar el PDF) en
+  `https://jobs-app-mcaparrosgu-4812s-projects.vercel.app` y confirmó que
+  funciona. De paso se actualizó `APP_URL_JOBS_APP` en `Docker n8n/.env`
+  (el enlace del aviso por email del Hito 8, pendiente desde entonces) a la
+  misma URL real, y se reinició `dockern8n-n8n-1` para recogerlo — sin
+  tocar `postgres` ni los workflows `Jobs` originales. Solo queda sin
+  marcar **T68** (confirmar la ejecución real de las 13:00 de mañana).
+  Detalle completo en `hito-9-publicar.md`.
 * **Bloqueador de T76 arreglado: el enlace del email seguía apuntando a
   `localhost`.** Mar probó T76 desde el móvil y, al abrir el enlace de
   acceso, el navegador daba "no se puede acceder a este sitio web" —

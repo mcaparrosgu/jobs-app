@@ -61,9 +61,12 @@ El email necesita una URL a la que enlazar, y la web todavía no tiene
 dirección pública (Hito 9 sin empezar). Se añade `APP_URL_JOBS_APP` en
 `Docker n8n/.env` (+ `.env.example` + passthrough en `docker-compose.yml`),
 provisional a `http://localhost:3000/ofertas` — mismo patrón que
-`HEALTHCHECKS_PING_URL_JOBS_APP` (T38). **Pendiente para T74-T76**: cambiar
-su valor a la URL real de Vercel cuando se publique, y reiniciar el
-contenedor de n8n otra vez para que recoja el cambio.
+`HEALTHCHECKS_PING_URL_JOBS_APP` (T38).
+
+**Actualizado en T76** (19/08/2026): con la web ya publicada en Vercel,
+el valor pasa a `https://jobs-app-mcaparrosgu-4812s-projects.vercel.app/ofertas`.
+Contenedor `dockern8n-n8n-1` reiniciado (`docker compose up -d n8n`, sin
+tocar `postgres`) para que recoja el cambio.
 
 De paso se corrigió una inconsistencia menor que ya existía: la variable
 `HEALTHCHECKS_PING_URL_JOBS_APP` de T38 nunca se había añadido a
