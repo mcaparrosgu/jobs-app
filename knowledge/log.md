@@ -1,6 +1,11 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T72 (Hito 9): `.env.local` no se va a subir, confirmado.** `.gitignore`
+  ya cubría `.env`, `.env.local` y variantes desde T03; `git status` no lo
+  muestra y no está entre los archivos rastreados (`git ls-files`). El
+  único archivo de entorno que sí se sube, `.env.example`, solo tiene
+  nombres de claves, ningún valor real.
 * **T71 (Hito 9): permiso explícito de Mar para subir el código a GitHub.**
   Preguntado por escrito (regla 3 de `CLAUDE.md`, que exige permiso
   explícito cada vez): confirmó "Sí, adelante" y eligió repositorio

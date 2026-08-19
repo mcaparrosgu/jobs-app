@@ -226,7 +226,7 @@ verdad, ya no solo `localhost`.
 | T69 | Repasar que toda la interfaz, mensajes de error y el email están en castellano | — (prueba manual) | Recorres cada pantalla y no encuentras ningún texto en otro idioma | T62, T68 | [x] |
 | T70 | Probar los casos límite de la spec uno por uno | — (prueba manual) | Provocas cada caso (email inválido, sin ofertas que coincidan, límite diario alcanzado a mitad de sesión, descargar antes de tiempo) y el mensaje que aparece es el que describe `docs/03-spec.md` §6 | T69 | [x] |
 | T71 | ⚠️ Pedir tu permiso explícito antes de subir nada a GitHub | — | Confirmación tuya, por escrito, antes de continuar | T70 | [x] |
-| T72 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T71 | [ ] |
+| T72 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T71 | [x] |
 | T73 | Crear el repositorio en GitHub y subir el código, **privado** (confirmado en T71) | — | Recargas la página del repositorio en GitHub y ves los archivos | T72 | [ ] |
 | T74 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T73 | [ ] |
 | T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
