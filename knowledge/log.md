@@ -1,6 +1,28 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Bloqueador de T76 arreglado: el enlace del email seguía apuntando a
+  `localhost`.** Mar probó T76 desde el móvil y, al abrir el enlace de
+  acceso, el navegador daba "no se puede acceder a este sitio web" —
+  intentaba cargar `localhost:3000`, que solo existe en el ordenador donde
+  se programa. Causa: la propia configuración de Supabase Auth
+  (Authentication → URL Configuration), no el código de `app/page.tsx`, que
+  ya construye `emailRedirectTo` correctamente con
+  `window.location.origin`. Ni la **Site URL** (usada como destino por
+  defecto cuando el enlace no coincide con ninguno permitido) ni la lista
+  de **Redirect URLs** (vacía) se habían actualizado tras el despliegue en
+  Vercel de T74 — seguían con el valor de cuando solo existía desarrollo
+  local. Se corrige directamente desde el navegador (Mar no encontraba la
+  sección "Authentication" en el panel): Site URL cambiada a
+  `https://jobs-app-mcaparrosgu-4812s-projects.vercel.app`, y dos Redirect
+  URLs añadidas con comodín (`/**`): la misma de producción y
+  `http://localhost:3000/**` (se conserva para seguir programando en local
+  más adelante). El enlace que ya había recibido Mar no sirve — llevaba la
+  URL vieja grabada dentro — así que hace falta pedir uno nuevo para
+  reintentar T76. **Pendiente relacionado, no resuelto aquí**: `APP_URL_JOBS_APP`
+  en `Docker n8n/.env` (usado por el aviso por email de `Jobs App · ingesta`,
+  ver `hito-8-aviso-email.md`) sigue apuntando a `http://localhost:3000/ofertas`
+  y también hay que actualizarlo a la URL real de Vercel.
 * **T75 (Hito 9): las 5 claves añadidas en Vercel.** Mar las introdujo ella
   misma en el panel de Vercel (Settings → Environment Variables): nunca se
   escriben claves ni tokens desde aquí, por norma de seguridad, aunque haya
