@@ -194,7 +194,7 @@ CV en la primera página y la carta empezando en una página nueva.
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T58 | Crear la plantilla del PDF, diseño sobrio | `lib/pdf.tsx` | Interno — se verifica junto con T60 | — | [x] |
-| T59 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.ts` | Interno — se verifica junto con T60 | T58 | [ ] |
+| T59 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.tsx` | Interno — se verifica junto con T60 | T58 | [x] |
 | T60 | Crear el endpoint de descarga | `app/api/descargar/[id]/route.ts` | Con una generación en estado "listo", entras a la URL de descarga y se abre un PDF sin error | T53, T59 | [ ] |
 | T61 | Botón "Descargar", desactivado hasta que esté listo | `components/TarjetaOferta.tsx` | Con estado "generando" el botón está gris; en "listo" se activa | T60, T53 | [ ] |
 | T62 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T61 | [ ] |

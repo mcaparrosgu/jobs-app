@@ -15,7 +15,7 @@
 // y una línea en blanco separa párrafos. `bloqueTexto` traduce esa
 // convención a los elementos de react-pdf.
 
-import { Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 // 'Helvetica' es una de las 14 fuentes estándar de PDF: react-pdf la trae
 // integrada (con su negrita) sin incrustar ningún archivo, y su
@@ -65,6 +65,12 @@ export const estilos = StyleSheet.create({
   puntoTexto: {
     flex: 1,
   },
+  etiquetaCarta: {
+    fontSize: 9,
+    color: '#5b6470',
+    letterSpacing: 0.6,
+    marginBottom: 16,
+  },
 });
 
 // Une líneas sueltas en párrafos, listas de puntos y títulos de sección,
@@ -79,28 +85,38 @@ function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; 
   };
   const esPunto = (l: string) => l.trim().startsWith('- ');
 
+  // Una línea en blanco corta la continuidad: aunque la siguiente línea sea
+  // del mismo tipo que la anterior, empieza un grupo nuevo en vez de
+  // fundirse con él (si no, dos párrafos distintos separados a propósito
+  // acababan pegados en uno solo).
+  let anteriorEnBlanco = true;
+
   for (const linea of lineas) {
     const limpia = linea.trim();
-    if (limpia.length === 0) continue;
+    if (limpia.length === 0) {
+      anteriorEnBlanco = true;
+      continue;
+    }
 
     if (esTitulo(limpia)) {
       grupos.push({ tipo: 'titulo', contenido: [limpia] });
     } else if (esPunto(limpia)) {
       const ultimo = grupos[grupos.length - 1];
       const texto = limpia.slice(2).trim();
-      if (ultimo?.tipo === 'puntos') {
+      if (!anteriorEnBlanco && ultimo?.tipo === 'puntos') {
         ultimo.contenido.push(texto);
       } else {
         grupos.push({ tipo: 'puntos', contenido: [texto] });
       }
     } else {
       const ultimo = grupos[grupos.length - 1];
-      if (ultimo?.tipo === 'parrafo') {
+      if (!anteriorEnBlanco && ultimo?.tipo === 'parrafo') {
         ultimo.contenido.push(limpia);
       } else {
         grupos.push({ tipo: 'parrafo', contenido: [limpia] });
       }
     }
+    anteriorEnBlanco = false;
   }
 
   return grupos;
@@ -135,4 +151,30 @@ export function bloqueTexto(texto: string) {
       </Text>
     );
   });
+}
+
+// T59 · El CV y la carta, como un único PDF descargable (historia C4). Cada
+// texto va en su propio `<Page>`: react-pdf reparte el contenido de una
+// misma `<Page>` en tantas páginas físicas como haga falta si se desborda
+// (comportamiento por defecto, `wrap`), así que el CV puede ocupar una o
+// varias páginas sin que la carta se mueva — al vivir en su propio `<Page>`,
+// siempre empieza en una página nueva, sin importar cuánto ocupe el CV.
+export function DocumentoGeneracion({
+  cvTexto,
+  cartaTexto,
+}: {
+  cvTexto: string;
+  cartaTexto: string;
+}) {
+  return (
+    <Document>
+      <Page size="A4" style={estilos.pagina}>
+        {bloqueTexto(cvTexto)}
+      </Page>
+      <Page size="A4" style={estilos.pagina}>
+        <Text style={estilos.etiquetaCarta}>CARTA DE PRESENTACIÓN</Text>
+        {bloqueTexto(cartaTexto)}
+      </Page>
+    </Document>
+  );
 }
