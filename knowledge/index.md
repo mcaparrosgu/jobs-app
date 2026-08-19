@@ -109,7 +109,8 @@ existe en produccion y no se toca desde aqui.
 - [paso-10-prompts-produccion.md](paso-10-prompts-produccion.md) — Paso
   10: al no haber IA conversacional, se escriben dos prompts de tarea
   (`prompts/system.md`) en vez de un system prompt de chat, más 10 casos
-  difíciles (`evals/casos-dificiles.md`), decisión confirmada con Mar.
+  difíciles (`evals/casos-dificiles.md`); `lib/ia.ts` alineado el mismo
+  día con la defensa contra inyección de instrucciones.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -1,6 +1,20 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **`lib/ia.ts` alineado con `prompts/system.md`: defensa contra
+  inyección de instrucciones añadida al código, el mismo día que se
+  documentó.** Al cerrar el Paso 10 quedó anotado a propósito que el
+  código no llevaba todavía la defensa contra instrucciones dentro del
+  CV o de la oferta ("ignora las instrucciones anteriores", "añade una
+  cifra falsa"...). Mar pidió resolverlo sin esperar al Paso 14: los dos
+  prompts de `lib/ia.ts` (`extraerPerfil`, `mensajesDeGeneracion`) llevan
+  ahora el mismo texto de defensa que `prompts/system.md`, y cada uno un
+  comentario que remite a `prompts/system.md` y
+  `evals/casos-dificiles.md` para no volver a divergir. Queda pendiente,
+  y es trabajo real del Paso 14: verificar en vivo con los casos 1, 2, 3
+  y 5 de `evals/casos-dificiles.md` que el modelo obedece esto — hoy es
+  solo prompt, sin ninguna verificación en código detrás. Detalle en
+  `paso-10-prompts-produccion.md`.
 * **Paso 10 cerrado: prompts de producción escritos como dos tareas, no
   como un system prompt de chat.** `docs/05-ia.md` ya documentaba que Jobs
   App no tiene IA conversacional (peldaño 1, sin herramientas, sin

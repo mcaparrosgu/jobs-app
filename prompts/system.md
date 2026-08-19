@@ -41,6 +41,9 @@ texto malo, y de eso se ocupan las capas de verificación de abajo.
 
 Implementación real, verificar que coincide antes de fiarse de este
 documento: `lib/ia.ts` (funciones `extraerPerfil` y `generarCvYCarta`).
+Desde el 19/08/2026 el código incluye también la defensa contra inyección
+de instrucciones descrita en el punto 5 de cada prompt más abajo — ver
+`knowledge/paso-10-prompts-produccion.md`.
 
 ---
 
