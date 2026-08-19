@@ -1,6 +1,28 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `decision-caducidad-sesion.md` y **cierre de T16** de
+  `docs/06-tareas.md` (Paso 9). Supervisado en Chrome: Authentication →
+  Sessions en Supabase tiene los campos correctos ("Time-box user
+  sessions", "Inactivity timeout") pero estan bloqueados con "Configuring
+  user sessions is only available on the Pro Plan and above" en el plan
+  Free (fijos en `0`/`never`). Se plantearon dos opciones: forzar la
+  caducidad con codigo propio, o dejar el valor por defecto y documentar
+  la limitacion. **Mar elige documentar la limitacion** — presupuesto 0
+  €/mes, sin construir logica a medida solo para esto. Anotado como
+  limitacion conocida en `docs/03-spec.md` regla 9 y en "Continuidad de
+  sesion" (§7), para que la spec no prometa algo que la infraestructura
+  gratuita no cumple.
+* **Preferencia registrada**: Mar quiere que, en adelante, se aproveche
+  cualquier via que agilice la construccion del MVP — incluida la
+  automatizacion de navegador (Chrome) para tareas de panel en vez de
+  explicarselas paso a paso, cuando el riesgo sea bajo y ella este
+  presente para supervisarlo.
+* **Construccion**: T15 de `docs/06-tareas.md` (Paso 9) — SMTP de Gmail
+  activado en Supabase Auth (Authentication → SMTP Settings), conexion
+  verificada. Abre el Hito 2 (Entrar con el enlace de email); paso previo
+  necesario para T16 (caducidad de sesion a 15 dias) y T18 (envio real del
+  magic link).
 * **Creacion**: `hito-1-base-de-datos.md` — concepto de cierre del Hito 1
   (T09-T14): resume las cuatro tablas creadas en Supabase y el diseño de
   RLS (privacidad por usuaria en `perfiles`/`intereses`/`generaciones`,

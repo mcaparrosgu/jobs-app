@@ -82,8 +82,8 @@ correo, pinchas el enlace y aparece una pantalla que te reconoce.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T15 | Activar el envío de emails por Gmail en Supabase Auth | — (panel de Supabase) | Authentication → SMTP Settings muestra los datos de Gmail y "conexión correcta" | T06 | [ ] |
-| T16 | Configurar la caducidad de sesión a 15 días de inactividad (regla 9) | — (panel de Supabase) | El valor de expiración de sesión en Authentication → Settings está en 15 días | T15 | [ ] |
+| T15 | Activar el envío de emails por Gmail en Supabase Auth | — (panel de Supabase) | Authentication → SMTP Settings muestra los datos de Gmail y "conexión correcta" | T06 | [x] |
+| T16 | ~~Configurar~~ Comprobar la caducidad de sesión por inactividad (regla 9) — bloqueada por el plan gratuito, ver `knowledge/decision-caducidad-sesion.md` | — (panel de Supabase) | Authentication → Sessions muestra "Inactivity timeout" en `0 / never` (límite del plan Free) y la limitación queda anotada en `docs/03-spec.md` §5.9 | T15 | [x] |
 | T17 | Crear la página para pedir acceso | `app/page.tsx` | En `localhost:3000` hay una caja para el email y un botón "Entrar" | T04 | [ ] |
 | T18 | Conectar el botón "Entrar" al envío del enlace | `app/page.tsx` | Escribes tu email, pulsas "Entrar", y te llega un correo con un enlace | T16, T17 | [ ] |
 | T19 | Crear la página que recibe el enlace | `app/auth/callback/route.ts` | Pinchas el enlace del correo y no da error 404 | T18 | [ ] |

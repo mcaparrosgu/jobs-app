@@ -170,6 +170,13 @@ En lenguaje natural, lo que el sistema necesita recordar:
    cualquiera de los dos casos, para volver a entrar tiene que pedir un
    enlace nuevo y verificarlo de nuevo por email — no hay forma de saltarse
    esa verificación.
+   > ⚠️ **Limitación conocida (T16)**: el plan gratuito de Supabase no
+   > permite configurar de forma nativa esa caducidad por inactividad (es
+   > una opción exclusiva del plan Pro, de pago). Mientras el presupuesto
+   > siga siendo 0 €/mes, la sesión no fuerza el cierre exacto a los 15
+   > días; se mantiene válida más tiempo. El resto de la regla 9 (enlace
+   > de un solo uso) sí está garantizado. Detalle en
+   > `knowledge/decision-caducidad-sesion.md`.
 10. **Los datos de cada usuaria se conservan durante un mes** (perfil, CV
     pegado, CVs/cartas generados); pasado ese tiempo se eliminan
     automáticamente.
@@ -222,7 +229,8 @@ En lenguaje natural, lo que el sistema necesita recordar:
   ocurre, para que no se perciba como una avería.
 - **Continuidad de sesión**: una vez que la usuaria entra, permanece
   identificada en ese dispositivo hasta 15 días sin usarlo; pasado ese
-  tiempo, necesita un enlace nuevo verificado por email.
+  tiempo, necesita un enlace nuevo verificado por email. Ver limitación
+  conocida en la regla 9.
 - **Retención de datos**: los datos de cada usuaria se conservan un mes y
   se eliminan automáticamente después — más que suficiente margen sobre
   la duración prevista del periodo de prueba con la clase.

@@ -38,6 +38,10 @@ existe en produccion y no se toca desde aqui.
 - [hito-1-base-de-datos.md](hito-1-base-de-datos.md) — cierre del Hito 1
   (Paso 9, T09-T14): las cuatro tablas creadas en Supabase y el candado
   RLS que garantiza la privacidad entre usuarias.
+- [decision-caducidad-sesion.md](decision-caducidad-sesion.md) — decision
+  tomada en T16: la caducidad de sesion a 15 dias de inactividad no se
+  puede forzar en el plan gratuito de Supabase; se documenta como
+  limitacion conocida en vez de pagar el plan Pro.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
