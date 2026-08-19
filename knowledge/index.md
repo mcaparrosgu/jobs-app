@@ -63,6 +63,11 @@ existe en produccion y no se toca desde aqui.
   (Paso 9, T41-T47): pantalla `/ofertas`, emparejamiento por codigo sin IA
   contra puesto/palabras clave del perfil, boton "me interesa" con dedupe
   a nivel de base de datos.
+- [hito-6-generar-cv.md](hito-6-generar-cv.md) — cierre del Hito 6 (Paso 9,
+  T48-T57): una llamada al modelo produce CV y carta adaptados a la oferta,
+  con el idioma decidido por codigo, verificacion automatica de cifras y
+  nombres inventados, limite de 5 al dia y cola con reintentos desde el
+  navegador.
 - [mejora-navegacion.md](mejora-navegacion.md) — T77-T80, añadidas tras el
   Hito 5: menu permanente, cerrar sesion, aterrizaje condicional del enlace
   del email y guia de dos pasos. Las pantallas estaban construidas pero

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TarjetaOferta from '@/components/TarjetaOferta';
+import TarjetaOferta, { type EstadoGeneracion } from '@/components/TarjetaOferta';
 import GuiaPasos from '@/components/GuiaPasos';
 
 type Oferta = {
@@ -12,6 +12,7 @@ type Oferta = {
   empresa: string;
   enlace: string;
   interesada: boolean;
+  generacion: EstadoGeneracion | null;
 };
 
 type Estado =
@@ -25,6 +26,7 @@ type Estado =
 export default function Ofertas() {
   const router = useRouter();
   const [estado, setEstado] = useState<Estado>({ tipo: 'cargando' });
+  const [limiteAlcanzado, setLimiteAlcanzado] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -43,6 +45,8 @@ export default function Ofertas() {
           setEstado({ tipo: 'error', mensaje: datos.error ?? 'No se pudieron cargar las ofertas.' });
           return;
         }
+        setLimiteAlcanzado(Boolean(datos.limiteAlcanzado));
+
         if (datos.sinPerfil) {
           setEstado({ tipo: 'sin-perfil' });
         } else if (!datos.huboIngestaHoy) {
@@ -103,6 +107,13 @@ export default function Ofertas() {
 
         {estado.tipo === 'error' && (
           <p className="mt-8 text-red-600 dark:text-red-400">{estado.mensaje}</p>
+        )}
+
+        {estado.tipo === 'lista' && limiteAlcanzado && (
+          <p className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
+            Hoy ya has preparado los 5 documentos del día. Puedes seguir marcando ofertas que te
+            interesen: sus documentos se prepararán mañana.
+          </p>
         )}
 
         {estado.tipo === 'lista' && (

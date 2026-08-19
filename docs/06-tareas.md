@@ -161,16 +161,30 @@ activa solo.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T48 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/ia.ts` | Interno — se verifica junto con T52 | T26 | [ ] |
-| T49 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T52 | — | [ ] |
-| T50 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/ia.ts` | Interno — se verifica junto con T52 | T48, T49 | [ ] |
-| T51 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T52 | T50, T12 | [ ] |
-| T52 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Marcas "me interesa" en una oferta real y ves de inmediato "generando" en pantalla | T46, T51 | [ ] |
-| T53 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Esperas unos segundos y el estado cambia solo a "listo", sin recargar a mano | T52 | [ ] |
-| T54 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Interno — pruébalo generando un CV para una oferta y revisando que no aparecen cifras nuevas | T53 | [ ] |
-| T55 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Interno — mismo tipo de prueba que T54, con nombres de empresa | T54, T29 | [ ] |
-| T56 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts` | Generas 5 CVs seguidos (con ofertas de prueba) y el sexto intento muestra el mensaje del límite, no un error críptico | T53 | [ ] |
-| T57 | Manejar el fallo del modelo de IA: reintento + rotación entre modelos gratis + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T53 | [ ] |
+| T48 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/ia.ts` | Interno — se verifica junto con T52 | T26 | [x] |
+| T49 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T52. **Sin librería externa** (decisión de Mar): cuenta palabras muy frecuentes del castellano y del inglés | — | [x] |
+| T50 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/ia.ts` | Interno — se verifica junto con T52 | T48, T49 | [x] |
+| T51 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T52 | T50, T12 | [x] |
+| T52 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Comprobado con una oferta real: al pulsar sale "Te interesa ✓" y "Preparando tu CV y tu carta…" al instante | T46, T51 | [x] |
+| T53 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Comprobado: a los ~25 s la tarjeta pasa sola a "CV y carta preparados ✓", y sigue así al recargar | T52 | [x] |
+| T54 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Comprobado sobre un CV real: 0 avisos falsos; con una cifra inventada a mano ("equipo de 47"), la caza | T53 | [x] |
+| T55 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Mismo tipo de prueba: con una empresa inventada a mano ("Zumbatrónica Ibérica"), la caza | T54, T29 | [x] |
+| T56 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts`, `lib/generaciones.ts` | Comprobado con el cupo lleno: la sexta muestra "Has llegado al máximo de 5 documentos por hoy…", el interés se guarda igual | T53 | [x] |
+| T57 | Manejar el fallo del modelo de IA: reintento + rotación entre modelos gratis + cola + estado `error` | `lib/ia.ts`, `components/TarjetaOferta.tsx`, `lib/cola.ts` | Comprobado en vivo (los modelos primarios estaban saturados): rota entre modelos, reintenta desde el navegador con espera creciente y acaba en "error" con mensaje y botón de reintentar | T53 | [x] |
+
+> **Cambios respecto a lo planeado**, salidos de probarlo en vivo:
+> - **La cola y los reintentos viven en el navegador**, no en el servidor
+>   (`lib/cola.ts` y `components/TarjetaOferta.tsx`). Una función de Vercel se
+>   corta a los 60 segundos: reintentar dentro de la misma petición se comía el
+>   tiempo y dejaba a la usuaria sin ni siquiera un error claro. Desde el
+>   navegador, cada intento es una petición nueva con su minuto entero.
+> - **Los modelos se llaman en dos rondas** (`lib/ia.ts`): primero dos, y solo
+>   si ninguno responde, los otros tres. La lista se renovó tras comprobar en
+>   vivo que los dos modelos primarios de T25 llevan días devolviendo 429.
+>   Detalle en `knowledge/decision-modelo-ia.md`.
+> - **Migración `0008`**: dos columnas nuevas en `generaciones` (`iniciado_en`,
+>   que hace de cerrojo para no preparar dos veces lo mismo, y `avisos`, para
+>   el resultado de T54-T55).
 
 ## Hito 7 · Descargar el documento en PDF
 

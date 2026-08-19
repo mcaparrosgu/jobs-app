@@ -2,24 +2,36 @@
 // Proveedor: OpenRouter, sin tarjeta. Ver knowledge/decision-modelo-ia.md
 // para por qué no es Groq y por qué hay varios modelos en vez de uno fijo.
 
+import { detectarIdioma, NOMBRE_IDIOMA, type Idioma } from '@/lib/idioma';
+
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-// Lista de modelos gratis intercambiables: si uno se retira o se satura
-// (429, "upstream_provider_shared_pool"), se prueba el siguiente. Orden de
-// preferencia, ver knowledge/decision-modelo-ia.md.
-const MODELOS_IA = [
-  'google/gemma-4-31b-it:free',
-  'z-ai/glm-5.2:free',
-  'nvidia/nemotron-nano-9b-v2:free',
-] as const;
+// Modelos gratis intercambiables, en dos rondas (knowledge/decision-modelo-ia.md).
+//
+// Por qué en rondas y no todos a la vez: la capa gratuita de OpenRouter es un
+// pozo compartido con el resto del mundo, y un modelo que hoy responde en dos
+// segundos mañana devuelve 429 ("temporarily rate-limited upstream"). Llamar a
+// los cinco siempre funcionaría, pero gastaría cinco peticiones de la cuota
+// diaria por cada documento. Así que primero se llama a dos; solo si ninguno
+// coge el teléfono se llama a los demás. En el caso normal, dos peticiones.
+//
+// Dentro de una ronda sí se llama en paralelo y gana el primero que responde
+// bien: un modelo saturado contesta 429 en menos de un segundo, pero uno que
+// se atasca puede tardar un minuto, y en paralelo el atascado no retrasa a
+// nadie.
+//
+// Orden verificado en vivo el 19/08/2026 con una petición de generación real.
+const RONDAS_MODELOS: readonly (readonly string[])[] = [
+  ['google/gemma-4-26b-a4b-it:free', 'nvidia/nemotron-3-super-120b-a12b:free'],
+  ['z-ai/glm-5.2:free', 'google/gemma-4-31b-it:free', 'nvidia/nemotron-nano-9b-v2:free'],
+];
 
-// Tiempo máximo de espera de una llamada antes de darla por perdida. Generoso
-// a propósito: cuando los modelos rápidos de la lista están saturados (429
-// "upstream_provider_shared_pool", común en la capa gratuita compartida de
-// OpenRouter), el único que queda es el modelo "razonador" de último recurso
-// (knowledge/decision-modelo-ia.md), que tarda más por diseño — mejor
-// esperarlo que fallar del todo.
-const TIMEOUT_MS = 45_000;
+// Tiempo máximo de espera por ronda. Las dos rondas juntas tienen que caber
+// holgadamente en los 60 s que aguanta una función en el plan gratuito de
+// Vercel, porque si se agota ese tiempo la usuaria no recibe ni un error
+// claro: la petición se corta a medias.
+const TIMEOUT_RONDA_MS = 20_000;
+const TIMEOUT_RONDA_GENERACION_MS = 25_000;
 
 type Mensaje = { role: 'system' | 'user'; content: string };
 
@@ -51,10 +63,13 @@ const ESQUEMA_PERFIL = {
   },
 };
 
+type Esquema = { name: string; strict: boolean; schema: object };
+
 async function llamarModelo(
   modelo: string,
   mensajes: Mensaje[],
-  esquema: { name: string; strict: boolean; schema: object },
+  esquema: Esquema,
+  maxTokens: number | undefined,
   senal: AbortSignal,
 ): Promise<string> {
   const respuesta = await fetch(OPENROUTER_URL, {
@@ -67,6 +82,7 @@ async function llamarModelo(
       model: modelo,
       messages: mensajes,
       response_format: { type: 'json_schema', json_schema: esquema },
+      ...(maxTokens ? { max_tokens: maxTokens } : {}),
     }),
     signal: senal,
   });
@@ -83,31 +99,40 @@ async function llamarModelo(
   return contenido;
 }
 
-// Lanza los modelos EN PARALELO y se queda con el primero que responda con
-// éxito (Promise.any), en vez de probarlos uno detrás de otro: probarlos en
-// serie suma sus tiempos (con timeouts reales de 20-30s por modelo, la suma
-// se dispara a más de un minuto o falla del todo); en paralelo, el tiempo lo
-// marca el más rápido de los que respondan bien. Los demás se cancelan en
-// cuanto hay un ganador — gasta algo más de cuota gratuita, pero el volumen
-// de esta app es bajo (docs/05-ia.md §5) y la cuota es gratis.
-async function llamarConReintentos(
+// Recorre las rondas de RONDAS_MODELOS hasta que un modelo responda bien.
+// Dentro de cada ronda gana el primero que conteste (Promise.any) y los demás
+// se cancelan en el acto para no seguir gastando cuota.
+async function llamarAlModelo(
   mensajes: Mensaje[],
-  esquema: { name: string; strict: boolean; schema: object },
+  esquema: Esquema,
+  opciones: { timeoutMs?: number; maxTokens?: number } = {},
 ): Promise<string> {
-  const controladores = MODELOS_IA.map(() => new AbortController());
+  const { timeoutMs = TIMEOUT_RONDA_MS, maxTokens } = opciones;
+  const fallos: unknown[] = [];
 
-  const intentos = MODELOS_IA.map((modelo, i) =>
-    llamarModelo(modelo, mensajes, esquema, AbortSignal.any([controladores[i].signal, AbortSignal.timeout(TIMEOUT_MS)])),
-  );
+  for (const ronda of RONDAS_MODELOS) {
+    const controladores = ronda.map(() => new AbortController());
+    const intentos = ronda.map((modelo, i) =>
+      llamarModelo(
+        modelo,
+        mensajes,
+        esquema,
+        maxTokens,
+        AbortSignal.any([controladores[i].signal, AbortSignal.timeout(timeoutMs)]),
+      ),
+    );
 
-  try {
-    const resultado = await Promise.any(intentos);
-    controladores.forEach((controlador) => controlador.abort());
-    return resultado;
-  } catch (error) {
-    const detalle = error instanceof AggregateError ? error.errors.join(' | ') : error;
-    throw new Error(`No se pudo completar la llamada a la IA: ningún modelo respondió. ${detalle}`);
+    try {
+      const resultado = await Promise.any(intentos);
+      controladores.forEach((controlador) => controlador.abort());
+      return resultado;
+    } catch (error) {
+      controladores.forEach((controlador) => controlador.abort());
+      fallos.push(...(error instanceof AggregateError ? error.errors : [error]));
+    }
   }
+
+  throw new Error(`No se pudo completar la llamada a la IA: ningún modelo respondió. ${fallos.join(' | ')}`);
 }
 
 // La API no garantiza el esquema en modo no-estricto salvo con modelos
@@ -167,6 +192,156 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
     { role: 'user', content: cvTexto },
   ];
 
-  const contenido = await llamarConReintentos(mensajes, ESQUEMA_PERFIL);
+  const contenido = await llamarAlModelo(mensajes, ESQUEMA_PERFIL);
   return validarPerfil(JSON.parse(contenido));
+}
+
+// ---------------------------------------------------------------------------
+// §2.2 de docs/05-ia.md: el CV y la carta adaptados a una oferta concreta.
+// Una sola llamada para los dos documentos, no dos (docs/05-ia.md §3,
+// tentación 2): así no se contradicen entre sí y se gasta la mitad.
+// ---------------------------------------------------------------------------
+
+// T48 · El esquema de salida. Es la defensa 2 de docs/05-ia.md §6.1
+// ("encajonar la salida"): en vez de pedirle al modelo que separe el CV de la
+// carta con marcadores de texto —lo que falla en el workflow de n8n actual,
+// §6.4— se le da un formulario con dos casillas y no hay nada que separar.
+const ESQUEMA_GENERACION = {
+  name: 'cv_y_carta',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      cv_texto: { type: 'string' },
+      carta_texto: { type: 'string' },
+    },
+    required: ['cv_texto', 'carta_texto'],
+    additionalProperties: false,
+  },
+};
+
+export type Generacion = {
+  cv_texto: string;
+  carta_texto: string;
+  idioma: Idioma;
+};
+
+// Límites de longitud, en caracteres (docs/05-ia.md §6.6, fallo 5: "devuelve
+// un texto vacío o demasiado corto"). El mínimo caza medio CV o una respuesta
+// truncada; el máximo, una generación desbocada que se ha puesto a inventar.
+const LARGO_MINIMO_CV = 400;
+const LARGO_MAXIMO_CV = 20_000;
+const LARGO_MINIMO_CARTA = 200;
+const LARGO_MAXIMO_CARTA = 8_000;
+
+// Tope de texto que se le manda de cada pieza. Una descripción de oferta
+// puede venir con toda la web de la empresa pegada dentro; recortarla evita
+// pagar (en tiempo y en cuota) por texto que no aporta.
+const MAXIMO_CARACTERES_CV = 12_000;
+const MAXIMO_CARACTERES_OFERTA = 8_000;
+
+function validarGeneracion(datos: unknown): { cv_texto: string; carta_texto: string } {
+  if (typeof datos !== 'object' || datos === null) {
+    throw new Error('La IA no devolvió un objeto con el CV y la carta');
+  }
+
+  const { cv_texto, carta_texto } = datos as Record<string, unknown>;
+
+  if (typeof cv_texto !== 'string' || typeof carta_texto !== 'string') {
+    throw new Error('La IA no devolvió los dos textos esperados');
+  }
+
+  const cv = cv_texto.trim();
+  const carta = carta_texto.trim();
+
+  if (cv.length < LARGO_MINIMO_CV) {
+    throw new Error(`El CV generado es demasiado corto (${cv.length} caracteres)`);
+  }
+  if (cv.length > LARGO_MAXIMO_CV) {
+    throw new Error(`El CV generado es desproporcionado (${cv.length} caracteres)`);
+  }
+  if (carta.length < LARGO_MINIMO_CARTA) {
+    throw new Error(`La carta generada es demasiado corta (${carta.length} caracteres)`);
+  }
+  if (carta.length > LARGO_MAXIMO_CARTA) {
+    throw new Error(`La carta generada es desproporcionada (${carta.length} caracteres)`);
+  }
+
+  return { cv_texto: cv, carta_texto: carta };
+}
+
+export type OfertaParaGenerar = {
+  titulo: string;
+  empresa: string;
+  descripcion: string | null;
+};
+
+// T50 · El prompt. La instrucción clave es la primera y es un cambio de
+// encargo, no un ruego (defensa 1 de docs/05-ia.md §6.1): se le pide
+// **reordenar y reformular** lo que ya hay en el CV, no "redactar un CV para
+// esta oferta". Adaptar, no crear. Es la diferencia entre pedirle a alguien
+// que subraye lo importante de un texto y pedirle que escriba uno nuevo.
+function mensajesDeGeneracion(
+  cvTexto: string,
+  oferta: OfertaParaGenerar,
+  idioma: Idioma,
+): Mensaje[] {
+  return [
+    {
+      role: 'system',
+      content:
+        'Tu tarea es REORDENAR Y REFORMULAR la información del CV que se te da, ' +
+        'para destacar lo que resulta relevante para una oferta de empleo concreta, ' +
+        'y escribir además una carta de presentación breve para esa misma oferta. ' +
+        'NO redactas un CV nuevo: adaptas el que ya existe.\n\n' +
+        'Reglas estrictas:\n' +
+        '- Usa ÚNICAMENTE información presente en el CV original. No inventes ' +
+        'empresas, fechas, cifras, porcentajes, tamaños de equipo, tecnologías, ' +
+        'herramientas, certificaciones ni titulaciones.\n' +
+        '- Si la oferta pide algo que el CV no menciona, NO lo añadas: no lo tiene.\n' +
+        '- Puedes reordenar la experiencia, resumirla, cambiar el énfasis y ' +
+        'reformular las frases con el vocabulario de la oferta, siempre que lo que ' +
+        'digas siga estando respaldado por el CV original.\n' +
+        `- Escribe los dos textos en ${NOMBRE_IDIOMA[idioma]}, sea cual sea el idioma ` +
+        'del CV original. Esto no es negociable ni tienes que decidirlo tú.\n' +
+        '- El CV va en texto plano, en secciones con títulos en mayúsculas y líneas ' +
+        'que empiezan por "- " para los puntos. Nada de markdown, tablas ni asteriscos.\n' +
+        '- La carta ocupa entre 200 y 300 palabras, va dirigida a la empresa de la ' +
+        'oferta, y no repite el CV entero: explica por qué encaja.\n' +
+        '- No escribas datos de contacto que no estén en el CV original, ni ' +
+        'marcadores del tipo "[tu nombre]" o "[fecha]".',
+    },
+    {
+      role: 'user',
+      content:
+        `=== OFERTA ===\nPuesto: ${oferta.titulo}\nEmpresa: ${oferta.empresa}\n\n` +
+        `${(oferta.descripcion ?? '(sin descripción; usa el puesto y la empresa)').slice(0, MAXIMO_CARACTERES_OFERTA)}\n\n` +
+        `=== CV ORIGINAL ===\n${cvTexto.slice(0, MAXIMO_CARACTERES_CV)}`,
+    },
+  ];
+}
+
+// Una llamada, dos rondas de modelos. Los reintentos con espera creciente que
+// pide docs/05-ia.md §6.7 NO se hacen aquí dentro, sino desde la pantalla
+// (components/TarjetaOferta.tsx): una función de Vercel se corta a los 60
+// segundos, así que reintentar dentro de la misma petición solo conseguiría
+// que se cortara a media faena y la usuaria no viera ni un error decente.
+// Reintentando desde el navegador, cada intento es una petición nueva con su
+// minuto entero, y de paso se espera entre uno y otro a que el proveedor
+// saturado se despeje.
+export async function generarCvYCarta(
+  cvTexto: string,
+  oferta: OfertaParaGenerar,
+): Promise<Generacion> {
+  // El idioma se decide aquí dentro, con código, para que ningún sitio que
+  // llame a esta función pueda olvidarse de decidirlo (docs/05-ia.md §6.5).
+  const idioma = detectarIdioma(`${oferta.titulo}\n${oferta.descripcion ?? ''}`);
+  const mensajes = mensajesDeGeneracion(cvTexto, oferta, idioma);
+
+  const contenido = await llamarAlModelo(mensajes, ESQUEMA_GENERACION, {
+    timeoutMs: TIMEOUT_RONDA_GENERACION_MS,
+    maxTokens: 6_000,
+  });
+
+  return { ...validarGeneracion(JSON.parse(contenido)), idioma };
 }

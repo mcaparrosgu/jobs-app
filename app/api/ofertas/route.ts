@@ -1,22 +1,7 @@
 import { NextResponse } from 'next/server';
+import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
+import { contarGeneracionesDeHoy, LIMITE_DIARIO } from '@/lib/generaciones';
 import { createClient } from '@/lib/supabase/server';
-
-// Instante (UTC) de la medianoche de hoy en hora de España, calculado a
-// partir de las horas transcurridas desde esa medianoche — funciona igual
-// en horario de invierno y de verano, sin librerías externas de fechas.
-function inicioDeHoyEnMadridISO(): string {
-  const ahora = new Date();
-  const partes = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Europe/Madrid',
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).formatToParts(ahora);
-  const obtener = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value ?? 0);
-  const horasTranscurridas = obtener('hour') + obtener('minute') / 60 + obtener('second') / 3600;
-  return new Date(ahora.getTime() - horasTranscurridas * 3600 * 1000).toISOString();
-}
 
 // Quita caracteres que romperían la sintaxis del filtro .or() de Supabase.
 function limpiarTermino(termino: string): string {
@@ -95,6 +80,9 @@ export async function GET() {
 
   const ids = (ofertas ?? []).map((o) => o.id);
   let idsConInteres = new Set<string>();
+  // Estado de preparación del CV y la carta de cada oferta (Hito 6): es lo que
+  // mueve el indicador de "preparando…" y, más adelante, el botón de descarga.
+  const generaciones = new Map<string, { estado: string; avisos: string[]; error: string | null }>();
 
   if (ids.length > 0) {
     const { data: intereses, error: errorIntereses } = await supabase
@@ -108,6 +96,24 @@ export async function GET() {
     } else {
       idsConInteres = new Set((intereses ?? []).map((i) => i.oferta_id));
     }
+
+    const { data: filas, error: errorGeneraciones } = await supabase
+      .from('generaciones')
+      .select('oferta_id, estado, avisos, error_mensaje')
+      .eq('user_id', user.id)
+      .in('oferta_id', ids);
+
+    if (errorGeneraciones) {
+      console.error('Error consultando generaciones:', errorGeneraciones);
+    } else {
+      for (const fila of filas ?? []) {
+        generaciones.set(fila.oferta_id, {
+          estado: fila.estado,
+          avisos: fila.avisos ?? [],
+          error: fila.error_mensaje,
+        });
+      }
+    }
   }
 
   const resultado = (ofertas ?? []).map((o) => ({
@@ -116,7 +122,15 @@ export async function GET() {
     empresa: o.empresa,
     enlace: o.enlace,
     interesada: idsConInteres.has(o.id),
+    generacion: generaciones.get(o.id) ?? null,
   }));
 
-  return NextResponse.json({ sinPerfil: false, huboIngestaHoy, ofertas: resultado });
+  const cupoGastado = await contarGeneracionesDeHoy(supabase, user.id);
+
+  return NextResponse.json({
+    sinPerfil: false,
+    huboIngestaHoy,
+    ofertas: resultado,
+    limiteAlcanzado: cupoGastado !== null && cupoGastado >= LIMITE_DIARIO,
+  });
 }

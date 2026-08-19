@@ -44,7 +44,46 @@ cuenta:
    `content`), así que queda como **último recurso**: gasta más tokens de
    los necesarios para una tarea tan simple como esta.
 
-**Consecuencia técnica**: durante las pruebas, los dos primeros modelos
+# Revisión del 19/08/2026 (Hito 6): la lista se renueva y pasa a dos rondas
+
+Al llegar al Hito 6 se volvió a comprobar la lista **en vivo**, con una
+petición de generación real, y el resultado obligó a cambiarla:
+
+| Modelo | Resultado el 19/08 |
+| :-- | :-- |
+| `google/gemma-4-31b-it:free` (primario de T25) | **429**, saturado |
+| `z-ai/glm-5.2:free` | **429**, saturado |
+| `nvidia/nemotron-nano-9b-v2:free` | Responde, pero en la primera prueba tardó más de 55 s y agotó el tiempo |
+| `google/gemma-4-26b-a4b-it:free` | ✅ 2,0 s, JSON válido |
+| `nvidia/nemotron-3-super-120b-a12b:free` | ✅ 0,4 s, el texto más completo |
+| `dots-studio/dots-3-note-preview:free` | ✅ 1,0 s |
+
+**Lista nueva, en dos rondas** (`lib/ia.ts`):
+
+1. **Primera ronda**: `google/gemma-4-26b-a4b-it:free` y
+   `nvidia/nemotron-3-super-120b-a12b:free`, en paralelo.
+2. **Segunda ronda**, solo si ninguno de los dos responde:
+   `z-ai/glm-5.2:free`, `google/gemma-4-31b-it:free` y
+   `nvidia/nemotron-nano-9b-v2:free`.
+
+**Por qué en rondas y no todos a la vez**: llamar a los cinco siempre
+funcionaría, pero gastaría cinco peticiones de la cuota gratuita por cada
+documento. Con dos rondas, en el caso normal son dos. Dentro de una ronda
+sí se llama en paralelo, porque un modelo saturado contesta 429 en menos de
+un segundo mientras que uno atascado puede tardar un minuto: en paralelo,
+el atascado no retrasa a nadie.
+
+**Reintentos**: dejan de hacerse dentro del servidor. Ver
+[hito-6-generar-cv.md](hito-6-generar-cv.md), punto 3 — dos intentos
+seguidos tardaban 112 s y una función de Vercel se corta a los 60.
+
+> **Aprendizaje que conviene repetir**: esta lista caduca. Lo que hoy
+> responde en dos segundos mañana da 429, porque la capa gratuita de
+> OpenRouter es un pozo compartido con todo el mundo. Antes de dar por
+> bueno cualquier problema de generación, **volver a probar los modelos en
+> vivo** en lugar de fiarse de lo escrito aquí.
+
+**Consecuencia técnica**: durante las pruebas de T25, los dos primeros modelos
 dieron `429` por saturación temporal de su proveedor "de detrás"
 (`upstream_provider_shared_pool` — OpenRouter reparte la capacidad de sus
 modelos gratis entre todas las cuentas que los usan). El modelo NVIDIA sí

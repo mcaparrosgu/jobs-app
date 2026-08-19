@@ -1,6 +1,25 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Hito 6 cerrado (T48-T57)**: marcar "me interesa" prepara solo un CV y
+  una carta adaptados a la oferta. Nuevo `hito-6-generar-cv.md`. Tres cosas
+  cambiaron respecto a lo planeado, y las tres por medir en vez de suponer:
+  (1) **la primera version de la verificacion automatica daba 11 avisos
+  falsos** sobre el CV real de Mar — comparaba frases enteras y tomaba por
+  nombre propio la primera palabra de cada vineta; reescrita palabra a
+  palabra, baja a **0 falsos** y sigue cazando una empresa y una cifra
+  inventadas a mano; (2) **los reintentos se mueven al navegador**, porque
+  dos intentos dentro del endpoint tardaron **112 s** y una funcion de
+  Vercel se corta a los 60; (3) **la lista de modelos de T25 estaba
+  caducada** — los dos primarios llevan dias devolviendo 429, se renueva y
+  pasa a dos rondas (ver `decision-modelo-ia.md`). Migracion `0008`
+  aplicada en Supabase: columnas `iniciado_en` (cerrojo de turno) y
+  `avisos`. Los datos de prueba se borraron al terminar.
+* **Aviso abierto, para hablar con Mar**: las palabras clave guardadas en su
+  perfil son frases largas ("Coordinacion multitarea en entornos remotos")
+  que no aparecen literalmente en ningun anuncio, asi que **su pantalla de
+  ofertas sale vacia**. Viene del Hito 3, no del 6, pero deja la app sin
+  contenido para ella.
 * **Repaso de pendientes: los dos que arrastraba el bundle quedan
   cerrados.** (1) **La migracion `0007_quitar_anios_experiencia.sql` SI
   esta aplicada** en Supabase — se anoto como "pendiente de aplicar" al
