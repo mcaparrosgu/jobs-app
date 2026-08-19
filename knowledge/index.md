@@ -92,9 +92,9 @@ existe en produccion y no se toca desde aqui.
   generasen en inglés; la IA adapta ahora también el titular al mismo
   idioma, guardado en `generaciones.puesto_texto`.
 - [idea-navegacion-atras-coherencia.md](idea-navegacion-atras-coherencia.md)
-  — pendiente para más adelante: botón de volver atrás, datos coherentes
-  entre pantallas, algo en el home. Apuntado a petición de Mar, sin diseñar
-  todavía.
+  — el botón de "volver atrás" resultó ya estar cubierto por el menú de
+  T77, confirmado con Mar y cerrado sin código nuevo. Sigue abierta la idea
+  del home (estadísticas personalizadas), explícitamente fuera del MVP.
 - [hito-8-aviso-email.md](hito-8-aviso-email.md) — cierre de T63-T67 (Paso
   9, Hito 8): nodos nuevos en `Jobs App · ingesta` que cuentan ofertas
   nuevas, consultan usuarias con perfil (vista `perfiles_con_email`, con el
@@ -106,6 +106,10 @@ existe en produccion y no se toca desde aqui.
   la dirección pública. El bloqueador encontrado — Site URL/Redirect URLs
   de Supabase Auth seguían apuntando a `localhost` — resultó ser también la
   causa de que `APP_URL_JOBS_APP` (Hito 8) siguiera sin actualizar.
+- [paso-10-prompts-produccion.md](paso-10-prompts-produccion.md) — Paso
+  10: al no haber IA conversacional, se escriben dos prompts de tarea
+  (`prompts/system.md`) en vez de un system prompt de chat, más 10 casos
+  difíciles (`evals/casos-dificiles.md`), decisión confirmada con Mar.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -1,6 +1,38 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Paso 10 cerrado: prompts de producción escritos como dos tareas, no
+  como un system prompt de chat.** `docs/05-ia.md` ya documentaba que Jobs
+  App no tiene IA conversacional (peldaño 1, sin herramientas, sin
+  conversación) — la plantilla estándar del Paso 10 (tono ante usuario
+  molesto, escalado a un humano, uso de herramientas) no encajaba. Se
+  preguntó explícitamente a Mar entre tres opciones y eligió adaptar la
+  estructura en vez de forzarla o saltarse el paso. Resultado:
+  `prompts/system.md` (Prompt A: extracción de perfil; Prompt B:
+  generación de CV y carta, basados en el texto real de `lib/ia.ts` y
+  ampliados con defensa explícita contra inyección de instrucciones
+  dentro del CV o de la oferta) y `evals/casos-dificiles.md` (10
+  situaciones, con peso en intentos de sacar la IA de su ámbito). Queda
+  anotado a propósito que `lib/ia.ts` no se ha tocado — alinear el código
+  con el prompt documentado es trabajo del Paso 14. Detalle completo en
+  `paso-10-prompts-produccion.md`.
+* **Idea de navegación (`idea-navegacion-atras-coherencia.md`) retomada y
+  cerrada en dos de sus tres puntos**, a petición de Mar mientras espera la
+  confirmación de T68 mañana. Antes de tocar código se preguntó en
+  concreto: (1) "volver atrás" significa solo navegar, sin deshacer nada —
+  elegido explícitamente entre dos opciones; (2) revisando el código,
+  `components/MenuNavegacion.tsx` (T77) **ya deja ir de `/perfil` a
+  `/ofertas` y viceversa** con un clic — la mejora que Mar pedía ya estaba
+  construida sin que se hubiera caído en la cuenta; el tercer caso
+  planteado (volver desde una tarjeta de oferta en generación) no aplica,
+  no hay pantalla propia por oferta. Preguntado explícitamente si hacía
+  falta algo más allá de la barra: Mar confirma que no. **Cerrado sin
+  escribir ni una línea de código, ni tarea nueva en `docs/06-tareas.md`.**
+  (3) Sobre el home, Mar propone una idea nueva —estadísticas
+  personalizadas (ofertas del día, CVs generados, estado de envío por
+  empresa)— pero la descarta ella misma para el MVP ("son funciones
+  secundarias"); queda anotada para más adelante, sin construir. Detalle
+  completo en `idea-navegacion-atras-coherencia.md`.
 * **Hito 9 cerrado (T69-T76): la web tiene dirección pública.** Mar probó
   el recorrido completo desde el móvil (pedir acceso → abrir el enlace del
   email → marcar "me interesa" → descargar el PDF) en
