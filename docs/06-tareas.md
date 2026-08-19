@@ -99,8 +99,8 @@ guardar.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T23 | Crear la cuenta en Groq y guardar la clave | `.env.local` | El archivo tiene `GROQ_API_KEY` rellena | T07 | [ ] |
-| T24 | Activar Zero Data Retention en Groq | — (panel de Groq) | Data Controls muestra la opción activada | T23 | [ ] |
+| T23 | Crear la cuenta en Groq y guardar la clave | `.env.local` | El archivo tiene `GROQ_API_KEY` rellena | T07 | [x] |
+| T24 | Activar Zero Data Retention en Groq | — (panel de Groq) | Data Controls muestra la opción activada | T23 | [x] |
 | T25 | Escribir la función que llama a Groq para extraer perfil | `lib/groq.ts` | Interno — se verifica junto con T29 | T24 | [ ] |
 | T26 | Definir el esquema de salida (puesto, palabras_clave, empresas_cv, titulos_cv) | `lib/groq.ts` | Interno — se verifica junto con T29 | T25 | [ ] |
 | T27 | Crear el endpoint que recibe el CV y llama a Groq | `app/api/extraer-perfil/route.ts` | Interno — se verifica junto con T29 | T26 | [ ] |

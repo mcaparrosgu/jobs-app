@@ -1,6 +1,14 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Construccion**: T23-T24 de `docs/06-tareas.md` (Paso 9). Mar crea la
+  cuenta en Groq y guarda `GROQ_API_KEY` en `.env.local` (T23). Supervisado
+  en Chrome: en Data Controls, se activa **Global ZDR** (no solo
+  "Inference APIs ZDR") porque Jobs App no usa ninguna funcion de Groq que
+  requiera guardar datos (batch, fine-tuning), asi que no hay coste
+  funcional en cubrir todo con la opcion mas amplia (T24). Cumple el
+  requisito de `CLAUDE.md` ("Datos sensibles") antes de que ninguna
+  companera pegue su CV.
 * **Creacion**: `hito-2-entrar.md` — cierre del Hito 2 (T18-T22, Paso 9).
   Magic link de Supabase Auth funcionando de extremo a extremo: formulario
   conectado (T18), ruta de callback que canjea el codigo por sesion (T19),
