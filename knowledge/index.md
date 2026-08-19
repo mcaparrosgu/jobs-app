@@ -83,6 +83,18 @@ existe en produccion y no se toca desde aqui.
   de referencia pero sin columnas paralelas ni texto girado (arriesgan la
   lectura de un ATS), fuentes incrustadas (Playfair Display + Jost) y el
   nombre completo anadido al perfil.
+- [decision-respaldo-groq.md](decision-respaldo-groq.md) — el error "servicio
+  de IA saturado" al generar CV y carta era el cupo diario compartido de
+  OpenRouter agotado, no saturacion por modelo; se anade Groq como respaldo
+  con cupo propio.
+- [decision-idioma-consistente-cv.md](decision-idioma-consistente-cv.md) — el
+  titular del PDF salía siempre en castellano aunque el CV y la carta se
+  generasen en inglés; la IA adapta ahora también el titular al mismo
+  idioma, guardado en `generaciones.puesto_texto`.
+- [idea-navegacion-atras-coherencia.md](idea-navegacion-atras-coherencia.md)
+  — pendiente para más adelante: botón de volver atrás, datos coherentes
+  entre pantallas, algo en el home. Apuntado a petición de Mar, sin diseñar
+  todavía.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -10,6 +10,7 @@
 
 import { renderToBuffer } from '@react-pdf/renderer';
 import { DocumentoGeneracion } from '@/lib/pdf';
+import { detectarIdioma } from '@/lib/idioma';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -30,11 +31,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const [{ data: generacion, error }, { data: perfil }] = await Promise.all([
     supabase
       .from('generaciones')
-      .select('estado, cv_texto, carta_texto, ofertas(titulo)')
+      .select('estado, puesto_texto, cv_texto, carta_texto, ofertas(titulo, descripcion)')
       .eq('user_id', user.id)
       .eq('oferta_id', ofertaId)
       .maybeSingle(),
-    supabase.from('perfiles').select('nombre, puesto').eq('user_id', user.id).maybeSingle(),
+    supabase.from('perfiles').select('nombre, puesto, telefono, enlace').eq('user_id', user.id).maybeSingle(),
   ]);
 
   if (error) {
@@ -46,17 +47,29 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return new Response('El documento todavía no está listo.', { status: 404 });
   }
 
+  const oferta = Array.isArray(generacion.ofertas) ? generacion.ofertas[0] : generacion.ofertas;
+
+  // El mismo cálculo, con los mismos datos de la oferta, que decidió el
+  // idioma al generar (lib/ia.ts): determinista, así que da siempre el mismo
+  // resultado sin tener que guardar el idioma aparte.
+  const idioma = detectarIdioma(`${oferta?.titulo ?? ''}\n${oferta?.descripcion ?? ''}`);
+
   const pdf = await renderToBuffer(
     DocumentoGeneracion({
       cvTexto: generacion.cv_texto,
       cartaTexto: generacion.carta_texto,
       nombre: perfil?.nombre ?? '',
-      puesto: perfil?.puesto ?? '',
+      // puesto_texto: el titular que la IA ya adaptó al idioma de este
+      // documento. Solo cae al puesto (fijo en castellano) del perfil en
+      // generaciones de antes de esta columna — knowledge/decision-idioma-puesto.md.
+      puesto: generacion.puesto_texto ?? perfil?.puesto ?? '',
       email: user.email ?? '',
+      telefono: perfil?.telefono ?? '',
+      enlace: perfil?.enlace ?? '',
+      idioma,
     }),
   );
 
-  const oferta = Array.isArray(generacion.ofertas) ? generacion.ofertas[0] : generacion.ofertas;
   const nombreArchivo = nombreDeArchivo(oferta?.titulo);
 
   return new Response(new Uint8Array(pdf), {

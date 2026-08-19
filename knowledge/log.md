@@ -1,6 +1,65 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **La app todavía no está desplegada — aclarado y anotado para el Paso
+  16**: al dar instrucciones para añadir `GROQ_API_KEY` a Vercel, Mar avisó
+  de que no existe ningún proyecto en su cuenta de Vercel. Comprobado:
+  tampoco hay repositorio remoto de git conectado (T73-T76 de
+  `docs/06-tareas.md` siguen sin marcar) — todo el trabajo del proyecto ha
+  vivido en local hasta ahora, como pide `CLAUDE.md`. Mar decidió seguir en
+  local por ahora y dejarlo apuntado para cuando llegue el Paso 16. Se
+  añade una nota en `docs/06-tareas.md` (junto a T75) y se actualiza el
+  "Pendiente" de `decision-respaldo-groq.md`: cuando se despliegue, hacen
+  falta **dos** claves de IA en Vercel (`OPENROUTER_API_KEY` y
+  `GROQ_API_KEY`), no solo la que lista la tabla desactualizada de
+  `docs/04-plan-tecnico.md` §4.
+* **Teléfono y LinkedIn/enlace en la cabecera del CV**: pedido por Mar tras
+  revisar el PDF con el idioma ya unificado — solo se mostraba el email.
+  Dos campos nuevos y opcionales en `perfiles` (`telefono`, `enlace`,
+  migración `0011`), editables en `/perfil` junto al nombre, mostrados en
+  el masthead del PDF. Al añadir hasta cuatro datos a la cabecera (puesto +
+  3 de contacto), el diseño original de una sola fila dejaba un "·" suelto
+  al partirse la línea; se separó el puesto a su propia línea y el
+  contacto a la de debajo. Verificado en vivo con un PDF de prueba (datos
+  de prueba retirados del perfil real después). Detalle en
+  `decision-diseno-pdf.md`.
+* **El respaldo de Groq rompía el diseño de las listas del CV, arreglado**:
+  tras el arreglo del idioma, Mar volvió a revisar el PDF de "Global
+  Marketing Operations Manager" y el diseño había cambiado — los puntos de
+  cada puesto salían pegados en un párrafo en vez de en su propia línea.
+  Causa: qwen3.6-27b (el respaldo de Groq, `decision-respaldo-groq.md`)
+  separa los puntos con "•" en la misma línea en vez de con un salto de
+  línea real, y `agruparLineas` (`lib/pdf.tsx`) solo reconoce como punto de
+  lista una línea que empieza por "- ". Se añade `normalizarPuntos` en
+  `lib/ia.ts`: reparte cada "•" en su propia línea antes de guardar el
+  texto, defensa en código en vez de confiar en que el modelo lo haga bien.
+  Verificado en vivo regenerando la misma oferta otra vez.
+* **El titular del PDF salía en castellano aunque el CV estuviera en
+  inglés, arreglado**: Mar revisó el PDF de "Global Marketing Operations
+  Manager" (la oferta del arreglo de Groq de más abajo) y vio el CV y la
+  carta en inglés pero el titular bajo su nombre en castellano. Causa: el
+  titular salía siempre de `perfiles.puesto`, fijado en castellano al
+  extraer el perfil (T25-T31) y ajeno al idioma que decide cada generación
+  (`lib/ia.ts`, T49). Ahora la IA adapta también el titular en la misma
+  llamada, guardado en la columna nueva `generaciones.puesto_texto`
+  (migración `0010`, aplicada a mano en el SQL Editor de Supabase); la
+  única etiqueta fija del PDF ("CARTA DE PRESENTACIÓN"/"COVER LETTER")
+  sigue el mismo idioma. Verificado en vivo regenerando esa misma oferta:
+  titular, CV y carta salieron los tres en inglés. Detalle en
+  `decision-idioma-consistente-cv.md`.
+* **"Servicio de IA saturado" al generar CV y carta, arreglado con un
+  respaldo en Groq**: Mar reportó el error dos veces seguidas en una oferta
+  concreta. Comprobado en vivo contra la API real de OpenRouter: los 5
+  modelos gratis de `lib/ia.ts` devolvían el mismo `429`
+  (`free-models-per-day`, `X-RateLimit-Remaining: 0`) — no es que cada
+  modelo estuviera saturado, es que la cuenta había agotado su cupo
+  compartido de 50 peticiones/día. Se añade Groq (`qwen/qwen3.6-27b`, con
+  `reasoning_effort: 'none'` para no gastar tokens de pensamiento de más)
+  como respaldo tras las dos rondas de OpenRouter: tiene cupo propio
+  (1000/día, verificado en vivo) y su clave ya estaba guardada desde T23.
+  De paso, se le añade `maxDuration = 60` a `extraer-perfil/route.ts`, que
+  no lo tenía. Pendiente: añadir `GROQ_API_KEY` a Vercel en producción.
+  Detalle en `decision-respaldo-groq.md`.
 * **"Ver oferta" como nombre de empresa, arreglado en `Jobs App · ingesta`**:
   el nodo "Normalizador Get on Board" dejaba `empresa` fijo a `'Ver
   oferta'`, con un comentario de que la API pública no exponía el nombre.

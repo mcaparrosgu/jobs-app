@@ -22,6 +22,7 @@
 
 import path from 'path';
 import { Document, Page, Text, View, Font, StyleSheet } from '@react-pdf/renderer';
+import type { Idioma } from '@/lib/idioma';
 
 // Playfair Display (nombre) y Jost (todo lo demás): las dos son fuentes
 // libres de Google Fonts (licencia SIL OFL, ver public/fonts/LICENCIA.txt),
@@ -76,10 +77,14 @@ export const estilos = StyleSheet.create({
     lineHeight: 1.15,
     color: TINTA,
   },
-  filaSubtitulo: {
+  // El contacto (email, teléfono, enlace) va en su propia fila, debajo del
+  // puesto: con dos o tres datos de contacto, mezclarlos con el puesto en
+  // una sola fila hacía que el ajuste de línea (flexWrap) dejara un "·"
+  // suelto al principio de la segunda línea cuando no cabía todo.
+  filaContacto: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 14,
+    marginTop: 4,
   },
   puesto: {
     fontFamily: 'Jost',
@@ -224,23 +229,42 @@ export function bloqueTexto(texto: string) {
 }
 
 // El masthead del CV: nombre real de la candidata (imprescindible para que
-// un ATS identifique de quién es el documento), el puesto al que aspira y
-// su email, en una sola línea corta — nada de franjas laterales ni texto
-// girado que puedan desordenar la lectura automática.
-function Masthead({ nombre, puesto, email }: { nombre: string; puesto: string; email: string }) {
-  const detalles = [puesto, email].filter((valor) => valor.trim().length > 0);
+// un ATS identifique de quién es el documento), el puesto al que aspira y,
+// debajo, sus datos de contacto (email, teléfono, LinkedIn/enlace — los que
+// tenga rellenos) — nada de franjas laterales ni texto girado que puedan
+// desordenar la lectura automática.
+//
+// El puesto va en su propia fila, separado del contacto: con dos o tres
+// datos de contacto ya no cabían siempre en una sola línea junto al puesto,
+// y al partirse (flexWrap) dejaban un "·" suelto al principio de la
+// segunda línea. Cada fila ajusta su propia línea por separado.
+function Masthead({
+  nombre,
+  puesto,
+  email,
+  telefono,
+  enlace,
+}: {
+  nombre: string;
+  puesto: string;
+  email: string;
+  telefono: string;
+  enlace: string;
+}) {
+  const contacto = [email, telefono, enlace].filter((valor) => valor.trim().length > 0);
 
   return (
     <View>
       {nombre.trim().length > 0 && <Text style={estilos.nombre}>{nombre}</Text>}
-      {detalles.length > 0 && (
-        <View style={estilos.filaSubtitulo}>
-          {detalles.map((valor, i) => (
+      {puesto.trim().length > 0 && (
+        <Text style={[estilos.puesto, { marginTop: 14 }]}>{puesto.toUpperCase()}</Text>
+      )}
+      {contacto.length > 0 && (
+        <View style={estilos.filaContacto}>
+          {contacto.map((valor, i) => (
             <View key={i} style={{ flexDirection: 'row' }}>
               {i > 0 && <Text style={estilos.separador}>·</Text>}
-              <Text style={i === 0 && puesto ? estilos.puesto : estilos.email}>
-                {i === 0 && puesto ? valor.toUpperCase() : valor}
-              </Text>
+              <Text style={estilos.email}>{valor}</Text>
             </View>
           ))}
         </View>
@@ -249,6 +273,16 @@ function Masthead({ nombre, puesto, email }: { nombre: string; puesto: string; e
     </View>
   );
 }
+
+// La única etiqueta fija del documento (todo lo demás sale del texto ya
+// generado en el idioma de la oferta, lib/ia.ts). Tiene que seguir ese mismo
+// idioma o el documento queda con los títulos en uno y el contenido en otro
+// — el fallo que reportó Mar sobre "Global Marketing Operations Manager":
+// esta etiqueta estaba fija en castellano pase lo que pase.
+const ETIQUETA_CARTA: Record<Idioma, string> = {
+  es: 'CARTA DE PRESENTACIÓN',
+  en: 'COVER LETTER',
+};
 
 // El CV y la carta, como un único PDF descargable (historia C4). Cada texto
 // va en su propio `<Page>`: react-pdf reparte el contenido de una misma
@@ -262,23 +296,29 @@ export function DocumentoGeneracion({
   nombre = '',
   puesto = '',
   email = '',
+  telefono = '',
+  enlace = '',
+  idioma = 'es',
 }: {
   cvTexto: string;
   cartaTexto: string;
   nombre?: string;
   puesto?: string;
   email?: string;
+  telefono?: string;
+  enlace?: string;
+  idioma?: Idioma;
 }) {
   return (
     <Document>
       <Page size="A4" style={estilos.pagina}>
         <View style={estilos.rayaVertical} fixed />
-        <Masthead nombre={nombre} puesto={puesto} email={email} />
+        <Masthead nombre={nombre} puesto={puesto} email={email} telefono={telefono} enlace={enlace} />
         {bloqueTexto(cvTexto)}
       </Page>
       <Page size="A4" style={estilos.pagina}>
         <View style={estilos.rayaVertical} fixed />
-        <Text style={estilos.etiquetaCarta}>CARTA DE PRESENTACIÓN</Text>
+        <Text style={estilos.etiquetaCarta}>{ETIQUETA_CARTA[idioma]}</Text>
         {bloqueTexto(cartaTexto)}
       </Page>
     </Document>

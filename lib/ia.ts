@@ -1,6 +1,8 @@
 // Llamadas al modelo de IA, en un solo sitio (docs/04-plan-tecnico.md §3.3).
-// Proveedor: OpenRouter, sin tarjeta. Ver knowledge/decision-modelo-ia.md
-// para por qué no es Groq y por qué hay varios modelos en vez de uno fijo.
+// Proveedor principal: OpenRouter, sin tarjeta. Ver knowledge/decision-modelo-ia.md
+// para por qué no es Groq en solitario y por qué hay varios modelos en vez de
+// uno fijo. Desde el 19/08/2026 hay además un respaldo en Groq (más abajo):
+// ver knowledge/decision-respaldo-groq.md para el porqué.
 
 import { detectarIdioma, NOMBRE_IDIOMA, type Idioma } from '@/lib/idioma';
 import { MAXIMO_CARACTERES, normalizarPalabrasClave } from '@/lib/palabras-clave';
@@ -9,16 +11,22 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Modelos gratis intercambiables, en dos rondas (knowledge/decision-modelo-ia.md).
 //
-// Por qué en rondas y no todos a la vez: la capa gratuita de OpenRouter es un
-// pozo compartido con el resto del mundo, y un modelo que hoy responde en dos
-// segundos mañana devuelve 429 ("temporarily rate-limited upstream"). Llamar a
-// los cinco siempre funcionaría, pero gastaría cinco peticiones de la cuota
-// diaria por cada documento. Así que primero se llama a dos; solo si ninguno
-// coge el teléfono se llama a los demás. En el caso normal, dos peticiones.
+// Importante — verificado en vivo el 19/08/2026: el 429 que devuelven estos
+// modelos casi siempre NO es "este modelo en concreto está saturado", sino
+// "free-models-per-day": OpenRouter da 50 peticiones gratis AL DÍA para toda
+// la cuenta, compartidas entre los 5 modelos. Agotada esa cuota, los 5 fallan
+// a la vez con el mismo error, y probar el siguiente modelo de la ronda no
+// arregla nada — por eso existe el respaldo en Groq, más abajo, que tiene su
+// propio cupo independiente.
 //
-// Dentro de una ronda sí se llama en paralelo y gana el primero que responde
+// Aun así se mantienen las dos rondas: si algún día el fallo es de verdad de
+// un modelo concreto (retirado, con una tirada de errores 500, etc.) probar
+// otro sí ayuda, y el coste de intentarlo es bajo porque un 429 por cupo
+// agotado contesta en menos de un segundo.
+//
+// Dentro de una ronda se llama en paralelo y gana el primero que responde
 // bien: un modelo saturado contesta 429 en menos de un segundo, pero uno que
-// se atasca puede tardar un minuto, y en paralelo el atascado no retrasa a
+// se atasca puede tardar mucho más, y en paralelo el atascado no retrasa a
 // nadie.
 //
 // Orden verificado en vivo el 19/08/2026 con una petición de generación real.
@@ -27,12 +35,39 @@ const RONDAS_MODELOS: readonly (readonly string[])[] = [
   ['z-ai/glm-5.2:free', 'google/gemma-4-31b-it:free', 'nvidia/nemotron-nano-9b-v2:free'],
 ];
 
-// Tiempo máximo de espera por ronda. Las dos rondas juntas tienen que caber
-// holgadamente en los 60 s que aguanta una función en el plan gratuito de
-// Vercel, porque si se agota ese tiempo la usuaria no recibe ni un error
-// claro: la petición se corta a medias.
-const TIMEOUT_RONDA_MS = 20_000;
-const TIMEOUT_RONDA_GENERACION_MS = 25_000;
+// Respaldo fuera de OpenRouter: Groq, con qwen3.6-27b (el mismo modelo que
+// dejó "Preview" en knowledge/decision-modelo-ia.md — ahí se descartó como
+// PRIMARIO por ese riesgo, pero como último recurso, solo cuando OpenRouter ya
+// ha fallado entero, el riesgo de que además esté retirado justo ese día es
+// asumible). Groq tiene su propio cupo (1000 peticiones/día verificadas en
+// vivo, frente a las 50/día de OpenRouter), así que agotar el de OpenRouter no
+// afecta a este. `reasoning_effort: 'none'` apaga la cadena de pensamiento que
+// este modelo añade por defecto (gastaría cientos de tokens de más por nada:
+// verificado en vivo, 1184 tokens de "pensamiento" para contestar "OK"), y
+// `reasoning_format: 'hidden'` asegura que ese razonamiento, si aparece, no
+// se cuele dentro del JSON de respuesta.
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODELO_GROQ_RESPALDO = 'qwen/qwen3.6-27b';
+const EXTRA_GROQ = { reasoning_format: 'hidden', reasoning_effort: 'none' } as const;
+
+// Tiempo máximo de espera por ronda. Todo el presupuesto (las dos rondas de
+// OpenRouter MÁS el respaldo de Groq) tiene que caber holgadamente en los 60 s
+// que aguanta una función en el plan gratuito de Vercel, porque si se agota
+// ese tiempo la usuaria no recibe ni un error claro: la petición se corta a
+// medias.
+const TIMEOUT_RONDA_MS = 12_000;
+const TIMEOUT_RESPALDO_MS = 15_000;
+const TIMEOUT_RONDA_GENERACION_MS = 15_000;
+const TIMEOUT_RESPALDO_GENERACION_MS = 20_000;
+
+// Groq, a diferencia de OpenRouter, limita también por TOKENS POR MINUTO
+// (verificado en vivo: 8000 TPM en esta cuenta para qwen3.6-27b) y esa cuenta
+// suma el texto de entrada MÁS el `max_tokens` pedido, no lo que de verdad se
+// gaste. Pedir los mismos 6000 de OpenRouter revienta ese límite en cuanto el
+// CV y la oferta ocupan su sitio. Se pide bastante menos aquí — de sobra para
+// los mínimos de validarGeneracion, con margen para el texto de entrada.
+const MAX_TOKENS_RESPALDO_POR_DEFECTO = 1_200;
+const MAX_TOKENS_RESPALDO_GENERACION = 2_500;
 
 type Mensaje = { role: 'system' | 'user'; content: string };
 
@@ -70,16 +105,17 @@ const ESQUEMA_PERFIL = {
 type Esquema = { name: string; strict: boolean; schema: object };
 
 async function llamarModelo(
+  proveedor: { nombre: string; url: string; apiKey: string | undefined; extra?: Record<string, unknown> },
   modelo: string,
   mensajes: Mensaje[],
   esquema: Esquema,
   maxTokens: number | undefined,
   senal: AbortSignal,
 ): Promise<string> {
-  const respuesta = await fetch(OPENROUTER_URL, {
+  const respuesta = await fetch(proveedor.url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${proveedor.apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -87,21 +123,35 @@ async function llamarModelo(
       messages: mensajes,
       response_format: { type: 'json_schema', json_schema: esquema },
       ...(maxTokens ? { max_tokens: maxTokens } : {}),
+      ...proveedor.extra,
     }),
     signal: senal,
   });
 
   if (!respuesta.ok) {
-    throw new Error(`OpenRouter (${modelo}) respondió ${respuesta.status}: ${await respuesta.text()}`);
+    throw new Error(`${proveedor.nombre} (${modelo}) respondió ${respuesta.status}: ${await respuesta.text()}`);
   }
 
   const datos = await respuesta.json();
   const contenido = datos.choices?.[0]?.message?.content;
   if (typeof contenido !== 'string' || contenido.trim().length === 0) {
-    throw new Error(`OpenRouter (${modelo}) devolvió una respuesta vacía`);
+    throw new Error(`${proveedor.nombre} (${modelo}) devolvió una respuesta vacía`);
   }
   return contenido;
 }
+
+const PROVEEDOR_OPENROUTER = {
+  nombre: 'OpenRouter',
+  url: OPENROUTER_URL,
+  apiKey: process.env.OPENROUTER_API_KEY,
+};
+
+const PROVEEDOR_GROQ = {
+  nombre: 'Groq',
+  url: GROQ_URL,
+  apiKey: process.env.GROQ_API_KEY,
+  extra: EXTRA_GROQ as Record<string, unknown>,
+};
 
 // Recorre las rondas de RONDAS_MODELOS hasta que un modelo responda bien.
 // Dentro de cada ronda gana el primero que conteste (Promise.any) y los demás
@@ -109,15 +159,26 @@ async function llamarModelo(
 async function llamarAlModelo(
   mensajes: Mensaje[],
   esquema: Esquema,
-  opciones: { timeoutMs?: number; maxTokens?: number } = {},
+  opciones: {
+    timeoutMs?: number;
+    timeoutRespaldoMs?: number;
+    maxTokens?: number;
+    maxTokensRespaldo?: number;
+  } = {},
 ): Promise<string> {
-  const { timeoutMs = TIMEOUT_RONDA_MS, maxTokens } = opciones;
+  const {
+    timeoutMs = TIMEOUT_RONDA_MS,
+    timeoutRespaldoMs = TIMEOUT_RESPALDO_MS,
+    maxTokens,
+    maxTokensRespaldo = MAX_TOKENS_RESPALDO_POR_DEFECTO,
+  } = opciones;
   const fallos: unknown[] = [];
 
   for (const ronda of RONDAS_MODELOS) {
     const controladores = ronda.map(() => new AbortController());
     const intentos = ronda.map((modelo, i) =>
       llamarModelo(
+        PROVEEDOR_OPENROUTER,
         modelo,
         mensajes,
         esquema,
@@ -134,6 +195,26 @@ async function llamarAlModelo(
       controladores.forEach((controlador) => controlador.abort());
       fallos.push(...(error instanceof AggregateError ? error.errors : [error]));
     }
+  }
+
+  // Las dos rondas de OpenRouter han fallado — lo más probable, verificado en
+  // vivo el 19/08/2026, es que la cuenta haya agotado su cupo gratis del día
+  // (compartido entre los 5 modelos), no que estén saturados uno a uno. Groq
+  // tiene un cupo propio e independiente: se prueba como último recurso antes
+  // de darse por vencido.
+  try {
+    const controlador = new AbortController();
+    const resultado = await llamarModelo(
+      PROVEEDOR_GROQ,
+      MODELO_GROQ_RESPALDO,
+      mensajes,
+      esquema,
+      maxTokensRespaldo,
+      AbortSignal.any([controlador.signal, AbortSignal.timeout(timeoutRespaldoMs)]),
+    );
+    return resultado;
+  } catch (error) {
+    fallos.push(error);
   }
 
   throw new Error(`No se pudo completar la llamada a la IA: ningún modelo respondió. ${fallos.join(' | ')}`);
@@ -231,15 +312,17 @@ const ESQUEMA_GENERACION = {
   schema: {
     type: 'object',
     properties: {
+      puesto: { type: 'string', maxLength: 80 },
       cv_texto: { type: 'string' },
       carta_texto: { type: 'string' },
     },
-    required: ['cv_texto', 'carta_texto'],
+    required: ['puesto', 'cv_texto', 'carta_texto'],
     additionalProperties: false,
   },
 };
 
 export type Generacion = {
+  puesto: string;
   cv_texto: string;
   carta_texto: string;
   idioma: Idioma;
@@ -274,19 +357,53 @@ function lineasConContenido(texto: string): number {
   return texto.split('\n').filter((linea) => linea.trim().length > 0).length;
 }
 
-function validarGeneracion(datos: unknown): { cv_texto: string; carta_texto: string } {
+// Defensa en código, no solo en el prompt (docs/05-ia.md §6.1): verificado en
+// vivo el 19/08/2026, el modelo de respaldo de Groq (qwen3.6-27b) ignora la
+// instrucción de un salto de línea real por punto y devuelve todos los
+// puntos de un bloque pegados en una sola línea, separados por "•" en vez de
+// saltos de línea. `agruparLineas` (lib/pdf.tsx) solo reconoce un punto de
+// lista si empieza la línea con "- ": sin esto, el bloque entero se dibuja
+// como un párrafo corrido en vez de una lista, y el PDF pierde el diseño
+// original. Aquí se reparte cada "•" en su propia línea con "- " delante —
+// lo que venga antes del primer "•" (el puesto, la empresa, las fechas) se
+// deja como estaba, en su propia línea.
+function normalizarPuntos(texto: string): string {
+  return texto
+    .split('\n')
+    .flatMap((linea) => {
+      if (!linea.includes('•')) return [linea];
+
+      const partes = linea
+        .split('•')
+        .map((parte) => parte.trim())
+        .filter((parte) => parte.length > 0);
+      if (partes.length === 0) return [linea];
+
+      if (linea.trim().startsWith('•')) {
+        return partes.map((parte) => `- ${parte}`);
+      }
+      const [cabecera, ...puntos] = partes;
+      return [cabecera, ...puntos.map((punto) => `- ${punto}`)];
+    })
+    .join('\n');
+}
+
+function validarGeneracion(datos: unknown): { puesto: string; cv_texto: string; carta_texto: string } {
   if (typeof datos !== 'object' || datos === null) {
     throw new Error('La IA no devolvió un objeto con el CV y la carta');
   }
 
-  const { cv_texto, carta_texto } = datos as Record<string, unknown>;
+  const { puesto, cv_texto, carta_texto } = datos as Record<string, unknown>;
 
+  if (typeof puesto !== 'string' || puesto.trim().length === 0) {
+    throw new Error('La IA no devolvió un titular de puesto válido');
+  }
   if (typeof cv_texto !== 'string' || typeof carta_texto !== 'string') {
     throw new Error('La IA no devolvió los dos textos esperados');
   }
 
-  const cv = cv_texto.trim();
-  const carta = carta_texto.trim();
+  const cv = normalizarPuntos(cv_texto.trim());
+  const carta = normalizarPuntos(carta_texto.trim());
 
   if (cv.length < LARGO_MINIMO_CV) {
     throw new Error(`El CV generado es demasiado corto (${cv.length} caracteres)`);
@@ -307,7 +424,7 @@ function validarGeneracion(datos: unknown): { cv_texto: string; carta_texto: str
     throw new Error('La carta generada no tiene saltos de línea reales entre párrafos');
   }
 
-  return { cv_texto: cv, carta_texto: carta };
+  return { puesto: puesto.trim(), cv_texto: cv, carta_texto: carta };
 }
 
 export type OfertaParaGenerar = {
@@ -323,6 +440,7 @@ export type OfertaParaGenerar = {
 // que subraye lo importante de un texto y pedirle que escriba uno nuevo.
 function mensajesDeGeneracion(
   cvTexto: string,
+  puestoPerfil: string,
   oferta: OfertaParaGenerar,
   idioma: Idioma,
 ): Mensaje[] {
@@ -342,8 +460,14 @@ function mensajesDeGeneracion(
         '- Puedes reordenar la experiencia, resumirla, cambiar el énfasis y ' +
         'reformular las frases con el vocabulario de la oferta, siempre que lo que ' +
         'digas siga estando respaldado por el CV original.\n' +
-        `- Escribe los dos textos en ${NOMBRE_IDIOMA[idioma]}, sea cual sea el idioma ` +
-        'del CV original. Esto no es negociable ni tienes que decidirlo tú.\n' +
+        `- Escribe TODO — el titular, el CV y la carta, sin excepción — en ` +
+        `${NOMBRE_IDIOMA[idioma]}, sea cual sea el idioma del CV original o del ` +
+        'titular de partida. Esto no es negociable ni tienes que decidirlo tú. Un ' +
+        'documento que mezcle los dos idiomas está mal hecho.\n' +
+        '- "puesto": traduce/adapta el titular de partida (más abajo, "TITULAR ' +
+        `ACTUAL DEL PERFIL") a ${NOMBRE_IDIOMA[idioma]}, corto (2 a 6 palabras), ` +
+        'sin inventar un cargo distinto — es el mismo titular, en el idioma correcto ' +
+        'y con el vocabulario de la oferta si encaja de forma natural.\n' +
         '- FORMATO DEL CV, obligatorio: texto plano, organizado en secciones. Cada ' +
         'título de sección va en MAYÚSCULAS en su PROPIA línea. Cada punto de una ' +
         'lista empieza por "- " y va TAMBIÉN en su propia línea — nunca dos puntos, ' +
@@ -367,6 +491,7 @@ function mensajesDeGeneracion(
       content:
         `=== OFERTA ===\nPuesto: ${oferta.titulo}\nEmpresa: ${oferta.empresa}\n\n` +
         `${(oferta.descripcion ?? '(sin descripción; usa el puesto y la empresa)').slice(0, MAXIMO_CARACTERES_OFERTA)}\n\n` +
+        `=== TITULAR ACTUAL DEL PERFIL ===\n${puestoPerfil || '(sin titular; deduce uno corto del CV)'}\n\n` +
         `=== CV ORIGINAL ===\n${cvTexto.slice(0, MAXIMO_CARACTERES_CV)}`,
     },
   ];
@@ -382,16 +507,19 @@ function mensajesDeGeneracion(
 // saturado se despeje.
 export async function generarCvYCarta(
   cvTexto: string,
+  puestoPerfil: string,
   oferta: OfertaParaGenerar,
 ): Promise<Generacion> {
   // El idioma se decide aquí dentro, con código, para que ningún sitio que
   // llame a esta función pueda olvidarse de decidirlo (docs/05-ia.md §6.5).
   const idioma = detectarIdioma(`${oferta.titulo}\n${oferta.descripcion ?? ''}`);
-  const mensajes = mensajesDeGeneracion(cvTexto, oferta, idioma);
+  const mensajes = mensajesDeGeneracion(cvTexto, puestoPerfil, oferta, idioma);
 
   const contenido = await llamarAlModelo(mensajes, ESQUEMA_GENERACION, {
     timeoutMs: TIMEOUT_RONDA_GENERACION_MS,
+    timeoutRespaldoMs: TIMEOUT_RESPALDO_GENERACION_MS,
     maxTokens: 6_000,
+    maxTokensRespaldo: MAX_TOKENS_RESPALDO_GENERACION,
   });
 
   return { ...validarGeneracion(JSON.parse(contenido)), idioma };

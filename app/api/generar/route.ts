@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   // 4. Reunir lo que necesita la IA: el CV de la usuaria y la oferta.
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('cv_texto, empresas_cv, titulos_cv')
+    .select('cv_texto, puesto, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
 
   // 5. Generar, verificar y guardar.
   try {
-    const generado = await generarCvYCarta(perfil.cv_texto, {
+    const generado = await generarCvYCarta(perfil.cv_texto, perfil.puesto ?? '', {
       titulo: oferta.titulo,
       empresa: oferta.empresa,
       descripcion: oferta.descripcion,
@@ -164,6 +164,7 @@ export async function POST(request: Request) {
       .from('generaciones')
       .update({
         estado: 'listo',
+        puesto_texto: generado.puesto,
         cv_texto: generado.cv_texto,
         carta_texto: generado.carta_texto,
         avisos,

@@ -173,6 +173,25 @@ no un bug del PDF. Un reinicio limpio (`npm run dev`) lo resolvió al
 instante. Si vuelve a pasar tras dejar el servidor abierto mucho rato, la
 solución es la misma.
 
+# Añadido después: teléfono y LinkedIn/enlace en la cabecera (19/08/2026)
+
+Mar pidió, tras revisar el PDF con el idioma ya arreglado, añadir un
+teléfono y un enlace (LinkedIn u otro) junto al email de la cabecera —
+solo estaba el email. Dos campos nuevos y opcionales en `perfiles`
+(`telefono`, `enlace`; migración `0011`), siguiendo la misma norma que ya
+fijó esta skill para el nombre (T82): un campo explícito del perfil, nunca
+adivinado del CV pegado.
+
+**Ajuste de maquetación que hizo falta**: con hasta cuatro datos en la
+cabecera (puesto + email + teléfono + enlace), meterlos todos en la misma
+fila (el diseño original de "puesto + email en una línea") dejaba, al
+ajustar línea (`flexWrap`) cuando no cabían todos, un "·" suelto al
+principio de la segunda línea — se veía como un separador huérfano.
+Solución: el puesto pasa a su propia línea, y el contacto (email,
+teléfono, enlace — los que tenga rellenos) a la línea de debajo, cada una
+con su propio ajuste de línea independiente. Verificado en vivo
+descargando un PDF de prueba con los tres datos de contacto rellenos.
+
 # Relacionado
 
 - [`docs/06-tareas.md`](../docs/06-tareas.md) — T58-T62 (Hito 7) y T82-T83

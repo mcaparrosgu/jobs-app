@@ -232,6 +232,18 @@ verdad, ya no solo `localhost`.
 | T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
 | T76 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T75 | [ ] |
 
+> ⚠️ **Nota para cuando se haga T75** (19/08/2026): la tabla de claves de
+> `docs/04-plan-tecnico.md` §4 quedó desactualizada tras el cambio de
+> proveedor de IA (Groq → OpenRouter, T25, `knowledge/decision-modelo-ia.md`)
+> y el respaldo añadido después (`knowledge/decision-respaldo-groq.md`). Las
+> claves de IA que hay que añadir en Vercel en T75 son, en realidad,
+> **`OPENROUTER_API_KEY`** (primaria) **y `GROQ_API_KEY`** (respaldo, ya
+> existe en `.env.local` desde T23) — no solo `GROQ_API_KEY` como dice la
+> tabla. Sin la segunda, el respaldo no funciona en producción aunque
+> funcione en local. No se toca la tabla de `docs/04-plan-tecnico.md`
+> (documento del Paso 5, congelado): esta nota vive aquí, junto a la tarea
+> que de verdad se ejecuta.
+
 ## Añadido después del Hito 5 · Navegación y un agujero de seguridad
 
 > Estas tareas **no estaban en el plan original de 76**. Salieron al probar

@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { extraerPerfil } from '@/lib/ia';
 import { createClient } from '@/lib/supabase/server';
 
+// Dos rondas de OpenRouter más el respaldo en Groq (lib/ia.ts) pueden sumar
+// hasta ~40 s en el peor caso. Sin esto, la función se corta a los 10 s por
+// defecto del plan gratuito de Vercel antes de que le dé tiempo a intentarlo
+// todo — el mismo motivo por el que app/api/generar/route.ts ya lo tenía.
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   // Se comprueba antes de leer el cuerpo y antes de llamar al modelo:
   // sin esto, cualquiera que conociera la URL podría gastar la cuota de

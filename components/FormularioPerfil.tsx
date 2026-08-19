@@ -7,6 +7,8 @@ import { esPalabraClaveLarga } from '@/lib/palabras-clave';
 type PerfilGuardado = {
   nombre: string | null;
   puesto: string | null;
+  telefono: string | null;
+  enlace: string | null;
   palabras_clave: string[];
   empresas_cv: string[];
   titulos_cv: string[];
@@ -18,6 +20,8 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
   const [cvTexto, setCvTexto] = useState(perfilInicial?.cv_texto ?? '');
   const [nombre, setNombre] = useState(perfilInicial?.nombre ?? '');
   const [puesto, setPuesto] = useState(perfilInicial?.puesto ?? '');
+  const [telefono, setTelefono] = useState(perfilInicial?.telefono ?? '');
+  const [enlace, setEnlace] = useState(perfilInicial?.enlace ?? '');
   const [palabrasClave, setPalabrasClave] = useState<string[]>(perfilInicial?.palabras_clave ?? []);
   const [empresasCv, setEmpresasCv] = useState<string[]>(perfilInicial?.empresas_cv ?? []);
   const [titulosCv, setTitulosCv] = useState<string[]>(perfilInicial?.titulos_cv ?? []);
@@ -95,6 +99,8 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         body: JSON.stringify({
           nombre,
           puesto,
+          telefono,
+          enlace,
           palabras_clave: palabrasClave,
           empresas_cv: empresasCv,
           titulos_cv: titulosCv,
@@ -127,6 +133,38 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         placeholder="Como quieres que aparezca en tu CV y tu carta"
         className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
       />
+
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="telefono" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Teléfono <span className="font-normal text-zinc-400">(opcional)</span>
+          </label>
+          <input
+            id="telefono"
+            type="tel"
+            value={telefono}
+            onChange={(evento) => setTelefono(evento.target.value)}
+            placeholder="+34 600 000 000"
+            className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          />
+        </div>
+        <div>
+          <label htmlFor="enlace" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            LinkedIn u otro enlace <span className="font-normal text-zinc-400">(opcional)</span>
+          </label>
+          <input
+            id="enlace"
+            type="text"
+            value={enlace}
+            onChange={(evento) => setEnlace(evento.target.value)}
+            placeholder="linkedin.com/in/tu-perfil"
+            className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          />
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        Se muestran junto a tu email en la cabecera del CV y la carta.
+      </p>
 
       <label htmlFor="cv" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Tu CV
