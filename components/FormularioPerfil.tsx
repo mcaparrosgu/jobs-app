@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 type PerfilGuardado = {
   puesto: string | null;
@@ -98,7 +99,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
   }
 
   return (
-    <div className="mt-8 w-full text-left">
+    <div className="mt-8 w-full max-w-xl text-left">
       <label htmlFor="cv" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Tu CV
       </label>
@@ -190,6 +191,14 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
           className={`mt-4 text-sm ${mensaje.tipo === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}
         >
           {mensaje.texto}
+          {mensaje.tipo === 'ok' && (
+            <>
+              {' '}
+              <Link href="/ofertas" className="font-medium underline underline-offset-2">
+                Ver mis ofertas →
+              </Link>
+            </>
+          )}
         </p>
       )}
 

@@ -19,6 +19,9 @@
 - 76 tareas en total, agrupadas en 10 hitos. Cada hito termina con algo
   visible en pantalla — es la forma de saber que vas avanzando de verdad y
   no solo escribiendo código que no hace nada todavía.
+- Al final hay un bloque extra (**T77-T80**) añadido sobre la marcha, ya
+  con el Hito 5 cerrado, para la navegación entre pantallas. Lo que se
+  descubre construyendo se añade al final; no se renumera lo anterior.
 
 > ⚠️ **Regla que atraviesa todo el documento**: los workflows `Jobs` que
 > ya tienes en n8n (`Jobs · ingesta`, `Jobs · generación CV`,
@@ -214,6 +217,22 @@ verdad, ya no solo `localhost`.
 | T74 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T73 | [ ] |
 | T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
 | T76 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T75 | [ ] |
+
+## Añadido después del Hito 5 · Navegación
+
+> Estas tareas **no estaban en el plan original de 76**. Salieron al probar
+> la web con el Hito 5 ya cerrado: las pantallas funcionaban una por una,
+> pero estaban incomunicadas entre sí — la única forma de llegar a
+> `/ofertas` era escribir la dirección a mano. Se numeran a continuación de
+> T76 para no renumerar nada de lo ya hecho. Historia A4 de
+> `docs/01-historias.md`; detalle en `knowledge/mejora-navegacion.md`.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T77 | Menú permanente con "Ofertas", "Mi perfil", tu email y "Salir" | `components/MenuNavegacion.tsx`, `app/layout.tsx` | En `/perfil` y `/ofertas` ves la barra arriba, y la pantalla en la que estás sale subrayada. En la pantalla de acceso (`/`), antes de entrar, **no** aparece | T41 | [x] |
+| T78 | Cerrar sesión de verdad al pulsar "Salir" | `app/auth/salir/route.ts` | Pulsas "Salir": vuelves a la pantalla de acceso y, si escribes `/perfil` a mano, te devuelve allí. Para volver a entrar hace falta un enlace nuevo del email | T77 | [x] |
+| T79 | Entrar por el enlace del email aterriza donde toca | `app/auth/callback/route.ts` | Con perfil ya guardado, el enlace del email te lleva directa a `/ofertas`; sin perfil todavía, a `/perfil` | T31, T42 | [x] |
+| T80 | Guía de dos pasos y salida clara del perfil | `components/GuiaPasos.tsx`, `components/FormularioPerfil.tsx`, `app/perfil/page.tsx`, `app/ofertas/page.tsx` | Sin perfil guardado ves "1. Pega tu CV → 2. Mira tus ofertas" y desaparece al guardarlo; al pulsar "Guardar" sale "Perfil guardado. Ver mis ofertas →" y el enlace funciona | T77, T31 | [x] |
 
 ## Relacionado
 

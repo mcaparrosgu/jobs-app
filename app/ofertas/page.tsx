@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import TarjetaOferta from '@/components/TarjetaOferta';
+import GuiaPasos from '@/components/GuiaPasos';
 
 type Oferta = {
   id: string;
@@ -64,8 +66,9 @@ export default function Ofertas() {
   }, [router]);
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 font-sans dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-10 font-sans dark:bg-black">
       <main className="w-full max-w-3xl">
+        {estado.tipo === 'sin-perfil' && <GuiaPasos pasoActual={2} />}
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Ofertas para ti
         </h1>
@@ -77,9 +80,9 @@ export default function Ofertas() {
         {estado.tipo === 'sin-perfil' && (
           <p className="mt-8 text-zinc-600 dark:text-zinc-400">
             Todavía no has guardado tu perfil.{' '}
-            <a href="/perfil" className="underline">
+            <Link href="/perfil" className="underline">
               Cuéntanoslo primero
-            </a>{' '}
+            </Link>{' '}
             para poder buscarte ofertas.
           </p>
         )}

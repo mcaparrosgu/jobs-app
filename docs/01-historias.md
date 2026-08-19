@@ -50,6 +50,33 @@ visita, para no perder el trabajo ya hecho si cierro la pestaña.
 - Dado que nunca he buscado antes, cuando entro por primera vez, ¿veo un
   estado vacío claro en vez de un error o una pantalla en blanco? Sí/No.
 
+### A4. Moverme entre mis pantallas y poder salir
+**IMPRESCINDIBLE** — añadida después del Hito 5 (Paso 9)
+
+Como usuaria, quiero ver siempre un menú con las pantallas de la web y saber
+en cuál estoy, para no tener que adivinar cómo llegar a mis ofertas ni
+escribir direcciones a mano; y quiero poder cerrar sesión cuando termine,
+porque puedo estar usando un ordenador compartido.
+
+- Dado que ya he entrado, ¿veo en todas las pantallas un menú con "Ofertas"
+  y "Mi perfil", y marcado en cuál de las dos estoy? Sí/No.
+- Dado que acabo de guardar mi perfil, ¿la web me ofrece ir a mis ofertas en
+  vez de dejarme sin saber qué hacer después? Sí/No.
+- Dado que es la primera vez que entro y aún no tengo perfil, ¿veo en qué
+  paso estoy (pegar el CV → mirar las ofertas)? Sí/No.
+- Dado que ya tengo perfil guardado, cuando entro con el enlace del email,
+  ¿aterrizo directamente en mis ofertas en vez de en el formulario de
+  perfil? Sí/No.
+- Dado que pulso "Salir", ¿se cierra mi sesión y hace falta un enlace nuevo
+  del email para volver a entrar? Sí/No.
+- Dado que todavía no he entrado, ¿la pantalla de acceso NO muestra ese menú
+  (no hay a dónde ir aún)? Sí/No.
+
+> Nota: esta historia no existía en el documento original. Salió al probar
+> la web tras el Hito 5: las tres pantallas estaban construidas pero
+> incomunicadas — la única forma de llegar a `/ofertas` era escribir la URL.
+> Ver `knowledge/mejora-navegacion.md`.
+
 ## B. Perfil de búsqueda
 
 ### B1. Pegar mi CV base para que se use como punto de partida

@@ -36,6 +36,12 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
   dispositivo hasta 15 días sin usarlo, sin tener que repetir ese paso
   cada vez que vuelve; pasado ese tiempo de inactividad, tiene que pedir
   un enlace nuevo y verificarlo otra vez por email.
+- Puede **cerrar su sesión** cuando quiera, sin esperar a que caduque sola.
+  Al hacerlo vuelve a la pantalla de acceso y necesita un enlace nuevo por
+  email para entrar otra vez. Existe porque el ordenador puede ser
+  compartido y porque, mientras el presupuesto siga a 0 €/mes, la caducidad
+  automática por inactividad no está garantizada (ver limitación conocida
+  en la regla 9).
 
 ## 3. Recorridos
 
@@ -45,7 +51,10 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
    ningún campo de contraseña.
 2. **Entrar.** Recibe un mensaje en ese email con un enlace de un solo
    uso. Al pulsarlo, entra al sistema y queda identificada en ese
-   dispositivo para las próximas visitas.
+   dispositivo para las próximas visitas. **Aterriza donde le toca según
+   su situación**: si es la primera vez y todavía no ha contado su perfil,
+   en la pantalla de perfil (paso 3); si ya lo tiene guardado, directamente
+   en sus ofertas (paso 4), que es a lo que vuelve el resto de días.
 3. **Contar su perfil** (solo la primera vez, o cuando quiera actualizarlo
    más adelante) — pensado para llevarle poco tiempo. Pega el texto de su
    CV actual en un espacio de texto, y el sistema **le propone
@@ -82,6 +91,15 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
    ve el estado en el que dejó su búsqueda: su perfil guardado, las
    ofertas que ya había visto, y los CVs/cartas que ya había generado —
    sin tener que repetir nada desde cero.
+
+**Este recorrido no es de un solo sentido.** Una vez dentro, la usuaria ve
+en todas las pantallas un menú permanente con los dos sitios a los que
+puede ir —su perfil y sus ofertas—, con indicación de en cuál está en ese
+momento, además de la opción de cerrar sesión. Puede volver a su perfil a
+cambiar sus palabras clave y regresar a las ofertas cuantas veces quiera,
+sin pasar por ninguna pantalla intermedia. Mientras todavía no haya
+guardado su perfil, el sistema le indica además en qué paso de los dos está
+(contar su perfil → ver sus ofertas), para que no tenga que deducirlo.
 
 ### 3.2 Recorrido secundario: aviso de ofertas nuevas
 
@@ -233,7 +251,11 @@ En lenguaje natural, lo que el sistema necesita recordar:
   la duración prevista del periodo de prueba con la clase.
 - **Accesibilidad de perfil técnico**: pensado para personas sin
   experiencia técnica previa — sin jerga, con mensajes de error que se
-  entienden sin contexto adicional.
+  entienden sin contexto adicional. En particular, **no se le pide nunca a
+  la usuaria que escriba una dirección web a mano ni que recuerde por dónde
+  se llegaba a algo**: todo sitio al que puede ir está a un clic desde un
+  menú visible, y cada pantalla termina indicando cuál es el paso
+  siguiente.
 
 ## 8. Fuera de alcance
 

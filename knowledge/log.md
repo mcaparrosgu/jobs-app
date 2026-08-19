@@ -1,6 +1,42 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Navegacion** (T77-T80, añadidas sobre la marcha tras el Hito 5): Mar
+  prueba la web y señala que "es muy poco práctica, es incómoda". Al
+  revisarlo, el diagnóstico es peor de lo esperado: las tres pantallas
+  estaban construidas pero **incomunicadas** — el enlace del email llevaba
+  siempre a `/perfil` y desde ahí **la única forma de llegar a `/ofertas`
+  era escribir la URL a mano**; el único enlace interno de toda la app era
+  el del estado vacío de `/ofertas`; `next/link` no se usaba en ninguna
+  parte; y no existía forma de cerrar sesión pese a que `/perfil` ya
+  mostraba el email. Nada de esto aparecía en `docs/` ni en `knowledge/`:
+  era un hueco, no una decisión, así que se añade la **historia A4** a
+  `docs/01-historias.md` en vez de tratarlo como un retoque. **Tres
+  decisiones de Mar**, preguntadas explícitamente: (1) menú permanente
+  `Ofertas · Mi perfil · email · Salir` **más** guía de dos pasos mientras
+  no haya perfil guardado — descartadas las variantes sin "Salir" (el
+  ordenador puede ser compartido) y sin guía (quien entra por primera vez
+  no sabe qué se espera de ella); (2) el enlace del email aterriza en
+  `/ofertas` si ya hay perfil y en `/perfil` si no, que es lo que
+  `docs/03-spec.md` §3.2 ya prometía y no se cumplía — importa sobre todo
+  para el email de aviso diario del Hito 8; (3) retoques mínimos de
+  coherencia, sin rediseño. Nuevos `components/MenuNavegacion.tsx`
+  (`usePathname` para marcar dónde estás, primer uso de `<Link>` en el
+  proyecto), `components/GuiaPasos.tsx` (presentacional, **sin ninguna
+  consulta nueva**: cada pantalla ya sabe si hay perfil) y
+  `app/auth/salir/route.ts`; `app/layout.tsx` pasa a `async` y pinta la
+  barra solo con sesión. **Dos detalles que costaron un intento**: la
+  redirección de "Salir" necesita `status: 303` (con el 307 por defecto el
+  navegador repite el POST contra `/`, que solo responde a GET), y la barra
+  no alineaba con el contenido por 24 px porque tenía el `px-6` dentro del
+  `max-w-3xl` en vez de fuera — detectado en la revisión visual en Chrome.
+  Verificado en Chrome con la sesión real; **deliberadamente sin probar en
+  vivo**: pulsar "Salir" (dejaría a Mar fuera) y el aterrizaje condicional
+  (gastaría un enlace del email), las dos quedan para ella. **Detectado de
+  paso, sin arreglar**: `app/api/extraer-perfil/route.ts` es el único
+  endpoint sin comprobación de sesión — cualquiera con la URL podría gastar
+  la cuota de OpenRouter; propuesto para el Paso 14 (guardrails). Detalle
+  completo en `mejora-navegacion.md`.
 * **Hito 5 cerrado** (T41-T47, Paso 9): pantalla `app/ofertas/page.tsx`
   con cinco estados (cargando, sin perfil, sin ingesta hoy, sin
   coincidencias, lista), endpoint `app/api/ofertas/route.ts` que
