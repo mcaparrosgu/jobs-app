@@ -1,6 +1,18 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T75 (Hito 9): las 5 claves añadidas en Vercel.** Mar las introdujo ella
+  misma en el panel de Vercel (Settings → Environment Variables): nunca se
+  escriben claves ni tokens desde aquí, por norma de seguridad, aunque haya
+  permiso explícito. No existe una herramienta MCP de Vercel para listar
+  los nombres de las variables sin más, así que la verificación fue
+  indirecta: el despliegue de producción que se disparó al guardar las
+  claves terminó en `READY` (sin fallo de build), y las rutas que dependen
+  de Supabase en el servidor responden sano (`/` 200, `/ofertas` 200,
+  `/perfil` 307 — redirección esperada sin sesión, no un 500). Son 5
+  claves, no las 4 de la tabla original de `docs/04-plan-tecnico.md` §4:
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`.
 * **T74 (Hito 9): proyecto de Vercel creado y enlazado al repo de GitHub.**
   Proyecto `jobs-app` en el equipo `mcaparrosgu-4812's projects`, rama de
   producción `master`. Dos pasos previos que solo Mar podía hacer, ninguno

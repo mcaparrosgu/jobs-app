@@ -229,7 +229,7 @@ verdad, ya no solo `localhost`.
 | T72 | Revisar que `.env.local` no está entre los archivos a subir | `.gitignore` | `git status` no muestra `.env.local` en la lista de cambios | T71 | [x] |
 | T73 | Crear el repositorio en GitHub y subir el código, **privado** (confirmado en T71) | — | Recargas la página del repositorio en GitHub y ves los archivos | T72 | [x] |
 | T74 | Conectar el repositorio a Vercel | — | En el panel de Vercel, el proyecto aparece enlazado a tu repositorio | T73 | [x] |
-| T75 | Añadir las claves secretas en Vercel (tabla de `docs/04-plan-tecnico.md` §4) | — (panel de Vercel) | Environment Variables muestra las 4 claves, sin verlas en ningún archivo del repositorio | T74 | [ ] |
+| T75 | Añadir las claves secretas en Vercel (5, ver nota de abajo) | — (panel de Vercel) | Environment Variables muestra las 5 claves, sin verlas en ningún archivo del repositorio | T74 | [x] |
 | T76 | Primer despliegue y prueba completa en la dirección pública | — | Desde el móvil (no el ordenador donde programaste), pides acceso, entras y completas el recorrido entero hasta descargar un PDF | T75 | [ ] |
 
 > ⚠️ **Nota para cuando se haga T75** (19/08/2026): la tabla de claves de
