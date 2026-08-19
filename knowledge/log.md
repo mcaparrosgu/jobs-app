@@ -1,6 +1,17 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T73 (Hito 9): repositorio creado en GitHub, privado, código subido.**
+  `mcaparrosgu/jobs-app`, con `gh repo create --private --source=. --remote=origin`
+  desde este mismo directorio. Hueco encontrado y resuelto en el momento: la
+  variable de entorno `GITHUB_TOKEN` de la máquina apunta a un token
+  caducado/inválido, distinto de la sesión real de `gh` (cuenta
+  `mcaparrosgu`, guardada en el keyring); tanto la creación del repo como el
+  `git push` se hicieron con `GITHUB_TOKEN` excluido del entorno del comando
+  (`env -u GITHUB_TOKEN ...`) para que `gh` usara la sesión correcta.
+  Verificado tras el push: el repo es privado (`private: true`), y entre los
+  archivos de la raíz solo aparece `.env.example` (sin valores reales),
+  ningún `.env`/`.env.local`.
 * **T72 (Hito 9): `.env.local` no se va a subir, confirmado.** `.gitignore`
   ya cubría `.env`, `.env.local` y variantes desde T03; `git status` no lo
   muestra y no está entre los archivos rastreados (`git ls-files`). El
