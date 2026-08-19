@@ -1,6 +1,21 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Descartado**: Cerebras como proveedor de IA para T25. `docs/04-plan-tecnico.md`
+  daba por hecho que Groq ofrecia varias familias de modelos de peso
+  abierto (Llama, Qwen, Kimi, Mistral); comprobado en vivo contra la API
+  real de Groq, ese abanico ya no existe — los unicos modelos activos son
+  `openai/gpt-oss-*` (descartados, decision etica de Mar) y
+  `qwen/qwen3.6-27b`, marcado "Preview" por Groq (puede retirarse con poco
+  aviso). Se investigo Cerebras como alternativa sin OpenAI: su tabla de
+  limites promete cuotas generosas para `gemma-4-31b` (2.400
+  peticiones/dia, 3M tokens/dia), pero **al probar una llamada real da
+  "Payment required"** — supervisado en Chrome, el Playground confirma la
+  letra pequeña: "Add a payment method to start running requests and claim
+  $5 in free credits". Exige tarjeta pese al marketing de "gratis, sin
+  tarjeta". Descartado por eso, no por falta de modelos no-OpenAI. Sigue
+  la busqueda con OpenRouter (agregador de modelos gratis :free, sin
+  tarjeta, pero con techo de 50 peticiones/dia sin credito comprado).
 * **Construccion**: T23-T24 de `docs/06-tareas.md` (Paso 9). Mar crea la
   cuenta en Groq y guarda `GROQ_API_KEY` en `.env.local` (T23). Supervisado
   en Chrome: en Data Controls, se activa **Global ZDR** (no solo
