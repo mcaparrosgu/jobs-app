@@ -57,6 +57,59 @@ que no empiece literalmente por el nombre produce basura en letra grande
 la generación (`lib/verificarCv.ts`). Pedirlo como un campo explícito es
 la opción robusta.
 
+# Segunda vuelta: el problema no era (solo) el diseño
+
+Mar probó el rediseño con su CV real y lo describió como "caótico, no
+respira, sin párrafos". Comprobado contra la base de datos real (no
+adivinado): el `cv_texto` que había generado la IA para su última oferta
+no tenía **ningún salto de línea real** — todo pegado con guiones
+("PERFIL- Nombre: Mar...- Titular: ...-EXPERIENCIA- Operations..."), y
+además repetía su nombre, email, teléfono y LinkedIn como si fueran
+puntos del CV, algo que ya no tiene sentido desde que T82/T83 los muestra
+aparte, en la cabecera. Ninguna plantilla puede "respirar" con un texto
+así — el fallo estaba antes del PDF, en la generación.
+
+Dos arreglos en `lib/ia.ts`:
+
+1. **Prompt más estricto** (T50): "cada título de sección y cada punto en
+   su PROPIA línea, con un salto de línea real, nunca pegados con un
+   guion"; y "el CV no empieza por el nombre ni los datos de contacto —
+   ya se muestran aparte". También se pide que la carta separe sus
+   párrafos con líneas en blanco.
+2. **Validación estructural nueva** en `validarGeneracion()`:
+   `lineasConContenido()` cuenta las líneas no vacías del texto y
+   rechaza (lanza error) un CV con menos de 6 o una carta con menos de
+   3 — igual que ya se rechazaba un texto demasiado corto o largo. El
+   rechazo hace que el sistema de reintentos de T57 (cola en el
+   navegador, otro modelo de la rotación) se dispare solo, sin tocar
+   nada más.
+
+**Por qué validar en vez de intentar reparar el texto a posteriori**: se
+consideró insertar saltos de línea por código antes de cada "- " o cada
+título en mayúsculas, pero el texto real llegaba tan desordenado (guiones
+pegados directamente a la palabra anterior, títulos de sección sin
+siquiera un espacio: "-FORMACIÓN-") que cualquier heurística de
+recomposición sería frágil y podría inventar una estructura que no es la
+real. Rechazar y reintentar con otro modelo es la misma filosofía que ya
+sigue `lib/verificarCv.ts`: no confiar en arreglar lo que devuelve el
+modelo, confiar en detectarlo y pedirlo de nuevo.
+
+De paso se abre algo el espaciado en `lib/pdf.tsx` (más margen entre
+secciones y párrafos) para que el documento respire incluso con texto ya
+bien formado.
+
+**Importante para Mar**: los documentos ya generados son definitivos
+(regla de negocio 7) — este arreglo no los corrige solos. Para verlo
+hace falta marcar "me interesa" en una oferta **nueva**, todavía sin CV
+generado.
+
+**Aparte, no arreglado aquí**: una de las cartas generadas saludaba a
+"Estimado equipo de Ver oferta" — el campo `empresa` de esa oferta
+concreta contenía literalmente el texto "Ver oferta" en vez del nombre
+real de la empresa. Es un problema de los datos de `ofertas` (el
+normalizador de esa fuente en `Jobs App · ingesta`), no de `lib/ia.ts` ni
+de `lib/pdf.tsx` — pendiente de mirar aparte.
+
 # Tipografía: por qué se incrustan fuentes
 
 Los PDF solo traen integradas 14 fuentes "estándar" (Helvetica, Times,

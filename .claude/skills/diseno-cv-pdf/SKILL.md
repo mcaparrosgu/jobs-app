@@ -77,6 +77,17 @@ Estructura repetible:
   que pase con la longitud del CV — ver `bloqueTexto`/`DocumentoGeneracion`
   en `lib/pdf.tsx`.
 
+## El contenido importa tanto como el diseño
+
+Un diseño elegante no arregla un texto mal formado. Si el CV descargado
+"no respira" o se ve caótico, **antes de tocar `lib/pdf.tsx` comprobar el
+`cv_texto`/`carta_texto` reales** en la tabla `generaciones` (Supabase):
+puede que la IA haya dejado de poner saltos de línea entre secciones y
+puntos, o esté repitiendo el nombre/contacto que ya muestra la cabecera.
+Eso se corrige en `lib/ia.ts` (prompt + `validarGeneracion()`), no en la
+plantilla del PDF. Ver `knowledge/decision-diseno-pdf.md`, sección
+"Segunda vuelta", para el caso real que lo confirmó.
+
 ## Reglas prácticas al tocar `lib/pdf.tsx`
 
 - **Comprobar cada carácter decorativo nuevo con `fontkit` antes de

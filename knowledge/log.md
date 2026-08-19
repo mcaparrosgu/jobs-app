@@ -1,6 +1,21 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **El PDF "no respiraba" porque la IA dejaba de poner saltos de línea
+  (segunda vuelta de T58-T62)**: Mar probó el rediseño con su CV real y
+  lo describió como caótico. Comprobado contra la base de datos: el
+  `cv_texto` generado no tenía ningún salto de línea real (todo pegado
+  con guiones) y repetía su nombre/email/teléfono, ya redundante con la
+  cabecera nueva de T82/T83. Se corrige el prompt de `lib/ia.ts` (saltos
+  de línea reales obligatorios, sin repetir el contacto) y se añade una
+  validación estructural (`lineasConContenido`) que rechaza un texto sin
+  suficientes líneas y dispara el reintento de T57 con otro modelo. Se
+  abre algo el espaciado del PDF de paso. Detalle en
+  `decision-diseno-pdf.md`. **Pendiente para Mar**: los documentos ya
+  generados no se autocorrigen (regla de negocio 7) — para ver el
+  arreglo hay que probar con una oferta nueva. Aparte queda anotado un
+  bug de datos: una oferta tenía "Ver oferta" como nombre de empresa
+  (normalizador de `Jobs App · ingesta`, no tocado aquí).
 * **Rediseño del PDF (T58-T62, T82-T83)**: Mar probó el primer diseño
   (T58-T59, Helvetica a palo seco) y lo calificó de "lamentable,
   impresentable". Señaló una plantilla de referencia (Adobe Stock, "Minimal

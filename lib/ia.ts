@@ -259,6 +259,21 @@ const LARGO_MAXIMO_CARTA = 8_000;
 const MAXIMO_CARACTERES_CV = 12_000;
 const MAXIMO_CARACTERES_OFERTA = 8_000;
 
+// Mínimo de líneas con contenido (docs/05-ia.md §6.6): algunos modelos, pese
+// a que el prompt pide un salto de línea real entre título/punto/párrafo,
+// devuelven el texto entero en una sola línea con guiones pegados
+// ("PERFIL- Nombre: X- Titular: Y-EXPERIENCIA-..."). El resultado es legible
+// para la IA pero ilegible para una persona: sin líneas propias no hay forma
+// de distinguir secciones ni puntos al dibujar el PDF (lib/pdf.tsx). Se
+// rechaza aquí para que se reintente con otro modelo, igual que un texto
+// demasiado corto.
+const LINEAS_MINIMAS_CV = 6;
+const LINEAS_MINIMAS_CARTA = 3;
+
+function lineasConContenido(texto: string): number {
+  return texto.split('\n').filter((linea) => linea.trim().length > 0).length;
+}
+
 function validarGeneracion(datos: unknown): { cv_texto: string; carta_texto: string } {
   if (typeof datos !== 'object' || datos === null) {
     throw new Error('La IA no devolvió un objeto con el CV y la carta');
@@ -284,6 +299,12 @@ function validarGeneracion(datos: unknown): { cv_texto: string; carta_texto: str
   }
   if (carta.length > LARGO_MAXIMO_CARTA) {
     throw new Error(`La carta generada es desproporcionada (${carta.length} caracteres)`);
+  }
+  if (lineasConContenido(cv) < LINEAS_MINIMAS_CV) {
+    throw new Error('El CV generado no tiene saltos de línea reales entre secciones y puntos');
+  }
+  if (lineasConContenido(carta) < LINEAS_MINIMAS_CARTA) {
+    throw new Error('La carta generada no tiene saltos de línea reales entre párrafos');
   }
 
   return { cv_texto: cv, carta_texto: carta };
@@ -323,10 +344,21 @@ function mensajesDeGeneracion(
         'digas siga estando respaldado por el CV original.\n' +
         `- Escribe los dos textos en ${NOMBRE_IDIOMA[idioma]}, sea cual sea el idioma ` +
         'del CV original. Esto no es negociable ni tienes que decidirlo tú.\n' +
-        '- El CV va en texto plano, en secciones con títulos en mayúsculas y líneas ' +
-        'que empiezan por "- " para los puntos. Nada de markdown, tablas ni asteriscos.\n' +
+        '- FORMATO DEL CV, obligatorio: texto plano, organizado en secciones. Cada ' +
+        'título de sección va en MAYÚSCULAS en su PROPIA línea. Cada punto de una ' +
+        'lista empieza por "- " y va TAMBIÉN en su propia línea — nunca dos puntos, ' +
+        'ni un punto y un título, pegados en la misma línea o separados solo por un ' +
+        'guion. Cada elemento nuevo (título, punto, párrafo) empieza tras un salto de ' +
+        'línea real, no tras un espacio. Nada de markdown, tablas ni asteriscos.\n' +
+        '- EL CV NO EMPIEZA POR EL NOMBRE NI LOS DATOS DE CONTACTO: esta información ' +
+        'ya se muestra aparte, encima del documento. Empieza directamente por la ' +
+        'primera sección de contenido (perfil profesional, experiencia, etc.). No ' +
+        'escribas el nombre, email, teléfono, LinkedIn ni ubicación en ningún punto ' +
+        'del CV.\n' +
         '- La carta ocupa entre 200 y 300 palabras, va dirigida a la empresa de la ' +
-        'oferta, y no repite el CV entero: explica por qué encaja.\n' +
+        'oferta, y no repite el CV entero: explica por qué encaja. Se organiza en ' +
+        'varios párrafos cortos (saludo, cuerpo, despedida), cada uno separado del ' +
+        'siguiente por una línea en blanco — nunca todo seguido en un único bloque.\n' +
         '- No escribas datos de contacto que no estén en el CV original, ni ' +
         'marcadores del tipo "[tu nombre]" o "[fecha]".',
     },

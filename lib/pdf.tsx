@@ -119,18 +119,18 @@ export const estilos = StyleSheet.create({
     fontSize: 9.5,
     letterSpacing: 2.2,
     color: TINTA,
-    marginTop: 16,
-    marginBottom: 7,
-    paddingBottom: 4,
+    marginTop: 22,
+    marginBottom: 10,
+    paddingBottom: 5,
     borderBottomWidth: 0.75,
     borderBottomColor: GRIS_RAYA,
   },
   parrafo: {
-    marginBottom: 7,
+    marginBottom: 10,
   },
   puntoFila: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 7,
   },
   puntoMarca: {
     width: 14,
