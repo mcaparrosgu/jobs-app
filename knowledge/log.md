@@ -1,6 +1,16 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **T74 (Hito 9): proyecto de Vercel creado y enlazado al repo de GitHub.**
+  Proyecto `jobs-app` en el equipo `mcaparrosgu-4812's projects`, rama de
+  producción `master`. Dos pasos previos que solo Mar podía hacer, ninguno
+  automatizable por API (son consentimiento de cuenta): conectar GitHub como
+  Login Connection en Vercel, y luego dar acceso explícito al repo
+  `jobs-app` (privado) en la instalación de la GitHub App de Vercel — sin
+  eso, `create_git_project` fallaba primero con "Add a Login Connection" y
+  luego con "repo_not_found". Se disparó automáticamente un primer
+  despliegue de prueba; fallará porque las claves de entorno aún no están
+  puestas — normal en este punto, es justo lo que resuelve T75.
 * **T73 (Hito 9): repositorio creado en GitHub, privado, código subido.**
   `mcaparrosgu/jobs-app`, con `gh repo create --private --source=. --remote=origin`
   desde este mismo directorio. Hueco encontrado y resuelto en el momento: la
