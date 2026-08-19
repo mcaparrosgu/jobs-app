@@ -197,7 +197,7 @@ CV en la primera página y la carta empezando en una página nueva.
 | T59 | Forzar que la carta empiece en página nueva (historia C4) | `lib/pdf.tsx` | Interno — se verifica junto con T60 | T58 | [x] |
 | T60 | Crear el endpoint de descarga | `app/api/descargar/[id]/route.ts` | Con una generación en estado "listo", entras a la URL de descarga y se abre un PDF sin error | T53, T59 | [x] |
 | T61 | Botón "Descargar", desactivado hasta que esté listo | `components/TarjetaOferta.tsx` | Con estado "generando" el botón está gris; en "listo" se activa | T60, T53 | [x] |
-| T62 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T61 | [ ] |
+| T62 | Revisión visual del PDF con tu propio CV real | — (prueba manual) | Lees el PDF entero y confirmas que no hay ninguna experiencia inventada | T61 | [x] |
 
 ## Hito 8 · Aviso por email cuando hay ofertas nuevas
 
@@ -209,11 +209,11 @@ ofertas nuevas, te llega un correo con un enlace de vuelta a la app.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T63 | Contar cuántas ofertas nuevas entraron hoy | `Jobs App · ingesta` | En una ejecución de prueba, ese paso muestra un número | T36 | [ ] |
-| T64 | Consultar en Supabase qué usuarias tienen perfil guardado | `Jobs App · ingesta` | La ejecución de prueba devuelve tu email si ya tienes perfil guardado | T32, T31 | [ ] |
-| T65 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | `Jobs App · ingesta` | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T63, T64 | [ ] |
-| T66 | Redactar la plantilla fija del email de aviso, en castellano | `Jobs App · ingesta` (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T65 | [ ] |
-| T67 | Enviar el email a cada usuaria con perfil | `Jobs App · ingesta` | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T66 | [ ] |
+| T63 | Contar cuántas ofertas nuevas entraron hoy | `Jobs App · ingesta` | En una ejecución de prueba, ese paso muestra un número | T36 | [x] |
+| T64 | Consultar en Supabase qué usuarias tienen perfil guardado | `Jobs App · ingesta` | La ejecución de prueba devuelve tu email si ya tienes perfil guardado | T32, T31 | [x] |
+| T65 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | `Jobs App · ingesta` | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T63, T64 | [x] |
+| T66 | Redactar la plantilla fija del email de aviso, en castellano | `Jobs App · ingesta` (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T65 | [x] |
+| T67 | Enviar el email a cada usuaria con perfil | `Jobs App · ingesta` | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T66 | [x] |
 | T68 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T67 | [ ] |
 
 ## Hito 9 · Publicar en internet
@@ -276,8 +276,8 @@ verdad, ya no solo `localhost`.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T82 | Añadir el nombre completo al perfil | `supabase/migrations/0009_perfiles_nombre.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `app/perfil/page.tsx` | En `/perfil` escribes tu nombre completo, guardas, recargas la página y sigue ahí | T31 | [ ] |
-| T83 | Rediseño elegante del PDF, a prueba de ATS | `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts`, `public/fonts/` | Descargas un CV: tu nombre arriba en una tipografía elegante, el puesto y tu email debajo, secciones en mayúsculas espaciadas con una línea fina, viñetas finas — todo en una sola columna de lectura (nada de texto girado ni columnas paralelas, para que un lector automático no lo desordene) | T82, T60 | [ ] |
+| T82 | Añadir el nombre completo al perfil | `supabase/migrations/0009_perfiles_nombre.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `app/perfil/page.tsx` | En `/perfil` escribes tu nombre completo, guardas, recargas la página y sigue ahí | T31 | [x] |
+| T83 | Rediseño elegante del PDF, a prueba de ATS | `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts`, `public/fonts/` | Descargas un CV: tu nombre arriba en una tipografía elegante, el puesto y tu email debajo, secciones en mayúsculas espaciadas con una línea fina, viñetas finas — todo en una sola columna de lectura (nada de texto girado ni columnas paralelas, para que un lector automático no lo desordene) | T82, T60 | [x] |
 
 ## Relacionado
 

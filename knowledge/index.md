@@ -95,6 +95,11 @@ existe en produccion y no se toca desde aqui.
   — pendiente para más adelante: botón de volver atrás, datos coherentes
   entre pantallas, algo en el home. Apuntado a petición de Mar, sin diseñar
   todavía.
+- [hito-8-aviso-email.md](hito-8-aviso-email.md) — cierre de T63-T67 (Paso
+  9, Hito 8): nodos nuevos en `Jobs App · ingesta` que cuentan ofertas
+  nuevas, consultan usuarias con perfil (vista `perfiles_con_email`, con el
+  email que solo vivía en `auth.users`) y envían el aviso por Gmail;
+  verificado con una ejecución real.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

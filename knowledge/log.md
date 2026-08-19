@@ -1,6 +1,20 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Hito 8 cerrado (T63-T67): aviso por email de ofertas nuevas.** Cinco
+  nodos nuevos en `Jobs App · ingesta` (n8n): cuentan las ofertas nuevas del
+  día, consultan qué usuarias tienen perfil guardado y envían un aviso por
+  Gmail solo si hay ambas cosas (regla de negocio 8). Hueco encontrado: el
+  email de cada usuaria solo vivía en `auth.users`, no en `perfiles`;
+  preguntado a Mar, se resolvió con una vista SQL nueva
+  (`perfiles_con_email`, migración `0012`) en vez de duplicar el dato.
+  También se añadió `APP_URL_JOBS_APP` al `.env` del n8n autoalojado (mismo
+  patrón que `HEALTHCHECKS_PING_URL_JOBS_APP`) para el enlace del email,
+  provisional a `localhost` hasta que exista URL pública (T74-T76).
+  Verificado con una ejecución real completa: 5 ofertas nuevas detectadas,
+  email real recibido en la bandeja de Mar. Workflow publicado. Detalle en
+  `hito-8-aviso-email.md`. Queda pendiente que Mar confirme la ejecución
+  real de las 13:00 de mañana (T68).
 * **La app todavía no está desplegada — aclarado y anotado para el Paso
   16**: al dar instrucciones para añadir `GROQ_API_KEY` a Vercel, Mar avisó
   de que no existe ningún proyecto en su cuenta de Vercel. Comprobado:
