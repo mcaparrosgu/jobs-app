@@ -45,6 +45,9 @@ existe en produccion y no se toca desde aqui.
 - [hito-2-entrar.md](hito-2-entrar.md) — cierre del Hito 2 (Paso 9,
   T18-T22): magic link de extremo a extremo, sesion persistente, mensaje
   claro ante enlace caducado.
+- [idea-cerebras-version-consolidada.md](idea-cerebras-version-consolidada.md)
+  — Cerebras exige tarjeta, descartado para el MVP; candidato a revisar
+  cuando Jobs App pase a una version consolidada mas alla de la clase.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

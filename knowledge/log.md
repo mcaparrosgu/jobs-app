@@ -1,6 +1,11 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `idea-cerebras-version-consolidada.md`. Mar confirma que
+  no quiere poner tarjeta para el MVP de prueba con la clase, pero le
+  interesa Cerebras (3M tokens/dia gratis con tarjeta puesta) para cuando
+  Jobs App pase a una version consolidada, mas alla de las 5 companeras
+  de bootcamp. Queda anotado para retomar entonces, no se pierde la idea.
 * **Descartado**: Cerebras como proveedor de IA para T25. `docs/04-plan-tecnico.md`
   daba por hecho que Groq ofrecia varias familias de modelos de peso
   abierto (Llama, Qwen, Kimi, Mistral); comprobado en vivo contra la API
