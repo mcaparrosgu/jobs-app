@@ -1,6 +1,28 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Hito 4 cerrado** (T32-T40, Paso 9): workflow nuevo `Jobs App · ingesta`
+  en n8n, duplicado de `Jobs · ingesta` sin tocar el original. Quitados los
+  nodos de Google Sheets y su cadena de aviso; nuevos nodos
+  `Generar id_externo` (mismo hash 32-bit que el `Filtro duplicados`
+  original, regex de diacriticos corregida), `Supabase Insertar oferta`
+  (mapea al esquema de `ofertas`, la deduplicacion vive en el
+  `unique(fuente, id_externo)` de la base de datos, no en n8n) y
+  `Supabase Borrar ofertas antiguas` (regla de retencion, 30 dias).
+  **Fuentes de pago desactivadas**: la cuenta de Apify de Mar se quedo sin
+  fondos, asi que las 6 fuentes que dependen de sus actores (Indeed,
+  LinkedIn, InfoJobs, Wellfound, FlexJobs, All Jobs Scraper) se desactivan
+  en el workflow nuevo para el MVP; quedan las 7 gratuitas. Cron propio a
+  las 13:00 y vigilante propio de Healthchecks (check nuevo, variable
+  `HEALTHCHECKS_PING_URL_JOBS_APP`, con reinicio del contenedor n8n
+  confirmado sin perdida de datos ni afectar a los otros workflows `Jobs`).
+  **Bug encontrado y corregido en la propia construccion**: el nodo de
+  borrado no emitia ningun item si no habia filas que borrar, asi que el
+  ping de Healthchecks enganchado despues nunca se disparaba pese al
+  `executeOnce`; corregido con `alwaysOutputData: true`, verificado en
+  ejecucion real. Verificado con permiso explicito de Mar que dos
+  ejecuciones seguidas no duplican filas (20 → 20). Detalle completo en
+  `hito-4-n8n-supabase.md`.
 * **Segunda pasada del Hito 3** (mismo dia): Mar prueba `/perfil` con su
   propio CV (en ingles) y da cuatro correcciones, las cuatro aplicadas —
   detalle completo en `hito-3-perfil.md`. Resumen: (1) una sola pantalla

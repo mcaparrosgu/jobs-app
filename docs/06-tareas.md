@@ -131,9 +131,9 @@ reales, sin haber tocado la web ni ninguno de tus workflows actuales.
 | T35 | Sustituir la salida por un nodo que escriba cada oferta en Supabase | workflow `Jobs App · ingesta` | Ejecución manual de prueba: aparecen filas nuevas en Table Editor → `ofertas` | T32, T34 | [x] |
 | T36 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas el workflow nuevo dos veces seguidas y el número de filas no se duplica | T35 | [x] |
 | T37 | Añadir un paso de borrado de datos con más de 30 días (regla 10) | workflow `Jobs App · ingesta` | Insertas una fila de prueba con fecha antigua y, tras ejecutar ese paso, ha desaparecido | T35 | [x] |
-| T38 | Poner su propio Schedule Trigger a las 13:00 y su propio vigilante de Healthchecks | workflow `Jobs App · ingesta` | El workflow nuevo tiene su check propio en Healthchecks, distinto del de `Jobs · ingesta` | T37 | [ ] |
-| T39 | Activar y publicar el workflow nuevo | — (n8n) | `Jobs App · ingesta` aparece "Activo"; `Jobs · ingesta` sigue activo y sin cambios | T38 | [ ] |
-| T40 | Insertar ofertas de prueba a mano, por si la ingesta real tarda en dar resultados útiles para probar el resto | — (Supabase Table Editor) | Ves esas filas de prueba en la tabla `ofertas` | T10 | [ ] |
+| T38 | Poner su propio Schedule Trigger a las 13:00 y su propio vigilante de Healthchecks | workflow `Jobs App · ingesta` | El workflow nuevo tiene su check propio en Healthchecks, distinto del de `Jobs · ingesta` | T37 | [x] |
+| T39 | Activar y publicar el workflow nuevo | — (n8n) | `Jobs App · ingesta` aparece "Activo"; `Jobs · ingesta` sigue activo y sin cambios | T38 | [x] |
+| T40 | ~~Insertar ofertas de prueba a mano~~, innecesario: las pruebas de T36/T38 ya dejaron 20 filas reales en `ofertas` (Adzuna, Himalayas, Jooble, Get on Board, We Work Remotely, RemotoJob, Jobicy) | — (Supabase Table Editor) | La tabla `ofertas` ya tiene filas con las que probar el Hito 5 | T10 | [x] |
 
 ## Hito 5 · Ver ofertas y marcar "me interesa"
 

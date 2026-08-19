@@ -55,6 +55,10 @@ existe en produccion y no se toca desde aqui.
 - [hito-3-perfil.md](hito-3-perfil.md) — cierre del Hito 3 (Paso 9,
   T25-T31): la IA extrae puesto y palabras clave del CV pegado, editables,
   guardadas en Supabase.
+- [hito-4-n8n-supabase.md](hito-4-n8n-supabase.md) — cierre del Hito 4
+  (Paso 9, T32-T40): workflow nuevo `Jobs App · ingesta` en n8n, escribe en
+  Supabase, fuentes de pago de Apify desactivadas, vigilante propio de
+  Healthchecks.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
