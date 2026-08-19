@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { esPalabraClaveLarga } from '@/lib/palabras-clave';
 
 type PerfilGuardado = {
   puesto: string | null;
@@ -20,6 +21,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
   const [titulosCv, setTitulosCv] = useState<string[]>(perfilInicial?.titulos_cv ?? []);
   const [usarExperienciaCv, setUsarExperienciaCv] = useState(perfilInicial?.usar_experiencia_cv ?? false);
   const [nuevaPalabra, setNuevaPalabra] = useState('');
+  const [avisoPalabra, setAvisoPalabra] = useState<string | null>(null);
 
   const [analizando, setAnalizando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -62,6 +64,13 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       return;
     }
     setPalabrasClave((actuales) => [...actuales, palabra]);
+    // Se añade igual: manda ella. Pero conviene que sepa que las ofertas se
+    // buscan por coincidencia literal, y una frase larga no coincide con nada.
+    setAvisoPalabra(
+      esPalabraClaveLarga(palabra)
+        ? `Añadida, pero "${palabra}" es larga: las ofertas se buscan palabra por palabra, y los términos de una a tres palabras encuentran muchas más.`
+        : null,
+    );
     setNuevaPalabra('');
   }
 
@@ -175,6 +184,9 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
           Añadir
         </button>
       </div>
+      {avisoPalabra && (
+        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{avisoPalabra}</p>
+      )}
 
       <label className="mt-6 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
         <input

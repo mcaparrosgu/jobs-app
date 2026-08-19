@@ -3,6 +3,7 @@
 // para por qué no es Groq y por qué hay varios modelos en vez de uno fijo.
 
 import { detectarIdioma, NOMBRE_IDIOMA, type Idioma } from '@/lib/idioma';
+import { MAXIMO_CARACTERES, normalizarPalabrasClave } from '@/lib/palabras-clave';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -51,7 +52,10 @@ const ESQUEMA_PERFIL = {
       puesto: { type: 'string' },
       palabras_clave: {
         type: 'array',
-        items: { type: 'string' },
+        // maxLength es un refuerzo, no la garantía: no todos los modelos
+        // gratuitos de OpenRouter lo respetan. Quien garantiza la longitud es
+        // normalizarPalabrasClave, más abajo, que es código nuestro.
+        items: { type: 'string', maxLength: MAXIMO_CARACTERES },
         minItems: 8,
         maxItems: 20,
       },
@@ -154,7 +158,11 @@ function validarPerfil(perfil: unknown): PerfilExtraido {
       ? valor.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim())
       : [];
 
-  const palabrasClave = Array.from(new Set(listaTexto(palabras_clave)));
+  // Aquí se recorta al núcleo lo que venga largo: "gestión de equipos
+  // multidisciplinares en entorno internacional" → "gestión de equipos"
+  // (docs/05-ia.md §6.3, defensa 3). Sin esto, esas entradas son palabras
+  // clave muertas: no encuentran ninguna oferta.
+  const palabrasClave = normalizarPalabrasClave(listaTexto(palabras_clave));
   if (palabrasClave.length === 0) {
     throw new Error('La IA no devolvió palabras clave válidas');
   }
@@ -177,15 +185,26 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
     {
       role: 'system',
       content:
-        'Lees un CV en texto libre, de cualquier sector y en cualquier idioma, y extraes: ' +
-        'el puesto principal al que aspira la persona; entre 8 y 20 palabras clave ' +
-        'tal como aparecerían en un anuncio de empleo (herramientas, tecnologías, ' +
-        'funciones, sectores y habilidades duras concretas que aparezcan en el CV — ' +
-        'sé exhaustiva explorando variantes y sinónimos habituales de lo que ya está en ' +
-        'el texto, pero nada de habilidades blandas genéricas como "trabajo en equipo", ' +
-        'y nada que no esté respaldado por el CV); la lista de empresas donde ha ' +
-        'trabajado; y la lista de titulaciones que menciona. ' +
-        'No inventes nada que no esté en el texto del CV. ' +
+        'Lees un CV en texto libre, de cualquier sector y en cualquier idioma, y ' +
+        'extraes: el puesto principal al que aspira la persona; entre 8 y 20 palabras ' +
+        'clave de búsqueda de empleo; la lista de empresas donde ha trabajado; y la ' +
+        'lista de titulaciones que menciona.\n\n' +
+        'Las palabras clave son la parte delicada. Cada una es un TÉRMINO DE BÚSQUEDA, ' +
+        'de los que se teclean en el buscador de un portal de empleo (LinkedIn, ' +
+        'InfoJobs), no una descripción de lo que la persona sabe hacer:\n' +
+        '- De 1 a 3 palabras. Nunca una frase.\n' +
+        '- Sustantivos concretos: herramientas, tecnologías, metodologías, sectores, ' +
+        'nombres de puesto, especialidades. Sin verbos ni relleno.\n' +
+        '- Nada de habilidades blandas ("trabajo en equipo", "proactividad") ni de ' +
+        'coletillas ("experiencia en", "conocimientos de", "capacidad de").\n' +
+        '- BIEN: "Python", "Customer Success", "SAP", "atención al cliente", ' +
+        '"Google Ads", "enfermería geriátrica", "comercio exterior".\n' +
+        '- MAL: "gestión de equipos multidisciplinares en entorno internacional", ' +
+        '"capacidad de análisis y resolución de problemas", "experiencia en atención ' +
+        'al cliente", "trabajo en equipo".\n' +
+        '- Puedes añadir el sinónimo con el que ese mismo término aparece en los ' +
+        'anuncios (a menudo en inglés), siempre que también quepa en 3 palabras.\n' +
+        '- Todas respaldadas por el CV. No inventes nada que no esté en el texto.\n\n' +
         'Responde SIEMPRE en español (castellano), sin importar en qué idioma esté ' +
         'escrito el CV original.',
     },

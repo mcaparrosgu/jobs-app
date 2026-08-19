@@ -73,6 +73,12 @@ existe en produccion y no se toca desde aqui.
   del email y guia de dos pasos. Las pantallas estaban construidas pero
   incomunicadas entre si.
 
+- [mejora-palabras-clave.md](mejora-palabras-clave.md) — las palabras clave
+  que proponia la IA eran frases largas que ningun anuncio contiene
+  literalmente, y por eso la pantalla de ofertas salia vacia; se corrigen el
+  prompt, el esquema y la validacion en codigo, y los terminos largos se
+  recortan al nucleo.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

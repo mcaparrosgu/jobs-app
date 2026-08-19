@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO } from '@/lib/generaciones';
+import { normalizarPalabrasClave } from '@/lib/palabras-clave';
 import { createClient } from '@/lib/supabase/server';
 
 // Quita caracteres que romperían la sintaxis del filtro .or() de Supabase.
@@ -46,19 +47,19 @@ export async function GET() {
 
   const huboIngestaHoy = (ofertasHoy ?? 0) > 0;
 
-  const terminos = Array.from(
-    new Set(
-      [
-        perfil.puesto,
-        ...(perfil.palabras_clave ?? []),
-        ...(perfil.usar_experiencia_cv
-          ? [...(perfil.empresas_cv ?? []), ...(perfil.titulos_cv ?? [])]
-          : []),
-      ]
-        .map((t) => limpiarTermino(String(t ?? '')))
-        .filter((t) => t.length > 0),
-    ),
-  );
+  // Cada término se busca literalmente dentro del título y la descripción, así
+  // que antes se recorta al núcleo: un título de perfil o una titulación
+  // enteros ("Grado en Administración y Dirección de Empresas") no coinciden
+  // con ninguna oferta. Ver lib/palabras-clave.ts.
+  const terminos = normalizarPalabrasClave([
+    perfil.puesto,
+    ...(perfil.palabras_clave ?? []),
+    ...(perfil.usar_experiencia_cv
+      ? [...(perfil.empresas_cv ?? []), ...(perfil.titulos_cv ?? [])]
+      : []),
+  ])
+    .map(limpiarTermino)
+    .filter((t) => t.length > 0);
 
   if (terminos.length === 0) {
     return NextResponse.json({ sinPerfil: false, huboIngestaHoy, ofertas: [] });

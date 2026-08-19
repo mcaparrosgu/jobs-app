@@ -1,6 +1,19 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Palabras clave cortas (cierra el aviso abierto del Hito 6)**: la
+  pantalla de ofertas salia vacia porque cada palabra clave se busca de forma
+  literal (`ilike`) y las que proponia la IA eran frases enteras. Se arreglan
+  las tres capas: prompt con regla de "termino de busqueda de 1 a 3 palabras"
+  y ejemplos de bien/mal, `maxLength` en el esquema (refuerzo: verificado en
+  vivo que los modelos de la primera ronda lo aceptan) y un
+  `lib/palabras-clave.ts` nuevo que recorta al nucleo lo que llega largo
+  —decision de Mar: **recortar, no descartar**—. La limpieza se aplica tambien
+  al puesto y a las titulaciones al construir el filtro de busqueda. En
+  `/perfil`, escribir a mano una palabra clave larga **avisa pero no bloquea**.
+  Comprobado con un CV ficticio contra los dos modelos reales. Ver
+  `mejora-palabras-clave.md`. **Pendiente para Mar**: volver a analizar su CV
+  para reemplazar las palabras clave largas que ya tiene guardadas.
 * **Hito 6 cerrado (T48-T57)**: marcar "me interesa" prepara solo un CV y
   una carta adaptados a la oferta. Nuevo `hito-6-generar-cv.md`. Tres cosas
   cambiaron respecto a lo planeado, y las tres por medir en vez de suponer:
