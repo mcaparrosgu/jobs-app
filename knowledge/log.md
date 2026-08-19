@@ -1,6 +1,42 @@
 # Registro de cambios del bundle
 
 ## 2026-08-19
+* **Creacion**: `hito-3-perfil.md` — cierre del Hito 3 (T25-T31, Paso 9).
+  `lib/ia.ts` llama a OpenRouter con salida estructurada para extraer
+  puesto y palabras clave (y, sin coste extra, empresas/titulaciones para
+  verificar después, docs/05-ia.md §6.2); prueba una lista de 3 modelos
+  gratis con reintento de espera creciente si uno falla o satura. Nuevo
+  endpoint `app/api/extraer-perfil/route.ts`, componente
+  `components/FormularioPerfil.tsx` (caja de texto → puesto y palabras
+  clave editables → años de experiencia y casilla "tener en cuenta mi
+  CV" → guardar) y `app/api/perfil/route.ts` (GET+POST, upsert por
+  `user_id`). Verificado en Chrome con un CV de prueba ficticio: propone
+  puesto y 9 palabras clave razonables, edición y guardado funcionan, y
+  el perfil se recarga precargado en `/perfil` tras una recarga real.
+  **Incidente de la sesión de prueba, no de la app**: la primera
+  comprobación de "recargar y ver los mismos datos" pareció fallar por un
+  *hydration mismatch* de React; investigado a fondo (incluida la
+  documentación de esta versión de Next.js en `node_modules/next/dist/docs/`)
+  antes de tocar nada, resultó ser que la herramienta de automatización de
+  navegador hacía una navegación "blanda" que Next.js 16 intercepta
+  preservando el estado antiguo del formulario (ver "UI state
+  preservation" de Cache Components) — con recarga dura (`Ctrl+Shift+R`)
+  funciona a la primera. Sin cambios de código derivados; anotado como
+  nota de runbook para pruebas futuras con esta herramienta.
+* **Correccion menor**: `.env.example` — la sección de Groq se sustituye
+  por `OPENROUTER_API_KEY`, coherente con la decisión de T25.
+* **Creacion**: `decision-modelo-ia.md` — cierra T25 la parte de "que
+  proveedor y modelo". Cuenta creada en OpenRouter, sin tarjeta. Verificado
+  en vivo: 17 modelos gratis (`:free`), solo 1 de OpenAI. Probado con
+  exito `response_format: json_schema` en modo `strict` contra
+  `google/gemma-4-31b-it:free` (devolvio el JSON exacto pedido) y contra
+  `nvidia/nemotron-nano-9b-v2:free` (funciono, pero es un modelo
+  "razonador" que gasta tokens de mas). Los dos primeros modelos de la
+  lista (Gemma, GLM) dieron 429 por saturacion temporal del proveedor de
+  detras durante la prueba -- de ahi que el diseño final sea una **lista
+  de modelos intercambiables**, no uno fijo. `lib/groq.ts` (nombrado asi
+  en `docs/04-plan-tecnico.md` y T25 de `docs/06-tareas.md`) pasa a
+  llamarse `lib/ia.ts`, nombre neutral de proveedor.
 * **Creacion**: `idea-cerebras-version-consolidada.md`. Mar confirma que
   no quiere poner tarjeta para el MVP de prueba con la clase, pero le
   interesa Cerebras (3M tokens/dia gratis con tarjeta puesta) para cuando

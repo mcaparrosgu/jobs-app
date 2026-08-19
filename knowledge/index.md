@@ -48,6 +48,13 @@ existe en produccion y no se toca desde aqui.
 - [idea-cerebras-version-consolidada.md](idea-cerebras-version-consolidada.md)
   — Cerebras exige tarjeta, descartado para el MVP; candidato a revisar
   cuando Jobs App pase a una version consolidada mas alla de la clase.
+- [decision-modelo-ia.md](decision-modelo-ia.md) — T25: Groq perdio su
+  variedad de modelos abiertos, se cambia a OpenRouter con una lista de
+  modelos gratis intercambiables. `lib/groq.ts` pasa a llamarse
+  `lib/ia.ts`.
+- [hito-3-perfil.md](hito-3-perfil.md) — cierre del Hito 3 (Paso 9,
+  T25-T31): la IA extrae puesto y palabras clave del CV pegado, editables,
+  guardadas en Supabase.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

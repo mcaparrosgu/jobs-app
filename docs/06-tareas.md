@@ -101,13 +101,13 @@ guardar.
 | :-- | :---- | :---- | :---- | :-- | :-: |
 | T23 | Crear la cuenta en Groq y guardar la clave | `.env.local` | El archivo tiene `GROQ_API_KEY` rellena | T07 | [x] |
 | T24 | Activar Zero Data Retention en Groq | — (panel de Groq) | Data Controls muestra la opción activada | T23 | [x] |
-| T25 | Escribir la función que llama a Groq para extraer perfil | `lib/groq.ts` | Interno — se verifica junto con T29 | T24 | [ ] |
-| T26 | Definir el esquema de salida (puesto, palabras_clave, empresas_cv, titulos_cv) | `lib/groq.ts` | Interno — se verifica junto con T29 | T25 | [ ] |
-| T27 | Crear el endpoint que recibe el CV y llama a Groq | `app/api/extraer-perfil/route.ts` | Interno — se verifica junto con T29 | T26 | [ ] |
-| T28 | Construir la pantalla de perfil: caja de texto y botón "Continuar" | `app/perfil/page.tsx` | Se ve una caja de texto grande y un botón | T20 | [ ] |
-| T29 | Conectar el botón al endpoint y mostrar los resultados, editables | `app/perfil/page.tsx` | Pegas tu CV real, pulsas "Continuar" y en segundos ves puesto + palabras clave que puedes borrar o añadir | T27, T28 | [ ] |
-| T30 | Añadir años de experiencia y la casilla "tener en cuenta mi CV" | `app/perfil/page.tsx` | Ves un campo numérico y una casilla junto a la propuesta de la IA | T29 | [ ] |
-| T31 | Guardar el perfil al pulsar "Guardar" | `app/perfil/page.tsx`, `app/api/perfil/route.ts` | Pulsas "Guardar", recargas la página y ves los mismos datos que guardaste | T30, T13 | [ ] |
+| T25 | Escribir la función que llama al modelo de IA (OpenRouter) para extraer perfil | `lib/ia.ts` | Interno — se verifica junto con T29 | T24 | [x] |
+| T26 | Definir el esquema de salida (puesto, palabras_clave, empresas_cv, titulos_cv) | `lib/ia.ts` | Interno — se verifica junto con T29 | T25 | [x] |
+| T27 | Crear el endpoint que recibe el CV y llama al modelo de IA | `app/api/extraer-perfil/route.ts` | Interno — se verifica junto con T29 | T26 | [x] |
+| T28 | Construir la pantalla de perfil: caja de texto y botón "Continuar" | `app/perfil/page.tsx` | Se ve una caja de texto grande y un botón | T20 | [x] |
+| T29 | Conectar el botón al endpoint y mostrar los resultados, editables | `app/perfil/page.tsx` | Pegas tu CV real, pulsas "Continuar" y en segundos ves puesto + palabras clave que puedes borrar o añadir | T27, T28 | [x] |
+| T30 | Añadir años de experiencia y la casilla "tener en cuenta mi CV" | `app/perfil/page.tsx` | Ves un campo numérico y una casilla junto a la propuesta de la IA | T29 | [x] |
+| T31 | Guardar el perfil al pulsar "Guardar" | `app/perfil/page.tsx`, `app/api/perfil/route.ts` | Pulsas "Guardar", recargas la página y ves los mismos datos que guardaste | T30, T13 | [x] |
 
 ## Hito 4 · Un workflow nuevo de n8n alimenta la base de datos de ofertas
 
@@ -158,16 +158,16 @@ activa solo.
 
 | # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
 | :-- | :---- | :---- | :---- | :-- | :-: |
-| T48 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/groq.ts` | Interno — se verifica junto con T52 | T26 | [ ] |
+| T48 | Definir el esquema de salida de generación (cv_texto, carta_texto) | `lib/ia.ts` | Interno — se verifica junto con T52 | T26 | [ ] |
 | T49 | Detectar el idioma de la oferta con código, no con IA (§6.5 de `05-ia.md`) | `lib/idioma.ts` | Interno — se verifica junto con T52 | — | [ ] |
-| T50 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/groq.ts` | Interno — se verifica junto con T52 | T48, T49 | [ ] |
+| T50 | Escribir el prompt de generación: "reordena y reformula", no "redacta" | `lib/ia.ts` | Interno — se verifica junto con T52 | T48, T49 | [ ] |
 | T51 | Crear el endpoint que dispara la generación | `app/api/generar/route.ts` | Interno — se verifica junto con T52 | T50, T12 | [ ] |
 | T52 | Conectar "me interesa" a la generación, estado `generando` | `app/api/interes/route.ts`, `app/api/generar/route.ts` | Marcas "me interesa" en una oferta real y ves de inmediato "generando" en pantalla | T46, T51 | [ ] |
 | T53 | Guardar el resultado y pasar a estado `listo` | `app/api/generar/route.ts` | Esperas unos segundos y el estado cambia solo a "listo", sin recargar a mano | T52 | [ ] |
 | T54 | Verificación automática: las cifras del CV generado deben estar en el original | `lib/verificarCv.ts` | Interno — pruébalo generando un CV para una oferta y revisando que no aparecen cifras nuevas | T53 | [ ] |
 | T55 | Verificación automática: las empresas del CV generado deben estar en `empresas_cv` | `lib/verificarCv.ts` | Interno — mismo tipo de prueba que T54, con nombres de empresa | T54, T29 | [ ] |
 | T56 | Poner el límite de 5 generaciones al día (regla 5) | `app/api/generar/route.ts` | Generas 5 CVs seguidos (con ofertas de prueba) y el sexto intento muestra el mensaje del límite, no un error críptico | T53 | [ ] |
-| T57 | Manejar el fallo de Groq: reintento + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T53 | [ ] |
+| T57 | Manejar el fallo del modelo de IA: reintento + rotación entre modelos gratis + cola + estado `error` | `app/api/generar/route.ts` | Revisar con Claude Code que el reintento y el mensaje de error están escritos (es difícil de provocar a propósito) | T53 | [ ] |
 
 ## Hito 7 · Descargar el documento en PDF
 

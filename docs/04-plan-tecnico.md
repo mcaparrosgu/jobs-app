@@ -11,6 +11,16 @@
 >
 > Cada término técnico se explica la primera vez que aparece.
 
+> ⚠️ **Actualización (T25, 2026-08-19)**: este documento eligió **Groq**
+> dando por hecho que ofrecía varios modelos de peso abierto para elegir.
+> Al construir T25 se comprobó en vivo que Groq ya no los tiene (solo
+> quedan modelos de OpenAI, descartados, y uno solo no-OpenAI marcado
+> "Preview", con riesgo de retirada). El proveedor de IA pasó a
+> **OpenRouter**. El resto de este documento (por qué Next.js + Supabase +
+> Vercel, cómo se factura, la arquitectura general) sigue siendo válido —
+> solo cambia qué servicio ejecuta el modelo. Detalle completo en
+> [`knowledge/decision-modelo-ia.md`](../knowledge/decision-modelo-ia.md).
+
 ## 1. Tres opciones de stack
 
 Un **stack** es simplemente la lista de herramientas que trabajan juntas
@@ -88,8 +98,8 @@ dejan aquí registradas para no volver a plantearlas sin motivo nuevo:
 **Lo que sí se aprovecha de ese workflow**: la lógica del prompt, que ya
 está probada en producción — combina el CV base con la oferta y separa la
 respuesta del modelo con marcadores `===IDIOMA===` / `===CV===` /
-`===CARTA===`. Esa estructura se traduce a la llamada a Groq en
-`lib/groq.ts` (ver §3.3) en vez de reinventar el prompt desde cero. Es
+`===CARTA===`. Esa estructura se traduce a la llamada al modelo de IA en
+`lib/ia.ts` (ver §3.3) en vez de reinventar el prompt desde cero. Es
 tiempo real ahorrado en el Paso 9, sin heredar ninguno de los problemas
 del flujo original.
 
@@ -107,7 +117,8 @@ del flujo original.
   fichas dentro (filas), y cada ficha con las mismas casillas rellenas
   (columnas). Supabase además trae el sistema de entrada por enlace de un
   solo uso ya resuelto.
-- **Groq** — el servicio que ejecuta el modelo de IA. Le mandas texto por
+- **OpenRouter** — el servicio que ejecuta el modelo de IA (sustituye a
+  Groq, ver aviso al principio del documento). Le mandas texto por
   internet y te devuelve texto. Es la pieza que lee el CV pegado y propone
   puesto y palabras clave, y la que redacta el CV y la carta adaptados.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
@@ -138,7 +149,7 @@ sí. Los dos hablan con la misma base de datos.**
                                             │
                                      Web (Next.js/Vercel)
                                             │
-                                            └──► Groq (generar CV+carta)
+                                            └──► OpenRouter (generar CV+carta)
 ```
 
 Esto elimina un bloque entero del plan de esfuerzo: en `docs/02-mvp.md`
@@ -149,7 +160,7 @@ haga algo. Ya no hace falta ninguno, porque desde el Paso 4 sabemos que
 simplemente una consulta a la base de datos, cuestión de horas y no de
 días.
 
-El único servicio externo al que llama la web es Groq.
+El único servicio externo al que llama la web es OpenRouter.
 
 ### 3.3 Estructura de carpetas
 
@@ -161,13 +172,13 @@ jobs-app/
 │   ├── perfil/page.tsx           # "/perfil"     → pegar CV, revisar palabras clave
 │   ├── ofertas/page.tsx          # "/ofertas"    → lista, "me interesa", descargar
 │   └── api/                      # código que corre en el servidor, no en el móvil
-│       ├── extraer-perfil/route.ts   # CV pegado → puesto + palabras clave (Groq)
-│       ├── generar/route.ts          # oferta + CV → CV y carta adaptados (Groq)
+│       ├── extraer-perfil/route.ts   # CV pegado → puesto + palabras clave (IA)
+│       ├── generar/route.ts          # oferta + CV → CV y carta adaptados (IA)
 │       └── descargar/[id]/route.ts   # texto guardado → PDF
 ├── components/                   # trozos de pantalla reutilizables (botón, tarjeta de oferta)
 ├── lib/                          # utilidades compartidas
 │   ├── supabase/                 # conexión a la base de datos
-│   ├── groq.ts                   # llamadas al modelo de IA, en un solo sitio
+│   ├── ia.ts                     # llamadas al modelo de IA, en un solo sitio
 │   └── pdf.ts                    # cómo se dibuja el PDF
 ├── supabase/migrations/          # historial de cambios de la base de datos
 ├── .env.local                    # ⚠ claves secretas — NUNCA se sube a git
@@ -405,8 +416,10 @@ para el detalle completo:
 5. **Probarlo con tu propio CV antes de enseñárselo a nadie.** Es la
    prueba de fuego y cuesta 10 minutos.
 6. Si no da la talla: el código de las llamadas a la IA está concentrado
-   en `lib/groq.ts`, así que cambiar de modelo (o de proveedor) se toca en
-   **un solo archivo**. Por eso está aislado ahí desde el principio.
+   en `lib/ia.ts`, así que cambiar de modelo (o de proveedor) se toca en
+   **un solo archivo**. Por eso está aislado ahí desde el principio — y es
+   justo lo que permitió pasar de Groq a OpenRouter en T25 sin tocar nada
+   más.
 7. Avisar en la propia web de que hay que revisar el documento antes de
    enviarlo. Honestidad barata que evita un disgusto.
 
