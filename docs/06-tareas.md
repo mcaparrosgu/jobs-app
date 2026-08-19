@@ -129,7 +129,7 @@ reales, sin haber tocado la web ni ninguno de tus workflows actuales.
 | T33 | Exportar el JSON de `Jobs · ingesta` e importarlo como workflow nuevo `Jobs App · ingesta`, **desactivado** | — (n8n) | En la lista de workflows aparecen los dos por separado; el nuevo está inactivo y el original sigue activo e intacto | — | [x] |
 | T34 | Quitar del workflow nuevo todo lo que no sea ingesta (archivado, escritura en Google Sheets) | workflow `Jobs App · ingesta` | El lienzo del workflow nuevo ya no tiene nodos de Google Sheets | T33 | [x] |
 | T35 | Sustituir la salida por un nodo que escriba cada oferta en Supabase | workflow `Jobs App · ingesta` | Ejecución manual de prueba: aparecen filas nuevas en Table Editor → `ofertas` | T32, T34 | [x] |
-| T36 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas el workflow nuevo dos veces seguidas y el número de filas no se duplica | T35 | [ ] |
+| T36 | Confirmar que las ofertas duplicadas no se insertan dos veces | mismo nodo | Ejecutas el workflow nuevo dos veces seguidas y el número de filas no se duplica | T35 | [x] |
 | T37 | Añadir un paso de borrado de datos con más de 30 días (regla 10) | workflow `Jobs App · ingesta` | Insertas una fila de prueba con fecha antigua y, tras ejecutar ese paso, ha desaparecido | T35 | [x] |
 | T38 | Poner su propio Schedule Trigger a las 13:00 y su propio vigilante de Healthchecks | workflow `Jobs App · ingesta` | El workflow nuevo tiene su check propio en Healthchecks, distinto del de `Jobs · ingesta` | T37 | [ ] |
 | T39 | Activar y publicar el workflow nuevo | — (n8n) | `Jobs App · ingesta` aparece "Activo"; `Jobs · ingesta` sigue activo y sin cambios | T38 | [ ] |
