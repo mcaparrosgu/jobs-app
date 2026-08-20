@@ -4,7 +4,7 @@ title: Jobs App — base de conocimiento
 description: Documentacion en formato OKF (Open Knowledge Format) de las decisiones, contexto y trabajo de este proyecto.
 tags: [jobs-app, okf]
 okf_version: "0.2"
-timestamp: 2026-08-18T00:00:00Z
+timestamp: 2026-08-20T09:00:00Z
 ---
 
 # Que hay aqui
@@ -111,10 +111,43 @@ existe en produccion y no se toca desde aqui.
   (`prompts/system.md`) en vez de un system prompt de chat, más 10 casos
   difíciles (`evals/casos-dificiles.md`); `lib/ia.ts` alineado el mismo
   día con la defensa contra inyección de instrucciones.
+- [paso-11-no-aplica.md](paso-11-no-aplica.md) — Paso 11 marcado
+  explícitamente como no aplicable: `docs/05-ia.md` §4 ya dice "ninguna
+  herramienta, ni una sola"; el trabajo equivalente a prueba de errores
+  ya vive en `lib/ia.ts` y `lib/verificarCv.ts` bajo el paraguas del
+  Paso 14, no del 11.
 - [paso-12-pruebas.md](paso-12-pruebas.md) — Paso 12: 172 pruebas con
   Vitest sobre la parte determinista (funciones puras, endpoints y
   componentes clave), con un doble encadenable de Supabase y sin llamar
   nunca a un modelo de IA real.
+- [paso-13-evals.md](paso-13-evals.md) — Paso 13: golden dataset de 25
+  casos y arnés con Promptfoo para los dos prompts de `lib/ia.ts`, con 5
+  métricas de alta señal, umbrales iniciales de aprobado y un hallazgo
+  real de invención total en un CV vacío.
+- [paso-14-guardrails.md](paso-14-guardrails.md) — Paso 14: las 7 capas de
+  guardrails sobre `lib/ia.ts`, con relevancia/seguridad/moderación como
+  reglas deterministas (sin llamadas nuevas al modelo, confirmado con Mar)
+  y los dos disparadores de intervención humana adaptados a un producto
+  sin panel de administración.
+- [paso-15-red-team.md](paso-15-red-team.md) — Paso 15: 35 ataques OWASP
+  Top 10 para LLM contra el sistema real, varios ejecutados en vivo; sin
+  límite diario en `/api/extraer-perfil` (riesgo de dejar a las 5 usuarias
+  sin cupo), y el detector de inyección se esquiva con Unicode invisible o
+  una simple paráfrasis. Informe completo en `seguridad/red-team.md`.
+- [decision-groq-principal-privacidad.md](decision-groq-principal-privacidad.md)
+  — 20/08/2026: Groq pasa a proveedor principal de IA. El red team descubrió
+  que los modelos gratis de OpenRouter podían **entrenar con los CVs**; se
+  apagó esa opción y, como eso deja sin servicio a los `:free`, se invirtió el
+  orden. Groq tiene ZDR global y un cupo diario de 200.000 tokens (unos 30
+  documentos) en vez de las 50 peticiones de OpenRouter.
+- [paso-15-revision-opus.md](paso-15-revision-opus.md) — Paso 15, segunda
+  pasada independiente: la inyección indirecta que el primer informe dio por
+  resistida **sí funciona** (un anuncio manipulado sustituye el CV entero y
+  sale con cero avisos), porque la descripción de la oferta está dentro de la
+  lista blanca de `verificarCv`. Más: `titulo`/`empresa` sin vigilar,
+  registro abierto y privacidad de los modelos `:free` de OpenRouter. Incluye
+  los arreglos aplicados el mismo día, verificados relanzando los ataques en
+  vivo. Informe completo en `seguridad/red-team-opus.md`.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

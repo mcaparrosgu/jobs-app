@@ -32,8 +32,14 @@ son Mar: sus cuatro compañeras de clase.
 
 - El aislamiento entre usuarias se garantiza con **RLS** en Supabase (cada
   fila lleva su dueña grabada), no con lógica en el código.
-- El texto de los CVs sale hacia **Groq**. Debe estar activado *Zero Data
-  Retention* en la consola de Groq.
+- El texto de los CVs sale hacia el proveedor de IA. **Antes de cambiar de
+  proveedor o de añadir uno nuevo, hay que comprobar su política de datos** —
+  no basta con que sea gratis. Estado verificado el 20/08/2026:
+  - **Groq** (principal): *Zero Data Retention* global activado. ✓
+  - **OpenRouter** (respaldo): tenía activado "Allow free endpoints that train
+    on request data", es decir, los modelos gratuitos podían **entrenar con
+    los CVs**. Se apagó. Ver
+    `knowledge/decision-groq-principal-privacidad.md`.
 - Los datos se borran automáticamente al mes (regla 10 de la spec).
 
 ## Lo que NUNCA se debe hacer en este repositorio
@@ -66,6 +72,33 @@ son Mar: sus cuatro compañeras de clase.
 - `knowledge/` — bundle **OKF** con las decisiones y su porqué. Después de
   cada cambio relevante hay que actualizar `knowledge/index.md` y
   `knowledge/log.md`.
+
+## Evals de la IA
+
+`evals/` contiene el arnés de pruebas de las dos llamadas a IA de
+`lib/ia.ts` (Paso 13): `evals/golden.yaml` (25 casos), y su implementación
+ejecutable con Promptfoo en `evals/promptfoo/`.
+
+**Relanza los evals siempre que cambie el prompt (`lib/ia.ts`,
+`prompts/system.md`), el modelo (`MODELO_GROQ` / `RONDAS_MODELOS` en
+`lib/ia.ts`), o el formato de los datos de entrada o salida.** Un cambio
+que no se comprueba contra el golden dataset puede arreglar un caso y
+romper otro sin que nadie se entere hasta que le pase a una usuaria real.
+
+```
+npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml --env-file .env.local -j 1
+npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local -j 1
+```
+
+`-j 1` (sin concurrencia) es obligatorio desde que Groq es el proveedor
+principal: limita por **tokens por minuto** (8000 en esta cuenta), y con la
+concurrencia por defecto de 4 los casos se pisan entre sí y fallan con un 429
+que parece un fallo de calidad y no lo es.
+
+Ambos llaman a las funciones reales de `lib/ia.ts` (consumen cuota gratis
+de OpenRouter/Groq, igual que la app en producción). Los umbrales de
+aprobado y cómo leer el resultado están documentados en
+`knowledge/paso-13-evals.md`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

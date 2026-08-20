@@ -7,8 +7,9 @@
 // recarga, la pantalla sigue sabiendo por dónde iba.
 
 import { NextResponse } from 'next/server';
-import { generarCvYCarta } from '@/lib/ia';
+import { esErrorDeContenido, generarCvYCarta } from '@/lib/ia';
 import { verificarCv } from '@/lib/verificarCv';
+import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO, MENSAJE_LIMITE } from '@/lib/generaciones';
 import { createClient } from '@/lib/supabase/server';
 
@@ -21,6 +22,13 @@ export const maxDuration = 60;
 // Si una generación lleva más de esto sin terminar, es que quien la empezó ya
 // no está (pestaña cerrada, función cortada), y otra petición puede retomarla.
 const MINUTOS_TURNO = 3;
+
+// Paso 14 · Disparador de intervención humana "umbral de fallos". No hay
+// panel de administración (docs/03-spec.md §2), así que "intervención
+// humana" aquí significa: un log distinguible que Mar puede revisar en
+// Vercel, y un mensaje distinto para la usuaria a partir del tercer fallo
+// seguido en la misma oferta.
+const UMBRAL_FALLOS_HUMANO = 3;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -38,11 +46,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Falta la oferta' }, { status: 400 });
   }
 
+  // 0. Regla de negocio 2: preparar documentos SOLO para una oferta que la
+  //    usuaria ha marcado como "me interesa". La pantalla ya lo respeta, pero
+  //    hasta el Paso 15 el servidor no lo comprobaba: con un `oferta_id`
+  //    cualquiera se podía generar para una oferta nunca marcada
+  //    (seguridad/red-team-opus.md, ficha 5.2). RLS ya limita la consulta a
+  //    las filas de esta usuaria.
+  const { data: interes, error: errorInteres } = await supabase
+    .from('intereses')
+    .select('oferta_id')
+    .eq('user_id', user.id)
+    .eq('oferta_id', oferta_id)
+    .maybeSingle();
+
+  if (errorInteres) {
+    console.error('Error comprobando el interés:', errorInteres);
+    return NextResponse.json({ error: 'No se pudo preparar el documento.' }, { status: 500 });
+  }
+
+  if (!interes) {
+    return NextResponse.json(
+      { error: 'Marca antes la oferta como "me interesa".' },
+      { status: 400 },
+    );
+  }
+
   // 1. ¿Ya está hecho? Un CV generado es definitivo (regla de negocio 7): no
   //    se regenera aunque se vuelva a pedir.
   const { data: generacion, error: errorGeneracion } = await supabase
     .from('generaciones')
-    .select('id, estado, iniciado_en')
+    .select('id, estado, iniciado_en, intentos_fallidos')
     .eq('user_id', user.id)
     .eq('oferta_id', oferta_id)
     .maybeSingle();
@@ -60,17 +93,25 @@ export async function POST(request: Request) {
   //    haya comprobado antes: es el servidor quien tiene que garantizarlo.
   //    Las que fallaron no gastan cupo — sería injusto cobrarle a la usuaria
   //    un intento que no le dio ningún documento.
-  const cupoGastado = await contarGeneracionesDeHoy(supabase, user.id);
-
-  if (cupoGastado === null) {
-    return NextResponse.json({ error: 'No se pudo preparar el documento.' }, { status: 500 });
-  }
-
-  // Si esta oferta ya tenía su fila creada, esa fila ya está dentro del
-  // recuento: lo que se comprueba es si el cupo está pasado, no si cabe una más.
+  //    Cuando la fila todavía no existe, de esto se encarga entero
+  //    `crear_generacion_con_cupo` unas líneas más abajo (migración 0014), que
+  //    cuenta y crea sin dejar hueco a una condición de carrera. Aquí solo se
+  //    comprueba el caso de la fila que YA existe (un reintento), donde no hay
+  //    nada que crear y basta con mirar que el cupo no esté pasado.
   const yaTieneFila = Boolean(generacion);
-  if (cupoGastado > LIMITE_DIARIO || (!yaTieneFila && cupoGastado >= LIMITE_DIARIO)) {
-    return NextResponse.json({ estado: 'limite', error: MENSAJE_LIMITE }, { status: 429 });
+
+  if (yaTieneFila) {
+    const cupoGastado = await contarGeneracionesDeHoy(supabase, user.id);
+
+    if (cupoGastado === null) {
+      return NextResponse.json({ error: 'No se pudo preparar el documento.' }, { status: 500 });
+    }
+
+    // Esa fila ya está dentro del recuento: lo que se comprueba es si el cupo
+    // está pasado, no si cabe una más.
+    if (cupoGastado > LIMITE_DIARIO) {
+      return NextResponse.json({ estado: 'limite', error: MENSAJE_LIMITE }, { status: 429 });
+    }
   }
 
   // 3. Coger el turno (la "cola" de docs/05-ia.md §6.7): la garantía de que
@@ -83,19 +124,30 @@ export async function POST(request: Request) {
   let tengoTurno = false;
 
   if (!yaTieneFila) {
+    // Paso 15 · La misma función atómica que usa /api/interes (migración
+    // 0014): comprueba el cupo y crea la fila en una sola transacción, con
+    // cerrojo por usuaria. Devuelve `creada: false` si otra petición se
+    // adelantó, y sin `id` si el cupo estaba lleno.
     const { data, error } = await supabase
-      .from('generaciones')
-      .insert({ user_id: user.id, oferta_id, estado: 'generando', iniciado_en: ahora })
-      .select('id')
-      .maybeSingle();
+      .rpc('crear_generacion_con_cupo', {
+        p_oferta_id: oferta_id,
+        p_limite: LIMITE_DIARIO,
+        p_inicio_del_dia: inicioDeHoyEnMadridISO(),
+        // Aquí sí: esta petición se pone a generar ahora mismo.
+        p_tomar_turno: true,
+      })
+      .maybeSingle<{ id: string | null; creada: boolean; cupo_gastado: number }>();
 
-    // 23505 = la fila ya existía (otra petición la creó entre medias). No es
-    // un fallo: simplemente se sigue por el camino del update de abajo.
-    if (error && error.code !== '23505') {
+    if (error) {
       console.error('Error creando la generación:', error);
       return NextResponse.json({ error: 'No se pudo preparar el documento.' }, { status: 500 });
     }
-    tengoTurno = Boolean(data);
+
+    if (!data?.id) {
+      return NextResponse.json({ estado: 'limite', error: MENSAJE_LIMITE }, { status: 429 });
+    }
+
+    tengoTurno = Boolean(data.creada);
   }
 
   if (!tengoTurno) {
@@ -152,6 +204,7 @@ export async function POST(request: Request) {
 
     const avisos = verificarCv({
       cvGenerado: generado.cv_texto,
+      cartaGenerada: generado.carta_texto,
       cvOriginal: perfil.cv_texto,
       empresasCv: perfil.empresas_cv ?? [],
       titulosCv: perfil.titulos_cv ?? [],
@@ -159,6 +212,17 @@ export async function POST(request: Request) {
       ofertaEmpresa: oferta.empresa,
       ofertaDescripcion: oferta.descripcion,
     });
+
+    // Paso 14, capa 2: el intento de inyección no bloqueó la generación, pero
+    // sí se avisa aquí porque este documento se descarga y se envía a una
+    // empresa real (docs/05-ia.md §6.2) — a diferencia de extraerPerfil,
+    // donde la usuaria ya revisa el resultado siempre.
+    if (generado.intentoDeInyeccion) {
+      avisos.unshift(
+        'Detectamos texto dentro de tu CV o de la descripción de la oferta que parecía intentar dar instrucciones a la IA. Revisa el documento con más atención antes de enviarlo.',
+      );
+      console.warn(`[GUARDRAIL:inyeccion] user=${user.id} oferta=${oferta_id}`);
+    }
 
     const { error: errorGuardado } = await supabase
       .from('generaciones')
@@ -169,6 +233,7 @@ export async function POST(request: Request) {
         carta_texto: generado.carta_texto,
         avisos,
         error_mensaje: null,
+        intentos_fallidos: 0,
       })
       .eq('user_id', user.id)
       .eq('oferta_id', oferta_id);
@@ -178,10 +243,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ estado: 'listo', avisos });
   } catch (error) {
     console.error('Error generando el CV y la carta:', error);
-    const mensaje =
-      'No se pudo preparar el documento. Vuelve a intentarlo en unos minutos: puede que el servicio de IA esté saturado.';
-    await marcarError(supabase, user.id, oferta_id, mensaje);
-    return NextResponse.json({ estado: 'error', error: mensaje }, { status: 502 });
+    const intentosPrevios = generacion?.intentos_fallidos ?? 0;
+    const intentosFallidos = intentosPrevios + 1;
+
+    // Paso 14 · Disparador de intervención humana "umbral de fallos": tres
+    // fallos seguidos en la misma oferta sugieren un problema sistemático
+    // (la oferta, no un modelo saturado puntual). Sin panel de
+    // administración, la "intervención" es este log distinguible más un
+    // mensaje distinto para la usuaria.
+    // Paso 15 · Un fallo de contenido (el documento llegó, pero no pasó la
+    // validación) no se reintenta solo: volvería a fallar igual y cada
+    // reintento cuesta una cascada entera de modelos. Se responde con 422
+    // para que la pantalla no entre en el bucle automático; el botón de
+    // "Reintentar" sigue ahí para quien quiera insistir a mano.
+    const deContenido = esErrorDeContenido(error);
+
+    let mensaje = deContenido
+      ? 'El documento que preparó la IA no pasó nuestras comprobaciones de calidad, así que no te lo mostramos. Puedes volver a intentarlo o probar con otra oferta.'
+      : 'No se pudo preparar el documento. Vuelve a intentarlo en unos minutos: puede que el servicio de IA esté saturado.';
+
+    if (intentosFallidos >= UMBRAL_FALLOS_HUMANO) {
+      mensaje =
+        'Ha fallado varias veces seguidas para esta oferta. Puede que haya un problema con esta oferta en concreto: prueba con otra, o inténtalo de nuevo más tarde.';
+      console.error(`[GUARDRAIL:fallos-repetidos] user=${user.id} oferta=${oferta_id} intentos=${intentosFallidos}`);
+    }
+
+    await marcarError(supabase, user.id, oferta_id, mensaje, intentosFallidos);
+    return NextResponse.json({ estado: 'error', error: mensaje }, { status: deContenido ? 422 : 502 });
   }
 }
 
@@ -193,10 +281,16 @@ async function marcarError(
   userId: string,
   ofertaId: string,
   mensaje: string,
+  intentosFallidos?: number,
 ) {
   const { error } = await supabase
     .from('generaciones')
-    .update({ estado: 'error', error_mensaje: mensaje, iniciado_en: null })
+    .update({
+      estado: 'error',
+      error_mensaje: mensaje,
+      iniciado_en: null,
+      ...(intentosFallidos !== undefined ? { intentos_fallidos: intentosFallidos } : {}),
+    })
     .eq('user_id', userId)
     .eq('oferta_id', ofertaId);
 

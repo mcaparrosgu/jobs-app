@@ -114,3 +114,20 @@ y sin ningun "•" suelto.
   OpenRouter y las dos rondas, que este cambio no sustituye, solo completa.
 - [hito-6-generar-cv.md](hito-6-generar-cv.md) — el diseno original de cola
   y reintentos desde el navegador (T48-T57), que sigue igual.
+
+---
+
+> ⚠️ **Superado el 20/08/2026**: Groq ya no es el respaldo, es el **proveedor
+> principal**, y por un motivo que aquí no se contempló — la privacidad. Ver
+> [decision-groq-principal-privacidad.md](decision-groq-principal-privacidad.md).
+>
+> Dos datos de esta ficha se quedaron cortos, y conviene no fiarse de ellos:
+>
+> - El cupo de Groq no son "1000 peticiones al día" a efectos prácticos. El
+>   límite que se agota primero son **200.000 tokens diarios** (unos 30
+>   documentos para las cinco usuarias), más **8.000 por minuto**, que en la
+>   práctica dejan pasar una generación por minuto.
+> - El esquema JSON con `strict: true` no se comporta igual en los dos
+>   proveedores: **Groq lo valida de verdad** y devuelve un 400 si la
+>   respuesta no encaja. Eso obligó a bajar el mínimo de `palabras_clave` de 8
+>   a 1 y a recortar los topes de entrada.

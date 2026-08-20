@@ -106,10 +106,16 @@ cuando el modelo lo soporta). Cuatro campos, los cuatro obligatorios:
 }
 ```
 
-`palabras_clave`: entre 8 y 20 elementos, cada uno de 40 caracteres como
-máximo (refuerzo del esquema — la garantía real es código, ver
-`lib/palabras-clave.ts`). No hay campo libre ni texto fuera de este JSON:
-nada de explicaciones, disculpas ni comentarios antes o después.
+`palabras_clave`: **el prompt pide entre 8 y 20**, pero el esquema solo exige
+1 como mínimo y 20 como máximo. La diferencia importa desde que Groq es el
+proveedor principal: Groq valida el esquema de verdad y rechaza la respuesta
+entera si el modelo no llega al mínimo, y hay entradas donde llegar a ocho es
+imposible sin inventar (un CV de una línea). Es decir: 8-20 es la
+**preferencia**, no la barrera. La garantía de forma y longitud es código,
+`lib/palabras-clave.ts`, y la última revisión la hace la usuaria.
+
+No hay campo libre ni texto fuera de este JSON: nada de explicaciones,
+disculpas ni comentarios antes o después.
 
 ### 4. Casos límite
 
@@ -249,6 +255,30 @@ Sin marcadores de texto tipo `===CV===` para separar el CV de la carta
 documento va en su propia casilla del JSON, no hay nada que separar a
 mano. Sin texto ni comentarios fuera del JSON.
 
+### 3 bis. Cómo llega la entrada (desde el Paso 15)
+
+El mensaje de usuario ya no separa las piezas con marcadores fijos
+(`=== OFERTA ===`, `=== CV ORIGINAL ===`), sino con **etiquetas que llevan
+una marca aleatoria distinta en cada petición**:
+
+```
+[a7f3c2:OFERTA] … [/a7f3c2:OFERTA]
+[a7f3c2:TITULAR_DEL_PERFIL] … [/a7f3c2:TITULAR_DEL_PERFIL]
+[a7f3c2:CV_ORIGINAL] … [/a7f3c2:CV_ORIGINAL]
+```
+
+El porqué está en [`seguridad/red-team-opus.md`](../seguridad/red-team-opus.md),
+ficha 2.1: como la descripción de la oferta se pega **antes** del CV y la
+escribe un desconocido en un portal de empleo, con marcadores fijos bastaba
+que su anuncio cerrara la sección de la oferta y abriera una falsa de CV
+para que el modelo adaptara un currículum inventado en vez del de la
+usuaria. Probado en vivo: el CV real desapareció entero y no saltó ni un
+aviso. Con una marca que el atacante no puede adivinar, ya no puede dibujar
+una etiqueta creíble; y además todo el texto que viene de fuera pasa por
+`neutralizarDelimitadores` (`lib/guardrails.ts`), que le rompe los signos
+`=`. El prompt de sistema dice explícitamente que **el único CV de la
+persona es el que va dentro del bloque `CV_ORIGINAL`**.
+
 ### 4. Casos límite
 
 - **La oferta no tiene descripción** (`descripcion: null`): trabaja solo
@@ -314,11 +344,25 @@ Después de la respuesta, el código aplica sin excepción (`lib/ia.ts`,
   una generación desbocada.
 - Saltos de línea reales entre secciones y puntos (mínimo de líneas con
   contenido) — caza el texto pegado en un único bloque ilegible.
+- Titular del puesto: se comprueba que guarde relación con el puesto del
+  perfil o con el título de la oferta; si no, se descarta y se usa el del
+  perfil (`titularSeguro` en `lib/ia.ts`). Es el texto que se imprime bajo
+  el nombre real de la persona en el PDF, y una oferta manipulada llegó a
+  controlarlo (red team, ficha 2.3).
 - Verificación numérica: toda cifra en el CV generado debe aparecer también
   en el CV original.
 - Verificación de nombres propios: ninguna empresa mencionada en el CV
   generado puede estar fuera de la lista `empresas_cv` extraída en el
   Prompt A.
+- **La descripción de la oferta NO cuenta como fuente legítima** para esas
+  comprobaciones (desde el Paso 15). Mientras contó, quien escribía el
+  anuncio decidía qué nombres, titulaciones y datos de contacto se
+  consideraban verificados: le bastaba nombrarlos en su oferta para que el
+  verificador se callara. Los datos de contacto se comprueban ya solo
+  contra el CV de la usuaria.
+- Comprobación de que el documento es suyo: si el CV original tenía
+  empresas y el generado no menciona ninguna, se avisa con la máxima
+  gravedad — no se ha adaptado su CV, se ha escrito otro.
 
 Lo que ninguna de estas capas caza —una responsabilidad inventada sin
 cifras ni nombres propios, del tipo "lideré la migración a la nube"— queda

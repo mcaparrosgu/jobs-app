@@ -190,3 +190,56 @@ describe('POST /api/perfil — guardado y permisos', () => {
     expect(respuesta.status).toBe(500);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Paso 15 · La lista blanca del antifraude no la escribe el navegador
+// (seguridad/red-team-opus.md, ficha 1.5).
+// ---------------------------------------------------------------------------
+
+describe('POST /api/perfil — empresas y titulaciones ancladas al CV', () => {
+  const CV = 'Camarera en Bar Manolo desde 2019. Grado Superior en Hostelería.';
+
+  it('descarta las empresas y titulaciones que no aparecen en el CV pegado', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: { perfiles: [{ data: null, error: null }] },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await POST(
+      peticionPost({
+        nombre: 'Mar',
+        puesto: 'Camarera',
+        palabras_clave: ['sala'],
+        cv_texto: CV,
+        empresas_cv: ['Bar Manolo', 'Google', 'McKinsey'],
+        titulos_cv: ['Grado Superior en Hostelería', 'MBA por IESE'],
+      }),
+    );
+
+    const upsert = llamadasPorTabla.perfiles[0].find((l) => l.metodo === 'upsert');
+    expect(upsert?.args[0]).toMatchObject({
+      empresas_cv: ['Bar Manolo'],
+      titulos_cv: ['Grado Superior en Hostelería'],
+    });
+  });
+
+  it('rechaza un cv_texto que no pasa la capa de relevancia', async () => {
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: { perfiles: [{ data: null, error: null }] },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const respuesta = await POST(
+      peticionPost({
+        nombre: 'Mar',
+        puesto: 'Camarera',
+        palabras_clave: ['sala'],
+        cv_texto: 'a'.repeat(25_000),
+      }),
+    );
+
+    expect(respuesta.status).toBe(400);
+  });
+});

@@ -1,5 +1,162 @@
 # Registro de cambios del bundle
 
+## 2026-08-20
+* **Paso 15, segunda pasada: revisión independiente del red team.** Pedida
+  por Mar para no fiarse de un único juicio sobre un sistema que maneja los
+  CVs de cuatro personas reales. Corrige la conclusión del primer informe:
+  la inyección indirecta que inventa experiencia **no está resistida**. El
+  prompt de `generarCvYCarta` separa las piezas con marcadores de texto
+  plano (`=== CV ORIGINAL ===`) y la descripción de la oferta se pega antes
+  del CV, así que un anuncio manipulado puede cerrar su sección y abrir la
+  del CV: ejecutado en vivo, el CV de una camarera salió convertido en el de
+  una ingeniera de datos con máster por Harvard, **con cero avisos**. Causa
+  raíz, que es de código y no del modelo: `verificarCv` mete
+  `ofertaDescripcion` en su lista blanca, así que el atacante decide qué
+  nombres cuentan como verificados (mismo CV generado: 0 avisos con la
+  oferta maliciosa, 6 con una limpia). Hallazgos nuevos: `oferta.titulo` y
+  `oferta.empresa` no pasan por el detector de inyección ni se recortan
+  (ejecutado: el título de la oferta fijó el campo `puesto`, que es lo que
+  se imprime bajo el nombre real en el PDF); el registro está abierto
+  (`signInWithOtp` sin `shouldCreateUser:false`); `CLAUDE.md` exige Zero
+  Data Retention solo a Groq, pero el proveedor principal es OpenRouter con
+  modelos `:free`, sin decisión escrita sobre retención; y cada llamada a la
+  IA gasta hasta 5 de las 50 peticiones diarias compartidas (verificado en
+  vivo: `X-RateLimit-Remaining: 0`, la app funcionando ya solo con el
+  respaldo de Groq). Informe completo en `seguridad/red-team-opus.md`,
+  detalle en `paso-15-revision-opus.md`.
+* **Los evals, relanzados con el proveedor nuevo: tres fallos, dos reales.**
+  Al pasar a Groq hubo que volver a pasar el golden dataset (`CLAUDE.md`), y
+  la primera lectura fue engañosa: 5 de 13 en generación. El motivo no era la
+  calidad — **el juez de las aserciones `llm-rubric` también era un modelo
+  `:free` de OpenRouter** y se quedó sin endpoints al apagar el permiso de
+  entrenamiento, así que los casos salían en rojo aunque la app respondiera
+  bien. Con el juez movido a Groq: **extracción 11/12, generación 11/13**. De
+  los tres fallos restantes, dos eran reales y se arreglaron: (1) el esquema
+  JSON exigía `minItems: 8` en `palabras_clave` y Groq **valida el esquema de
+  verdad**, así que rechazaba con un 400 cualquier CV del que no salieran
+  ocho términos sin inventar ("Juan. Busco curro.") — bajado a 1, la
+  preferencia de 8-20 se queda en el prompt; (2) un CV muy largo desbordaba
+  el presupuesto de tokens y devolvía JSON truncado — topes de entrada
+  bajados (CV 12.000→8.000, oferta 8.000→4.000) y margen de salida subido
+  (2.500→3.000). El tercero era el propio juez devolviendo su razonamiento en
+  vez de un veredicto (`reasoning_effort: none` en los dos YAML). **Cupo real
+  de Groq, medido al agotarlo: 200.000 tokens al día** (unos 30 documentos
+  para las cinco) y 8.000 por minuto, que en la práctica deja pasar una
+  generación por minuto. Corregida esa cifra en los cinco sitios donde se
+  había escrito "1000 peticiones/día". Los dos arreglos quedan **sin
+  confirmar con una tanda completa**: se agotó el cupo del día al
+  comprobarlos. Documentado en `seguridad/pendiente-para-mar.md`.
+* **Groq pasa a ser el proveedor principal de IA, por privacidad.** Al
+  revisar la configuración real de las cuentas (Paso 15) se vio que OpenRouter
+  tenía **activado** "Allow free endpoints that train on request data" —
+  proveedores de modelos gratis que *pueden retener y entrenar con los prompts*
+  — y ZDR desactivado en todos los ámbitos. Lo que viaja en cada petición es el
+  CV completo de una persona real. Groq, en cambio, tiene **Global ZDR
+  activado**. Decisión de Mar: apagar esa opción en OpenRouter (hecho) e
+  invertir el orden en `lib/ia.ts`, porque al apagarla OpenRouter deja de
+  enrutar a los endpoints gratuitos. Groq primero (ZDR; cupo real 200.000
+  tokens al día, unos 30 documentos, más 8.000 por minuto),
+  OpenRouter de respaldo por si Groq retira su modelo "Preview". De paso
+  resuelve el problema de cupo: medido tras el cambio, 0,7 s la extracción y
+  1,6 s la generación. Además, las rondas de OpenRouter bajan de 2+3 modelos
+  en paralelo a 1+2 (cada modelo lanzado gasta cuota aunque se aborte).
+  Constantes renombradas (`MODELO_GROQ`, `TIMEOUT_GROQ_MS`,
+  `TIMEOUT_OPENROUTER_MS`) y `CLAUDE.md` actualizado con la regla nueva:
+  antes de cambiar de proveedor, comprobar su política de datos. Detalle en
+  `decision-groq-principal-privacidad.md`.
+* **Paso 15, arreglos: se cierran las brechas del red team el mismo día.**
+  `verificarCv` deja de aceptar la descripción de la oferta como fuente de
+  verdad (dos listas blancas: nombres contra el CV + su experiencia + el
+  título y la empresa de la oferta; contacto solo contra el CV), y avisa con
+  gravedad máxima si el CV generado no menciona ninguna empresa del CV
+  original. El mensaje de generación pasa a usar etiquetas con **marca
+  aleatoria por petición** en vez de marcadores fijos, y todo el texto
+  externo pasa por `neutralizarDelimitadores`: **relanzados en vivo los dos
+  ataques que funcionaban, ninguno vuelve a funcionar** — el CV generado es
+  otra vez el de la usuaria y el campo `puesto` deja de ser controlable desde
+  la oferta (`titularSeguro` lo ata al perfil o al título). Además: límite de
+  10 análisis de CV al día (`lib/extracciones.ts`), cupo diario sin condición
+  de carrera con cerrojo por usuaria en la base de datos (migración `0014`),
+  detector de inyección normalizado (espacios, caracteres invisibles,
+  homoglifos y comparación sin espacios), moderación por palabra y no por
+  subcadena, avisos ordenados por gravedad antes de recortar,
+  `empresas_cv`/`titulos_cv` filtradas contra el CV en `/api/perfil`,
+  `/api/generar` exige interés previo, los fallos de contenido responden 422
+  y ya no se reintentan solos, y el enlace de la oferta se valida (solo
+  http/https). 218 pruebas en verde. Queda pendiente lo que no es código:
+  cerrar el registro en Supabase, verificar la política de datos de
+  OpenRouter y el ZDR de Groq, ejecutar la migración `0014`, y relanzar los
+  evals (el 20/08 no se pudo: cuota diaria agotada, todo 429).
+* **Paso 15: red team con 35 ataques (OWASP Top 10 para LLM) contra el
+  sistema real.** Sesión nueva tras `/security-review` y `/clear`. Varios
+  ataques ejecutados en vivo contra `lib/ia.ts` con las claves reales de
+  `.env.local`. Hallazgo estructural: `ofertas.descripcion` llega sin
+  limpieza de siete portales de empleo externos y entra directa al prompt
+  de `generarCvYCarta` — el canal real de inyección indirecta, sin que la
+  usuaria tenga que hacer nada raro. Tres arreglos antes de publicar: (1)
+  `/api/extraer-perfil` no tiene límite diario, a diferencia de
+  `/api/generar` — un bucle simple de `fetch` agota el cupo compartido de
+  las 5 usuarias en segundos; (2) `detectarIntentoDeInyeccion` da falsa
+  sensación de seguridad — una inyección indirecta con formato de "nota al
+  sistema" pasó invisible para el detector (la lista de frases fijas no
+  normaliza caracteres Unicode de ancho cero ni cubre paráfrasis); (3) un
+  email/teléfono de phishing incrustado en la propia oferta pasa
+  `verificarDatosDeContacto` porque el texto de la oferta cuenta como
+  fuente "permitida". Ejecutado también: inyección directa simple en
+  `extraerPerfil` que consiguió cambiar el campo `puesto` a "HACKEADO"
+  (mitigado por la revisión humana de ese campo, pero confirma que no hay
+  verificación en código de que `puesto`/`palabras_clave` estén
+  respaldados por el texto, a diferencia de las cifras/nombres que sí
+  verifica `verificarCv` en `generarCvYCarta`); inyección indirecta pidiendo
+  inventar "8 años de experiencia" fue resistida por el modelo. Informe
+  completo con las 35 fichas de ataque en `seguridad/red-team.md`, detalle
+  en `paso-15-red-team.md`.
+* **Paso 13: golden dataset de 25 casos y arnés de evals con Promptfoo
+  para la parte de IA.** `evals/golden.yaml` (12 casos de `extraerPerfil`,
+  13 de `generarCvYCarta`, diez heredados literalmente de
+  `evals/casos-dificiles.md`) implementado como aserciones ejecutables en
+  `evals/promptfoo/`, con proveedores en TypeScript que llaman
+  directamente a `lib/ia.ts` (no a una copia del prompt) y 5 métricas de
+  alta señal (`fidelidad`, `formato`, `idioma`, `resistencia_inyeccion`,
+  `calidad_palabras_clave`) que cubren cinco de los seis fallos de
+  `docs/05-ia.md` §6 — el sexto (Groq saturado) es infraestructura, no
+  medible con un dataset. Se descartó DeepEval (Python, sin ventaja en un
+  proyecto 100% TypeScript) y Ragas (pensado para RAG, que este producto
+  no usa). Primera ejecución: `extraerPerfil` 11/12 en verde, con un
+  hallazgo real no determinista — un CV completamente vacío a veces hace
+  que el modelo invente 8 palabras clave de la nada en vez de fallar
+  limpio, confirmando en vivo que el Fallo 1 de `docs/05-ia.md` "se reduce,
+  no se elimina". `generarCvYCarta` se ejecutó con la cuota gratis diaria
+  de OpenRouter ya agotada por el trabajo del propio día: 4 casos en verde
+  de verdad, 2 fallos reales (CV por debajo del mínimo de caracteres,
+  posiblemente con el modelo de respaldo de Groq), y 7 sin señal útil
+  (juez sin cuota o fallo puro de infraestructura) — pendiente de repetir
+  con cuota fresca. Umbrales iniciales de aprobado fijados por métrica
+  (100% idioma, 95% formato, 90% fidelidad/palabras clave, 85%
+  resistencia a inyección), con aviso explícito de recalibrarlos tras
+  unas semanas de datos reales. Nota añadida a `CLAUDE.md`: relanzar los
+  evals siempre que cambie el prompt, el modelo o los datos. Detalle en
+  `paso-13-evals.md`.
+* **Paso 14: guardrails en capas sobre los dos puntos de entrada de IA.**
+  Confirmado explícitamente con Mar: las capas de relevancia, seguridad y
+  moderación se implementan como reglas deterministas en `lib/guardrails.ts`
+  (nuevo), sin ninguna llamada extra al modelo — coherente con el cuello
+  de botella de tokens/minuto de Groq ya identificado en `docs/05-ia.md`.
+  Huecos reales cerrados: la carta generada nunca se verificaba (solo el
+  CV, `lib/verificarCv.ts` ahora cubre también `carta_texto`), no había
+  filtro de datos de contacto inventados/filtrados, no había moderación de
+  contenido ni chequeo de marcadores de relleno sin resolver
+  (`validarGeneracion`), y la promesa de `docs/05-ia.md` §6.2 ("la web
+  avisa de que hay que revisar el documento antes de enviarlo") no se
+  cumplía de forma incondicional — ahora hay un recordatorio fijo en
+  `TarjetaOferta.tsx`. Los dos disparadores de intervención humana se
+  adaptan a que `docs/03-spec.md` §2 prohíbe cualquier panel de
+  administración: "intervención" es un log distinguible en Vercel más un
+  mensaje distinto para la usuaria, nunca una UI nueva. Nueva columna
+  `generaciones.intentos_fallidos` (migración `0013`, aplicada en
+  Supabase). 22 pruebas nuevas, 194/194 en verde. Detalle en
+  `paso-14-guardrails.md`.
+
 ## 2026-08-19
 * **Paso 12: 172 pruebas automáticas con Vitest sobre la parte
   determinista de la app.** Cubre cada criterio de aceptación de
@@ -22,6 +179,21 @@
   1), el aspecto visual del PDF (ya verificado a mano en T62/T83) y el
   workflow de n8n (pruebas propias en los hitos 4 y 8). Detalle en
   `paso-12-pruebas.md`.
+* **Paso 11 marcado explícitamente como no aplicable.** `docs/05-ia.md`
+  §4 ya dice, sin margen de interpretación, que la IA de Jobs App no
+  tiene ninguna herramienta ("Ninguna. Ni una sola."): no es un agente,
+  no decide sus propios pasos, no lee ni escribe en ningún sitio. El
+  Paso 11 pide diseñar herramientas de agente a prueba de errores, una
+  categoría que no puede materializarse aquí. Se preguntó explícitamente
+  a Mar entre tres opciones (marcarlo no aplicable, documentar
+  retroactivamente las funciones de IA existentes con ese formato, o
+  auditar el código en busca de algo real) y eligió la primera. Revisando
+  `lib/ia.ts` y `lib/verificarCv.ts` antes de preguntar se confirmó que
+  el trabajo equivalente de diseño a prueba de errores (esquemas JSON
+  estrictos, validación en código, verificación de cifras y nombres
+  contra el CV original, defensa contra inyección) ya está construido,
+  pero encaja como Paso 14 (guardrails), no como Paso 11. Sin código
+  nuevo. Detalle en `paso-11-no-aplica.md`.
 * **`lib/ia.ts` alineado con `prompts/system.md`: defensa contra
   inyección de instrucciones añadida al código, el mismo día que se
   documentó.** Al cerrar el Paso 10 quedó anotado a propósito que el

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { contarGeneracionesDeHoy, LIMITE_DIARIO, MENSAJE_LIMITE } from '@/lib/generaciones';
+import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
+import { LIMITE_DIARIO, MENSAJE_LIMITE } from '@/lib/generaciones';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -54,19 +55,33 @@ export async function POST(request: Request) {
   // El límite diario se comprueba antes de crear nada (regla de negocio 5).
   // El interés queda guardado igual: la usuaria podrá preparar el documento
   // mañana sin tener que volver a buscar la oferta.
-  const cupoGastado = await contarGeneracionesDeHoy(supabase, user.id);
-  if (cupoGastado !== null && cupoGastado >= LIMITE_DIARIO) {
-    return NextResponse.json({ ok: true, generacion: null, limite: MENSAJE_LIMITE });
-  }
+  //
+  // Paso 15 · Contar y luego insertar no era atómico: cinco pestañas marcando
+  // interés a la vez leían todas "0 gastadas" y se saltaban el límite de 5
+  // (seguridad/red-team-opus.md, ficha 5.3). `crear_generacion_con_cupo`
+  // (migración 0014) hace las dos cosas en la misma transacción, con un
+  // cerrojo por usuaria dentro de la propia base de datos.
+  const { data: creacion, error: errorCrear } = await supabase
+    .rpc('crear_generacion_con_cupo', {
+      p_oferta_id: oferta_id,
+      p_limite: LIMITE_DIARIO,
+      p_inicio_del_dia: inicioDeHoyEnMadridISO(),
+      // Aquí solo se apunta que hay trabajo pendiente: el turno lo coge
+      // /api/generar, que es quien de verdad se pone a ello. Si se marcara
+      // desde aquí, esa petición vería el turno ocupado y contestaría "ya se
+      // está preparando" sin que nadie lo estuviera preparando.
+      p_tomar_turno: false,
+    })
+    .maybeSingle<{ id: string | null; creada: boolean; cupo_gastado: number }>();
 
-  const { error: errorCrear } = await supabase
-    .from('generaciones')
-    .insert({ user_id: user.id, oferta_id, estado: 'generando' });
-
-  // 23505 = ya existía (dos pulsaciones a la vez). No es un fallo.
-  if (errorCrear && errorCrear.code !== '23505') {
+  if (errorCrear) {
     console.error('Error creando la generación:', errorCrear);
     return NextResponse.json({ ok: true, generacion: null });
+  }
+
+  // Sin fila y sin haberla creado: el cupo del día estaba lleno.
+  if (!creacion?.id) {
+    return NextResponse.json({ ok: true, generacion: null, limite: MENSAJE_LIMITE });
   }
 
   return NextResponse.json({ ok: true, generacion: { estado: 'generando' } });

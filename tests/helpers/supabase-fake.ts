@@ -20,11 +20,16 @@ export type LlamadaRegistrada = { metodo: string; args: unknown[] };
 export type ClienteFalso = {
   auth: { getUser: ReturnType<typeof vi.fn> };
   from: ReturnType<typeof vi.fn>;
+  rpc: ReturnType<typeof vi.fn>;
 };
 
 export function crearClienteFalso(config: {
   user?: { id: string; email?: string } | null;
   tablas?: Record<string, ResultadoConsulta[]>;
+  // Funciones SQL llamadas con `.rpc()` (Paso 15: `crear_generacion_con_cupo`,
+  // que comprueba el cupo y crea la fila en la misma transacción). Misma idea
+  // que `tablas`: una cola de resultados por nombre de función.
+  funciones?: Record<string, ResultadoConsulta[]>;
 }) {
   const llamadasFrom: string[] = [];
   const llamadasPorTabla: Record<string, LlamadaRegistrada[][]> = {};
@@ -58,12 +63,43 @@ export function crearClienteFalso(config: {
     return proxy;
   });
 
+  const llamadasRpc: LlamadaRegistrada[] = [];
+  const indicesRpc: Record<string, number> = {};
+
+  const rpc = vi.fn((nombre: string, args: unknown) => {
+    llamadasRpc.push({ metodo: nombre, args: [args] });
+
+    const cola = config.funciones?.[nombre] ?? [];
+    const indice = indicesRpc[nombre] ?? 0;
+    indicesRpc[nombre] = indice + 1;
+    const resultado: ResultadoConsulta = cola[Math.min(indice, cola.length - 1)] ?? {
+      data: null,
+      error: null,
+    };
+
+    const proxy: unknown = new Proxy(
+      {},
+      {
+        get(_target, prop: string | symbol) {
+          if (prop === 'then') {
+            return (resolve: (v: ResultadoConsulta) => void, reject: (e: unknown) => void) =>
+              Promise.resolve(resultado).then(resolve, reject);
+          }
+          if (typeof prop !== 'string') return undefined;
+          return () => proxy;
+        },
+      },
+    );
+    return proxy;
+  });
+
   const cliente: ClienteFalso = {
     auth: { getUser: vi.fn(async () => ({ data: { user: config.user ?? null } })) },
     from,
+    rpc,
   };
 
-  return { cliente, llamadasFrom, llamadasPorTabla };
+  return { cliente, llamadasFrom, llamadasPorTabla, llamadasRpc };
 }
 
 export const USUARIA = { id: 'usuaria-11111', email: 'usuaria@example.com' };

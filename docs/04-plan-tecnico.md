@@ -21,6 +21,17 @@
 > solo cambia qué servicio ejecuta el modelo. Detalle completo en
 > [`knowledge/decision-modelo-ia.md`](../knowledge/decision-modelo-ia.md).
 
+> ⚠️ **Actualización (Paso 15, 2026-08-20)**: el proveedor principal vuelve a
+> ser **Groq**, ahora por privacidad. El red team descubrió que la cuenta de
+> OpenRouter permitía a los modelos gratuitos **entrenar con las peticiones**
+> — y cada petición lleva el CV completo de una persona real. Se apagó esa
+> opción, y como al apagarla OpenRouter deja de servir los modelos `:free`,
+> se invirtió el orden: Groq primero (con *Zero Data Retention* activado),
+> OpenRouter de respaldo. Sigue en pie el riesgo que motivó el cambio de T25
+> (el modelo de Groq está marcado "Preview"), asumido a cambio de la
+> privacidad. Detalle en
+> [`knowledge/decision-groq-principal-privacidad.md`](../knowledge/decision-groq-principal-privacidad.md).
+
 ## 1. Tres opciones de stack
 
 Un **stack** es simplemente la lista de herramientas que trabajan juntas

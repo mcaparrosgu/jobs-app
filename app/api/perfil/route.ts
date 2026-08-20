@@ -1,5 +1,29 @@
 import { NextResponse } from 'next/server';
+import { evaluarAmbitoCv } from '@/lib/guardrails';
+import { paraComparar } from '@/lib/palabras-clave';
 import { createClient } from '@/lib/supabase/server';
+
+// Paso 15 · `empresas_cv` y `titulos_cv` no son cosmética: son la lista
+// blanca con la que `verificarCv` decide después qué nombres del CV generado
+// son de fiar. Llegan del navegador (el formulario los recibe de
+// /api/extraer-perfil y los reenvía al guardar), así que cualquiera con la
+// consola abierta podía escribir ahí "Google, McKinsey, MBA por IESE" y
+// desactivar de un plumazo el aviso de invención — seguridad/red-team-opus.md,
+// ficha 1.5. Se aceptan, pero solo lo que de verdad aparece en el CV pegado:
+// misma idea que la verificación de cifras, y no rompe el flujo actual.
+const MAXIMO_ENTRADAS_LISTA = 40;
+const MAXIMO_CARACTERES_ENTRADA = 120;
+
+function listaAncladaAlCv(valor: unknown, cvTexto: string): string[] {
+  if (!Array.isArray(valor)) return [];
+  const cv = paraComparar(cvTexto);
+
+  return valor
+    .filter((entrada): entrada is string => typeof entrada === 'string')
+    .map((entrada) => entrada.trim().slice(0, MAXIMO_CARACTERES_ENTRADA))
+    .filter((entrada) => entrada.length > 0 && cv.includes(paraComparar(entrada)))
+    .slice(0, MAXIMO_ENTRADAS_LISTA);
+}
 
 export async function GET() {
   const supabase = await createClient();
@@ -49,6 +73,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Faltan palabras clave' }, { status: 400 });
   }
 
+  // El texto del CV entra también por aquí, no solo por /api/extraer-perfil:
+  // sin esta comprobación, la capa 1 (relevancia) tenía una puerta trasera.
+  const cvGuardado = typeof cv_texto === 'string' ? cv_texto : '';
+  if (cvGuardado.length > 0) {
+    const ambito = evaluarAmbitoCv(cvGuardado);
+    if (!ambito.permitido) {
+      return NextResponse.json({ error: ambito.motivo }, { status: 400 });
+    }
+  }
+
   const { error } = await supabase.from('perfiles').upsert(
     {
       user_id: user.id,
@@ -59,8 +93,8 @@ export async function POST(request: Request) {
       palabras_clave,
       cv_texto: cv_texto ?? null,
       usar_experiencia_cv: Boolean(usar_experiencia_cv),
-      empresas_cv: Array.isArray(empresas_cv) ? empresas_cv : [],
-      titulos_cv: Array.isArray(titulos_cv) ? titulos_cv : [],
+      empresas_cv: listaAncladaAlCv(empresas_cv, cvGuardado),
+      titulos_cv: listaAncladaAlCv(titulos_cv, cvGuardado),
       actualizado_en: new Date().toISOString(),
     },
     { onConflict: 'user_id' },

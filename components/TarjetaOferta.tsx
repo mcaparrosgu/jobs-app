@@ -14,6 +14,22 @@ export type EstadoGeneracion = {
 // saturados en ese momento, y eso se despeja solo en segundos.
 const ESPERAS_MS = [6_000, 15_000];
 
+// Paso 15 · El enlace de la oferta lo escribe el portal de empleo del que
+// viene, no nosotras, y se pinta como un `href` en la pantalla. Hoy React 19
+// bloquea por su cuenta las URL `javascript:` (comprobado en el red team,
+// ficha 6.1), pero eso es una red de seguridad del framework, no una decisión
+// de esta app: si mañana se pinta ese enlace en otro sitio —o React cambia—
+// el agujero vuelve. Aquí se decide explícitamente qué es un enlace: http o
+// https, y nada más.
+function enlaceSeguro(enlace: string): string | undefined {
+  try {
+    const url = new URL(enlace);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 type Oferta = {
   id: string;
   titulo: string;
@@ -63,6 +79,13 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
           // 502 = falló la IA (saturada, sin respuesta). Es el único fallo que
           // merece reintentarse: los demás (no hay CV guardado, la oferta ya no
           // existe) volverían a fallar igual dentro de quince segundos.
+          //
+          // Paso 15 · El 422 es nuevo y NO se reintenta: significa que la IA sí
+          // contestó, pero el documento no pasó la validación. Volvería a
+          // fallar igual, y cada reintento cuesta una cascada entera de modelos
+          // de la cuota que comparten las cinco usuarias
+          // (seguridad/red-team-opus.md, ficha 5.4). El botón de "Reintentar"
+          // sigue disponible para insistir a mano.
           const merecePenaReintentar = respuesta.status === 502 && intento < ESPERAS_MS.length;
 
           if (!merecePenaReintentar) {
@@ -135,14 +158,20 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
     <article className="flex flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{oferta.titulo}</h3>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{oferta.empresa}</p>
-      <a
-        href={oferta.enlace}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 text-sm text-zinc-700 underline underline-offset-2 dark:text-zinc-300"
-      >
-        Ver oferta original
-      </a>
+      {enlaceSeguro(oferta.enlace) ? (
+        <a
+          href={enlaceSeguro(oferta.enlace)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 text-sm text-zinc-700 underline underline-offset-2 dark:text-zinc-300"
+        >
+          Ver oferta original
+        </a>
+      ) : (
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-500">
+          Esta oferta no trae un enlace válido.
+        </p>
+      )}
 
       <button
         type="button"
@@ -164,9 +193,18 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
       )}
 
       {generacion?.estado === 'listo' && (
-        <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-          CV y carta preparados ✓
-        </p>
+        <>
+          <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            CV y carta preparados ✓
+          </p>
+          {/* Paso 14 · disparador de intervención humana "acción irreversible":
+              enviar el documento a una empresa no se puede deshacer, así que
+              este recordatorio aparece siempre, no solo cuando hay avisos
+              concretos (docs/05-ia.md §6.2). */}
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Revisa el documento antes de enviarlo: la IA puede cometer errores.
+          </p>
+        </>
       )}
 
       {(generacion?.estado === 'generando' || generacion?.estado === 'listo') && (

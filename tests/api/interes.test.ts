@@ -114,11 +114,10 @@ describe('POST /api/interes', () => {
       user: USUARIA,
       tablas: {
         intereses: [{ data: null, error: null }],
-        generaciones: [
-          { data: null, error: null },
-          { count: 2, error: null },
-          { data: null, error: null },
-        ],
+        generaciones: [{ data: null, error: null }],
+      },
+      funciones: {
+        crear_generacion_con_cupo: [{ data: { id: 'g1', creada: true, cupo_gastado: 3 }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -133,27 +132,25 @@ describe('POST /api/interes', () => {
     // Este endpoint solo se invoca al marcar "me interesa" (garantía de
     // components/TarjetaOferta.tsx); comprobamos que, dado el mismo cuerpo,
     // el efecto es siempre crear como mucho UNA fila de generación por oferta.
-    const { cliente, llamadasPorTabla } = crearClienteFalso({
+    const { cliente, llamadasRpc } = crearClienteFalso({
       user: USUARIA,
       tablas: {
         intereses: [{ data: null, error: null }],
-        generaciones: [
-          { data: null, error: null },
-          { count: 0, error: null },
-          { data: null, error: null },
-        ],
+        generaciones: [{ data: null, error: null }],
+      },
+      // Paso 15 · comprobar el cupo y crear la fila es ya una sola operación
+      // atómica en la base de datos (migración 0014).
+      funciones: {
+        crear_generacion_con_cupo: [{ data: { id: 'g1', creada: true, cupo_gastado: 1 }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
 
     await POST(peticion({ oferta_id: 'oferta-1' }));
 
-    const llamadaInsert = llamadasPorTabla.generaciones[2].find((l) => l.metodo === 'insert');
-    expect(llamadaInsert?.args[0]).toMatchObject({
-      user_id: USUARIA.id,
-      oferta_id: 'oferta-1',
-      estado: 'generando',
-    });
+    expect(llamadasRpc).toHaveLength(1);
+    expect(llamadasRpc[0].metodo).toBe('crear_generacion_con_cupo');
+    expect(llamadasRpc[0].args[0]).toMatchObject({ p_oferta_id: 'oferta-1', p_limite: 5 });
   });
 
   it('bloquea la generación e informa del límite diario, sin dejar de guardar el interés', async () => {
@@ -161,10 +158,11 @@ describe('POST /api/interes', () => {
       user: USUARIA,
       tablas: {
         intereses: [{ data: null, error: null }],
-        generaciones: [
-          { data: null, error: null }, // no había generación previa
-          { count: 5, error: null }, // cupo ya lleno (LIMITE_DIARIO = 5)
-        ],
+        generaciones: [{ data: null, error: null }], // no había generación previa
+      },
+      funciones: {
+        // Cupo lleno: la función no crea nada y no devuelve id.
+        crear_generacion_con_cupo: [{ data: { id: null, creada: false, cupo_gastado: 5 }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -173,8 +171,8 @@ describe('POST /api/interes', () => {
     const cuerpo = await respuesta.json();
 
     expect(cuerpo).toEqual({ ok: true, generacion: null, limite: MENSAJE_LIMITE });
-    // No se llega a intentar el insert: solo 2 llamadas a generaciones.
-    expect(llamadasFrom.filter((t) => t === 'generaciones').length).toBe(2);
+    // No se llega a intentar la creación por otra vía: una sola lectura.
+    expect(llamadasFrom.filter((t) => t === 'generaciones').length).toBe(1);
   });
 
   it('deja pasar la generación cuando la usuaria está justo por debajo del límite', async () => {
@@ -182,11 +180,11 @@ describe('POST /api/interes', () => {
       user: USUARIA,
       tablas: {
         intereses: [{ data: null, error: null }],
-        generaciones: [
-          { data: null, error: null },
-          { count: 4, error: null }, // 4 < 5: cabe una más
-          { data: null, error: null },
-        ],
+        generaciones: [{ data: null, error: null }],
+      },
+      funciones: {
+        // 4 gastadas: cabe una más, y la función la crea.
+        crear_generacion_con_cupo: [{ data: { id: 'g1', creada: true, cupo_gastado: 5 }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -198,16 +196,15 @@ describe('POST /api/interes', () => {
   });
 
   it('pulsar dos veces seguidas no produce error ni duplicado (insert 23505 se trata como éxito)', async () => {
-    const errorDuplicado = Object.assign(new Error('duplicado'), { code: '23505' });
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
         intereses: [{ data: null, error: null }],
-        generaciones: [
-          { data: null, error: null },
-          { count: 0, error: null },
-          { data: null, error: errorDuplicado },
-        ],
+        generaciones: [{ data: null, error: null }],
+      },
+      funciones: {
+        // Otra petición se adelantó: hay fila (id), pero no la ha creado esta.
+        crear_generacion_con_cupo: [{ data: { id: 'g1', creada: false, cupo_gastado: 1 }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -216,5 +213,28 @@ describe('POST /api/interes', () => {
 
     expect(respuesta.status).toBe(200);
     expect(await respuesta.json()).toEqual({ ok: true, generacion: { estado: 'generando' } });
+  });
+});
+
+describe('POST /api/interes — el turno se deja libre para /api/generar', () => {
+  it('crea la fila SIN tomar el turno (p_tomar_turno: false)', async () => {
+    const { cliente, llamadasRpc } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        intereses: [{ data: null, error: null }],
+        generaciones: [{ data: null, error: null }],
+      },
+      funciones: {
+        crear_generacion_con_cupo: [{ data: { id: 'g1', creada: true, cupo_gastado: 1 }, error: null }],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await POST(peticion({ oferta_id: 'oferta-1' }));
+
+    // Si esta ruta marcara el turno, /api/generar lo vería ocupado y
+    // respondería "ya se está preparando" sin que nadie lo estuviera
+    // preparando: el documento no se generaría nunca.
+    expect(llamadasRpc[0].args[0]).toMatchObject({ p_tomar_turno: false });
   });
 });
