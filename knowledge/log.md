@@ -74,6 +74,24 @@
   modelos devuelve 200 aunque no quede cuota; ese detalle costó los 26m 55s de
   la #3. Ahora se hace una petición real de 5 tokens al mismo modelo, y un 429
   se ve en dos segundos con un mensaje que dice a qué hora renueva.
+* **Cuarto hallazgo (ejecución #4): el circuito completo funcionó y la vista
+  previa salió rota.** La #4 pasó la puerta y publicó en 3m 55s (evals
+  saltados con motivo, porque ese push no tocaba la IA), y la vista previa dio
+  *Internal Server Error*: `Invalid supabaseUrl: Must be a valid HTTP or HTTPS
+  URL` en el middleware. Es **el mismo problema de raíz que el 401 de Groq**:
+  las `NEXT_PUBLIC_*` se **incrustan durante la construcción**, y el robot
+  construía con `vercel build --prebuilt` sin poder leer las variables
+  Sensitive, así que incrustaba una URL vacía. Nadie lo había visto porque
+  **era la primera vista previa de la historia del proyecto** — los 7
+  despliegues anteriores fueron todos de producción, y producción sí construye
+  en Vercel. Arreglado dejando que construya Vercel (~2 min más por
+  despliegue). **Regla que deja el paso**: con variables *Sensitive*, todo lo
+  que necesite leer su valor fuera de Vercel falla, y falla en silencio.
+* **Segundo hueco de la misma ejecución**: `decidir` comparaba el push con el
+  empujón anterior, así que una rama con un prompt cambiado se saltaba los
+  evals en cuanto le caía encima un commit de documentación. Ahora, en una
+  rama se compara contra `master` entero; en `master`, con el empujón
+  anterior.
 * **Sin confirmar: si producción está afectada.** Cero tráfico en 8 h, así que
   no hay registros que lo digan. Lo más probable es que producción esté bien
   (el 401 sería solo del `env pull`), pero queda pendiente generar un CV real

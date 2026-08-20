@@ -69,27 +69,35 @@ jobs:
           # regla que CLAUDE.md pide cumplir a mano; aquí la cumple la máquina.
           RUTAS_DE_IA='^(lib/ia\.ts|prompts/system\.md|lib/guardrails\.ts|lib/verificarCv\.ts|evals/)'
 
+          # En una RAMA se compara siempre contra master, no contra el empujón
+          # anterior. La diferencia importa: si comparas solo el último push,
+          # una rama que ya traía un prompt cambiado se salta los evals en
+          # cuanto haces encima un commit de documentación — el cambio de
+          # prompt acaba en la vista previa sin haberse medido nunca.
+          # (Pasó en la ejecución #4 del 20/08/2026.)
+          #
+          # En MASTER sí se compara con el empujón anterior: ahí lo que llega
+          # es justo lo que se va a publicar.
+          RAMA="${GITHUB_REF#refs/heads/}"
+
           if [ "$EVENTO" = "pull_request" ]; then
             CAMBIADOS=$(git diff --name-only "$BASE_PR" "$AHORA")
-          elif [ -n "${ANTES:-}" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
-            CAMBIADOS=$(git diff --name-only "$ANTES" "$AHORA")
-          else
-            # Rama nueva (su primer push) o ejecución a mano: `github.event.before`
-            # viene en ceros. Mirar solo el último commit sería un error —
-            # dejaría fuera todo lo que la rama trae de antes, y una rama con
-            # dos commits (uno de prompts, otro de documentación) se saltaría
-            # los evals por el orden en que se escribieron. Se compara la rama
-            # entera contra master.
+          elif [ "$RAMA" != "master" ]; then
             git fetch --no-tags --depth=100 origin master 2>/dev/null || true
             BASE_RAMA=$(git merge-base FETCH_HEAD "$AHORA" 2>/dev/null || echo '')
 
             if [ -n "$BASE_RAMA" ] && [ "$BASE_RAMA" != "$AHORA" ]; then
               CAMBIADOS=$(git diff --name-only "$BASE_RAMA" "$AHORA")
             else
-              # Sin nada con qué comparar (es master, o no se pudo traer):
-              # ante la duda, se evalúa.
+              # No se pudo comparar con master: ante la duda, se evalúa.
               CAMBIADOS=$(git ls-files)
             fi
+          elif [ -n "${ANTES:-}" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
+            CAMBIADOS=$(git diff --name-only "$ANTES" "$AHORA")
+          else
+            # Primer push de master, o ejecución a mano: no hay con qué
+            # comparar. Ante la duda, se evalúa.
+            CAMBIADOS=$(git ls-files)
           fi
 
           echo "Archivos cambiados:"
@@ -343,13 +351,27 @@ jobs:
       - name: Traer la configuración del proyecto
         run: vercel pull --yes --environment=${{ steps.destino.outputs.entorno }} --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Construir
-        run: vercel build ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }}
-
+      # Construye VERCEL, no este robot. La versión anterior hacía
+      # `vercel build` aquí y subía el resultado ya hecho con `--prebuilt`;
+      # parecía mejor (más control, un paso menos en Vercel) y estaba roto:
+      #
+      # Las variables `NEXT_PUBLIC_*` no se leen en tiempo de ejecución, se
+      # INCRUSTAN dentro del código durante la construcción. Y como las cinco
+      # variables del proyecto son de tipo **Sensitive**, su valor no se puede
+      # recuperar desde fuera de Vercel — el mismo motivo por el que las claves
+      # de IA tuvieron que pasar a secretos de GitHub. Resultado: el build de
+      # aquí incrustaba una URL de Supabase vacía y la vista previa moría con
+      # "Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL" en el
+      # middleware, con un escueto "Internal Server Error" en pantalla.
+      # (Verificado en vivo el 20/08/2026, ejecución #4.)
+      #
+      # Construyendo en Vercel, las variables están donde tienen que estar. Se
+      # pagan ~2 minutos más por despliegue; la puerta de calidad sigue siendo
+      # este robot, que es lo que importa.
       - name: Publicar
         id: desplegar
         run: |
-          URL=$(vercel deploy --prebuilt ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Publicado en $URL"
 

@@ -251,6 +251,51 @@ con una petición real de 5 tokens al mismo modelo. Listar modelos devuelve 200
 aunque no quede cuota — y ese detalle costó los 26m 55s de la #3. Ahora un 429
 se ve en dos segundos y el mensaje dice a qué hora renueva.
 
+## Cuarto hallazgo (ejecución #4): la primera vista previa de la historia del proyecto salió rota
+
+La #4 **pasó la puerta y publicó** — el circuito entero funcionó por primera
+vez: decidir (8 s) → lint y 253 pruebas (1m 39s) → evals saltados, porque ese
+push no tocaba la IA → publicar vista previa (2m 9s). Total, 3m 55s.
+
+Y la vista previa daba **Internal Server Error**. Causa, desde los registros
+de Vercel:
+
+```
+Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL   (en /middleware)
+```
+
+Es **el mismo problema de raíz que el 401 de Groq, con otro disfraz**. Las
+variables `NEXT_PUBLIC_*` no se leen en tiempo de ejecución: se **incrustan
+dentro del código durante la construcción**. El robot construía con
+`vercel build` y subía el resultado con `--prebuilt`, así que incrustaba una
+URL de Supabase vacía — porque las variables **Sensitive** no se pueden leer
+desde fuera de Vercel.
+
+Nadie lo había visto nunca porque **era la primera vista previa que existía en
+este proyecto**: los 7 despliegues anteriores fueron todos de producción, y
+producción sí construía en Vercel.
+
+Arreglo: quitar `vercel build` y `--prebuilt`, y dejar que **construya
+Vercel**. Cuesta unos 2 minutos más por despliegue; la puerta de calidad sigue
+estando en el robot, que es lo que importa.
+
+**Regla general que deja este paso**: con variables de tipo *Sensitive*,
+cualquier cosa que necesite **leer** su valor fuera de Vercel falla — y falla
+en silencio, con la clave vacía en vez de un error claro. Solo hay dos salidas:
+que el trabajo lo haga Vercel, o duplicar el valor donde haga falta.
+
+### Y un segundo hueco, destapado por la misma ejecución
+
+Los evals se saltaron porque el paso `decidir` comparaba el push con **el
+empujón anterior**, y ese solo tocaba documentación. Pero la rama entera sí
+traía cambios en `evals/`. Es decir: **una rama con un prompt cambiado se
+salta los evals en cuanto le haces encima un commit de documentación**, y ese
+prompt llega a la vista previa sin haberse medido nunca.
+
+Corregido: en una rama se compara siempre contra `master` (la rama entera); en
+`master` se compara con el empujón anterior, que ahí es justo lo que se
+publica.
+
 ## Lo que queda sin confirmar
 
 **No se pudo verificar si producción está afectada.** No hay tráfico en las
