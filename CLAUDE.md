@@ -124,6 +124,29 @@ calidad de los evals. Push a `master` → producción; push a cualquier otra ram
   Vercel devuelve el código, **no** las migraciones, las variables de entorno
   ni la configuración de Supabase Auth.
 
+### Dos trampas verificadas en vivo el 20/08/2026
+
+Las dos costaron horas. No volver a caer:
+
+1. **Las variables de entorno de Vercel son de tipo *Sensitive*: su valor no
+   se puede leer desde fuera.** Y falla **en silencio** — `vercel env pull`
+   dice `✓ Created .env.local` y trae la clave vacía. Por eso las claves de IA
+   se duplican como secretos de GitHub, y por eso **construye Vercel** y no el
+   robot (`vercel deploy` sin `--prebuilt`): las `NEXT_PUBLIC_*` se incrustan
+   al construir, y construir fuera produce una app rota con
+   *"Invalid supabaseUrl"*. Detalle en `docs/04-plan-tecnico.md` §3.8.
+
+2. **Groq cuenta el `max_tokens` que PIDES, no el que gastas**, contra su
+   límite de 8.000 por minuto. Una generación reserva ~7.000: **cabe una por
+   minuto**. Las pausas de los evals (25 s y 65 s) salen de esa división, no
+   de una corazonada. Si cambias `MAX_TOKENS_GROQ_GENERACION` en `lib/ia.ts`,
+   **rehaz el cálculo y ajusta los `--delay`** de `package.json` y del
+   workflow, o media tanda saldrá con 429 que parecen fallos de calidad.
+
+Corolario para el ritmo de trabajo: una tanda de evals dura **~25 minutos** y
+se lleva **la mitad de la cuota diaria**. Planifícalo, no lo lances a la
+ligera.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

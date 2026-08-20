@@ -66,6 +66,42 @@ Las instrucciones de qué clave se saca de dónde están dentro de
 
 > `.env.local` **nunca** se sube al repositorio. Ya está en `.gitignore`.
 
+## Comprobar que todo sigue bien
+
+```bash
+npm run lint     # el código, según las normas del proyecto
+npm test         # 253 pruebas de la parte que no usa IA (segundos)
+npm run evals    # los 25 casos de la parte de IA (~25 min, gasta cuota real)
+```
+
+`npm run evals` llama de verdad a Groq con tus claves y **se lleva más o menos
+la mitad de la cuota del día**. No lo lances el día que vayas a enseñar la
+app. Al terminar da un veredicto: **VERDE**, **ROJO** (calidad de verdad) o
+**NO CONCLUYENTE** (sin cuota, clave mala o el modelo juez sin responder —
+que no es culpa del prompt).
+
+## Cómo se publica
+
+**Vercel no publica solo.** Publica un robot de GitHub Actions, y solo si lint,
+las pruebas y —cuando el cambio toca la IA— los evals pasan. Si algo está en
+rojo, la web que ven las usuarias **no cambia**.
+
+```bash
+git checkout -b lo-que-voy-a-cambiar   # 1. una rama
+git push -u origin lo-que-voy-a-cambiar # 2. el robot publica una VISTA PREVIA
+                                        # 3. la abres y la pruebas de verdad
+git checkout master && git merge lo-que-voy-a-cambiar && git push
+                                        # 4. y ahora sí, a producción
+```
+
+- `[sin evals]` en el mensaje del commit salta los evals a conciencia (lint y
+  pruebas siguen corriendo). Para cuando necesitas la cuota de IA para otra
+  cosa, no para esquivar un rojo.
+- **Si algo sale mal en producción**: [`docs/07-emergencia.md`](docs/07-emergencia.md)
+  §1 — se deshace en 30 segundos desde el panel de Vercel.
+- Ese mismo documento tiene la lista de comprobación previa al lanzamiento y
+  cómo dar de alta a una compañera nueva.
+
 ## Dónde está cada cosa
 
 | Carpeta / archivo | Qué contiene |
@@ -91,6 +127,7 @@ Se escribieron en orden, siguiendo el método de los 17 pasos:
 | [`docs/04-plan-tecnico.md`](docs/04-plan-tecnico.md) | ¿Con qué se construye? |
 | [`docs/05-ia.md`](docs/05-ia.md) | ¿Qué partes usan IA y cuáles no? |
 | [`docs/06-tareas.md`](docs/06-tareas.md) | ¿En qué orden se construye? |
+| [`docs/07-emergencia.md`](docs/07-emergencia.md) | ¿Y si se rompe? ¿Cómo se deshace? |
 
 `docs/03-spec.md` es la referencia: describe qué hace el producto sin
 mencionar ninguna tecnología.

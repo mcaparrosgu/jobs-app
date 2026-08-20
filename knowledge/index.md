@@ -158,6 +158,14 @@ existe en produccion y no se toca desde aqui.
   distingue un suspenso de calidad de una falta de cuota, y
   [`docs/07-emergencia.md`](../docs/07-emergencia.md) con la marcha atrás y la
   lista de comprobación previa al lanzamiento.
+  — **La puerta encontró cuatro fallos reales el primer día**, todos
+  preexistentes: las claves no llegaban a los evals (las variables *Sensitive*
+  de Vercel no se pueden leer desde fuera, y `env pull` falla en silencio); el
+  arnés de Promptfoo **podía colgarse indefinidamente**, porque sus dos topes
+  de tiempo valen 0 por defecto; las pausas de los evals pedían **2,6 veces el
+  límite por minuto de Groq**; y las vistas previas salían **rotas** porque se
+  construían fuera de Vercel. Los cuatro habrían aparecido el día de enseñar
+  la app.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

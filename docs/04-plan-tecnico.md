@@ -313,6 +313,47 @@ sola instrucción.
 > n8n` tiene notas que no deben salir de local — este repo es distinto y
 > no las contiene, pero conviene revisarlo antes de subir.
 
+> ⚠️ **Actualización (Paso 16, 2026-08-20)**: el punto 3 de arriba dejó de
+> ser cierto, y a propósito. **Vercel ya no publica solo.** Publica un
+> workflow de GitHub Actions (`.github/workflows/publicar.yml`), y solo si
+> pasan lint, las 253 pruebas y —cuando el cambio toca la IA— la puerta de
+> calidad de los evals del Paso 13. El motivo: hasta entonces, cada push a
+> `master` iba directo a la web que ven las cinco usuarias, sin ninguna
+> comprobación por el camino.
+>
+> Lo que cambia en el día a día: se trabaja **en una rama**, se prueba en su
+> vista previa (protegida, solo la abre quien tenga sesión en Vercel) y se
+> fusiona a `master` cuando está bien. Detalle completo y las cuatro
+> decisiones en
+> [`knowledge/paso-16-publicar.md`](../knowledge/paso-16-publicar.md); cómo
+> deshacer una publicación mala, en
+> [`07-emergencia.md`](07-emergencia.md).
+
+### 3.8 Una regla que no es obvia: las variables *Sensitive* de Vercel
+
+Las cinco variables de entorno del proyecto se guardaron en Vercel marcadas
+como **Sensitive**, que significa **solo escritura**: se pueden guardar y la
+app las usa, pero **su valor no se puede volver a leer** — ni desde el panel,
+ni con el CLI, ni por la API.
+
+Es buena idea para la seguridad y **rompe dos cosas de forma silenciosa**, las
+dos descubiertas el 20/08/2026:
+
+1. **`vercel env pull` no falla, pero trae la clave vacía.** Dice
+   `✓ Created .env.local` tan tranquilo. El robot recibía una clave vacía y
+   Groq respondía `401 Invalid API Key`, lo que parecía un problema de calidad
+   de los prompts sin serlo.
+2. **Construir la web fuera de Vercel produce una app rota.** Las variables
+   `NEXT_PUBLIC_*` no se leen al ejecutar: se **incrustan en el código al
+   construir**. Construyendo en GitHub, se incrustaba una URL de Supabase
+   vacía y la web moría con *"Invalid supabaseUrl"*.
+
+**Regla, entonces**: con variables *Sensitive*, todo lo que necesite **leer**
+su valor fuera de Vercel falla, y falla en silencio. Solo hay dos salidas —
+que el trabajo lo haga Vercel (así se construye ahora), o duplicar el valor
+donde haga falta (así llegan las claves de IA al robot, como secretos del
+repositorio en GitHub).
+
 ## 4. Gestión de secretos
 
 Una **clave de API** es la contraseña con la que un servicio te reconoce.
@@ -331,6 +372,24 @@ proyecto. Como no apuntar el PIN en la tarjeta.
 | `GROQ_API_KEY` | tu cuota de IA | 🔴 **Sí** | ídem |
 | Credenciales de Gmail y de Apify | envío de correo, scraping | 🔴 **Sí** | n8n → Credentials (ya están ahí, no se tocan) |
 | Contraseña SMTP de Gmail | envío del enlace de acceso | 🔴 **Sí** | Supabase → Project Settings → Authentication → SMTP Settings |
+
+**Y desde el Paso 16, tres más en GitHub** — el robot que publica también
+necesita llaves. Van en **GitHub → repositorio → Settings → Secrets and
+variables → Actions**, y una vez guardadas no se pueden volver a leer (que es
+lo correcto):
+
+| Secreto | Para qué | Por qué no se lee de Vercel |
+| :---- | :---- | :---- |
+| `VERCEL_TOKEN` | Que el robot pueda publicar en tu nombre | Es un permiso nuevo, no existía antes |
+| `GROQ_API_KEY` | Lanzar los evals del Paso 13 | Las variables *Sensitive* no se pueden leer (§3.8) |
+| `OPENROUTER_API_KEY` | El respaldo, durante los evals | Ídem |
+
+> Duplicar `GROQ_API_KEY` y `OPENROUTER_API_KEY` en dos sitios no gustaba —
+> cuantos menos lugares tenga una clave, mejor. Se intentó traerlas de Vercel
+> y **no es posible** por lo que explica §3.8. Consecuencia práctica: **si
+> algún día cambias una de esas dos claves, hay que cambiarla en los dos
+> sitios**, o el robot empezará a dar 401 mientras la app funciona
+> perfectamente.
 
 **Mientras desarrollas en tu ordenador**: las mismas claves van en un
 archivo `.env.local` en la raíz del proyecto, y `.env.local` **tiene que
@@ -351,7 +410,7 @@ de más automáticamente: al llegar al límite se paran, no facturan.
 | :---- | :---- | :---- | :---- |
 | **Vercel** (Hobby) | 100 GB tráfico, 1M peticiones/mes | insignificante | Enorme |
 | **Supabase** | 500 MB datos, 50.000 usuarias activas/mes | 5 usuarias, unos pocos MB | Enorme |
-| **Groq** | 14.400 peticiones/día · 30/min · ~6.000 tokens/min | máx. 25 CVs/día (5 × 5) + extracciones | Amplio en total, **justo por minuto** — ver §6 |
+| **Groq** | **200.000 tokens/día · 8.000 por minuto** (medido en vivo, 20/08/2026) | máx. 25 CVs/día (5 × 5) + extracciones | **Ajustado**: el día da para ~30 documentos y el minuto para uno — ver §6.2 |
 | **Apify** | 5 $/mes de crédito | 1 ejecución diaria de ingesta | Ajustado, depende del actor |
 | **Gmail** | ~500 envíos/día | máx. 5 avisos/día + accesos | Enorme |
 
@@ -384,13 +443,28 @@ ves "proyecto pausado", se arregla con dos clics y no has perdido nada.
 
 ### 6.2 El límite por minuto de Groq cuando varias generáis a la vez
 
-El tope diario sobra de largo, pero el de **tokens por minuto** (~6.000)
-es estrecho. Un **token** es un trozo de palabra: la unidad con la que se
-mide el texto que entra y sale de la IA. Generar un CV + carta consume
-fácilmente 4.000–5.000 tokens. Si dos personas pulsan "me interesa" en el
-mismo minuto, la segunda recibe un error de "demasiadas peticiones" —
-justo el escenario que ocurre cuando enseñas la app a toda la clase a la
-vez.
+El tope por **tokens por minuto** es estrecho: **8.000**, medido en vivo en
+esta cuenta. Un **token** es un trozo de palabra: la unidad con la que se
+mide el texto que entra y sale de la IA.
+
+Y hay un detalle que se pasa por alto con facilidad: **ese límite cuenta el
+texto de entrada MÁS el `max_tokens` que pides, se gaste o no**. No se
+descuenta lo que consumes, sino lo que reservas. Como pedir mesa para diez y
+que te la cobren aunque vayáis cuatro.
+
+Generar un CV + carta reserva del orden de **7.000 de esos 8.000**. Es decir:
+**por minuto cabe una generación, o dos o tres extracciones**. Si dos personas
+pulsan "me interesa" en el mismo minuto, la segunda recibe un error de
+"demasiadas peticiones" — justo el escenario que ocurre cuando enseñas la app
+a toda la clase a la vez.
+
+> ⚠️ Este cálculo no es solo teoría de la app: **también manda en los evals**.
+> El arnés del Paso 13 estaba configurado para lanzar tres generaciones por
+> minuto, es decir **21.000 tokens/minuto contra un límite de 8.000**, y por
+> eso media tanda salía con errores 429 que parecían fallos de calidad.
+> Corregido el 20/08/2026 con pausas de 25 s y 65 s entre casos. Si algún día
+> cambias `MAX_TOKENS_GROQ_GENERACION` en `lib/ia.ts`, **hay que rehacer esa
+> división** — ver `knowledge/paso-13-evals.md`.
 
 **Mitigación**, por orden de esfuerzo (detalle en
 [`05-ia.md`](05-ia.md) §6.7):
