@@ -1,6 +1,41 @@
 # Registro de cambios del bundle
 
 ## 2026-08-20
+* **Paso 16: la publicación pasa a tener puerta de calidad.** Partiendo de una
+  app ya publicada (Hito 9), el trabajo fue protegerla. Dos hechos del estado
+  real lo dirigieron: los 7 despliegues existentes eran **todos de
+  producción** (nunca se había usado una vista previa: cada push iba directo a
+  la web de las usuarias) y la entrada seguía **abierta a cualquiera** con la
+  URL. Cuatro decisiones de Mar, preguntadas una a una: (1) la puerta
+  **bloquea**, no avisa — Vercel deja de publicar solo y publica un workflow
+  de GitHub Actions; (2) los evals corren **solo cuando el cambio toca la
+  IA**, con freno manual `[sin evals]` en el mensaje del commit; (3) la
+  entrada se cierra **en Supabase**, no en el código, porque
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` viaja al navegador y una comprobación en la
+  web se salta llamando a Supabase directamente; (4) las vistas previas se
+  protegen con Vercel Authentication (activado por API, solo `preview`) porque
+  son una app completa enchufada a la base de datos real con CVs dentro.
+  El número que decidió la (2): una pasada de evals gasta ~105.000 tokens,
+  **la mitad de los 200.000 diarios de Groq** — una pasada y una clase entera
+  usando la app no caben el mismo día.
+* **La puerta da tres veredictos, no dos** (`evals/puerta-calidad.mjs`, 22
+  pruebas): VERDE, ROJO (calidad, bloquea) y **NO CONCLUYENTE** (429 de Groq,
+  juez sin responder, tiempo agotado — bloquea pero dice que no es culpa del
+  prompt). Existe porque ya ha pasado tres veces que unos evals salieran en
+  rojo con la app funcionando bien. Se apoya en `failureReason` de Promptfoo
+  (2 = ERROR del proveedor vs 1 = ASSERT) más un catálogo de patrones de
+  infraestructura; las aserciones no concluyentes se **excluyen del
+  denominador** en vez de contar como suspensos.
+* **Creacion**: `docs/07-emergencia.md` — cómo deshacer una publicación mala
+  (Instant Rollback por panel y por CLI, y qué **no** deshace: migraciones,
+  variables de entorno, configuración de Supabase Auth), qué clase de "está
+  roto" es cada síntoma, las emergencias frecuentes por probabilidad, los
+  topes de gasto y la lista de comprobación previa al lanzamiento.
+* **Arreglos colaterales**: el error de lint `react-hooks/set-state-in-effect`
+  en `app/page.tsx` (habría bloqueado la puerta desde el primer día); los
+  comandos de evals de `package.json`, que no llevaban el `-j 1` ni las pausas
+  obligatorias desde que Groq es el principal; y `shouldCreateUser: false` en
+  la pantalla de acceso. Pruebas: 225 → 253.
 * **Paso 15, segunda pasada: revisión independiente del red team.** Pedida
   por Mar para no fiarse de un único juicio sobre un sistema que maneja los
   CVs de cuatro personas reales. Corrige la conclusión del primer informe:

@@ -149,6 +149,16 @@ existe en produccion y no se toca desde aqui.
   los arreglos aplicados el mismo día, verificados relanzando los ataques en
   vivo. Informe completo en `seguridad/red-team-opus.md`.
 
+- [paso-16-publicar.md](paso-16-publicar.md) — Paso 16: la publicación deja de
+  ser automática de Vercel y pasa a un robot de GitHub Actions que **solo
+  publica si lint, pruebas y (cuando el cambio toca la IA) los evals superan
+  sus umbrales**. Incluye las cuatro decisiones de Mar (puerta que bloquea,
+  evals solo al tocar la IA con freno `[sin evals]`, entrada cerrada por
+  invitación, vistas previas protegidas), el veredicto de tres estados que
+  distingue un suspenso de calidad de una falta de cuota, y
+  [`docs/07-emergencia.md`](../docs/07-emergencia.md) con la marcha atrás y la
+  lista de comprobación previa al lanzamiento.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

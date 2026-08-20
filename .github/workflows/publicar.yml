@@ -1,0 +1,273 @@
+# Puerta de calidad y publicación de Jobs App (Paso 16).
+#
+# Antes, Vercel publicaba solo en cuanto llegaba un push. Ahora publica este
+# robot, y solo si las comprobaciones pasan. Si algo está en rojo, la web que
+# ven las usuarias NO cambia.
+#
+# El orden es siempre el mismo:
+#
+#   1. decidir       ¿este cambio toca la IA? ¿lleva el freno "[sin evals]"?
+#   2. comprobar     lint + pruebas (rápido, gratis, no llama a ninguna IA)
+#   3. evals         solo si toca la IA. Llama a Groq de verdad y gasta cuota
+#   4. publicar      vista previa en cualquier rama, producción solo en master
+#
+# Para deshacer una publicación mala, NO hace falta este robot: se hace en el
+# panel de Vercel en 30 segundos. Ver docs/07-emergencia.md.
+
+name: Publicar
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  # Permite lanzarlo a mano desde la pestaña Actions de GitHub, por ejemplo
+  # para reintentar unos evals que salieron "no concluyentes" por falta de
+  # cuota, sin tener que inventarse un commit.
+  workflow_dispatch:
+
+# Si haces dos pushes seguidos a la misma rama, el primero se cancela: no tiene
+# sentido publicar una versión que ya está superada, y ahorra cuota de evals.
+concurrency:
+  group: publicar-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Estos dos NO son secretos: identifican el proyecto, no dan acceso a nada.
+  # El que sí lo es (VERCEL_TOKEN) vive en Settings → Secrets del repositorio.
+  VERCEL_ORG_ID: team_re1pN0Cr5HU7wbuaIKJ5NMPR
+  VERCEL_PROJECT_ID: prj_2W8yk0mwvGZZ3uyBwwVxuI1DNL38
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # 1 · ¿Hace falta gastar cuota de IA en este cambio?
+  # ─────────────────────────────────────────────────────────────────────
+  decidir:
+    name: Decidir si hacen falta los evals
+    runs-on: ubuntu-latest
+    outputs:
+      lanzar_evals: ${{ steps.mirar.outputs.lanzar_evals }}
+      motivo: ${{ steps.mirar.outputs.motivo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: mirar
+        name: Mirar qué archivos han cambiado
+        env:
+          ANTES: ${{ github.event.before }}
+          AHORA: ${{ github.sha }}
+          BASE_PR: ${{ github.event.pull_request.base.sha }}
+          EVENTO: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          # Los archivos de los que depende la calidad de la IA. Es la misma
+          # regla que CLAUDE.md pide cumplir a mano; aquí la cumple la máquina.
+          RUTAS_DE_IA='^(lib/ia\.ts|prompts/system\.md|lib/guardrails\.ts|lib/verificarCv\.ts|evals/)'
+
+          if [ "$EVENTO" = "pull_request" ]; then
+            CAMBIADOS=$(git diff --name-only "$BASE_PR" "$AHORA")
+          elif [ -n "${ANTES:-}" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
+            CAMBIADOS=$(git diff --name-only "$ANTES" "$AHORA")
+          else
+            # Rama nueva o ejecución a mano: no hay con qué comparar, así que se
+            # mira solo el último commit.
+            CAMBIADOS=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files)
+          fi
+
+          echo "Archivos cambiados:"
+          echo "$CAMBIADOS" | sed 's/^/  /'
+
+          # El mensaje del commit se LEE con git, nunca se interpola dentro del
+          # script: un mensaje con comillas o acentos graves podría ejecutar
+          # comandos aquí dentro (lección del Paso 15).
+          MENSAJE=$(git log -1 --pretty=%B)
+
+          if echo "$MENSAJE" | grep -qiF '[sin evals]'; then
+            echo "lanzar_evals=false" >> "$GITHUB_OUTPUT"
+            echo "motivo=El commit lleva el freno [sin evals]" >> "$GITHUB_OUTPUT"
+          elif echo "$CAMBIADOS" | grep -qE "$RUTAS_DE_IA"; then
+            echo "lanzar_evals=true" >> "$GITHUB_OUTPUT"
+            echo "motivo=El cambio toca la IA" >> "$GITHUB_OUTPUT"
+          else
+            echo "lanzar_evals=false" >> "$GITHUB_OUTPUT"
+            echo "motivo=El cambio no toca la IA" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Anotar la decisión
+        run: |
+          {
+            echo "### Evals del Paso 13"
+            echo ""
+            echo "- ¿Se lanzan? **${{ steps.mirar.outputs.lanzar_evals }}**"
+            echo "- Motivo: ${{ steps.mirar.outputs.motivo }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 2 · Lo rápido y gratis: se hace siempre
+  # ─────────────────────────────────────────────────────────────────────
+  comprobar:
+    name: Lint y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas automáticas (Paso 12)
+        run: npm test
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 3 · Los evals: solo cuando el cambio toca la IA
+  # ─────────────────────────────────────────────────────────────────────
+  evals:
+    name: Puerta de calidad de la IA
+    needs: decidir
+    if: needs.decidir.outputs.lanzar_evals == 'true'
+    runs-on: ubuntu-latest
+    # Los dos evals con pausas entre casos rondan los 15 minutos. El margen
+    # cubre un día en el que Groq vaya lento.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar la herramienta de Vercel
+        run: npm install --global vercel@latest
+
+      # Las claves de IA no se duplican como secretos de GitHub: se traen de
+      # Vercel, que ya es donde viven. Un sitio menos donde una clave puede
+      # quedarse olvidada.
+      - name: Traer las claves desde Vercel
+        run: |
+          # `vercel pull` deja el proyecto enlazado (crea .vercel/) además de
+          # traer la configuración; sin ese paso, `env pull` falla en algunas
+          # versiones del CLI aunque VERCEL_PROJECT_ID esté puesto.
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env pull .env.local --environment=production --yes --token=${{ secrets.VERCEL_TOKEN }}
+
+      # `-j 1` y las pausas son obligatorias desde que Groq es el proveedor
+      # principal: limita por tokens por minuto y sin ellas los casos se pisan
+      # y fallan con un 429 que parece calidad y no lo es.
+      # `|| true` deja que el eval termine aunque haya casos en rojo: quien
+      # decide no es promptfoo, es la puerta del paso siguiente.
+      - name: Evals · extraerPerfil (12 casos)
+        run: |
+          npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml \
+            --env-file .env.local -j 1 --delay 15000 \
+            -o evals/promptfoo/resultado-perfil.json || true
+
+      - name: Evals · generarCvYCarta (13 casos)
+        run: |
+          npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml \
+            --env-file .env.local -j 1 --delay 20000 \
+            -o evals/promptfoo/resultado-generar.json || true
+
+      # Aquí está la puerta. Sale con 0 (verde), 1 (rojo de calidad) o 2 (no
+      # concluyente: sin cuota, juez caído...). Cualquiera que no sea 0 detiene
+      # la publicación, pero el mensaje distingue de qué se trata.
+      - name: Veredicto
+        shell: bash
+        run: |
+          # `pipefail` es imprescindible aquí: sin él, el código de salida de la
+          # tubería sería el de `tee` (siempre 0) y la puerta no bloquearía
+          # nunca — parecería montada y no lo estaría.
+          set -uo pipefail
+          node evals/puerta-calidad.mjs \
+            evals/promptfoo/resultado-perfil.json \
+            evals/promptfoo/resultado-generar.json | tee veredicto.txt
+          exit "${PIPESTATUS[0]}"
+
+      - name: Anotar el veredicto
+        if: always()
+        run: |
+          {
+            echo '### Veredicto de los evals'
+            echo ''
+            echo '```'
+            cat veredicto.txt 2>/dev/null || echo 'La puerta no llegó a dar un veredicto.'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 4 · Publicar. Solo si todo lo anterior fue bien.
+  # ─────────────────────────────────────────────────────────────────────
+  publicar:
+    name: Publicar en Vercel
+    needs: [decidir, comprobar, evals]
+    # `always()` hace que este trabajo se evalúe aunque "evals" se haya
+    # saltado; las condiciones de dentro son las que mandan de verdad.
+    # "skipped" cuenta como bueno (no había que lanzarlos); "failure" no.
+    # `decidir` también tiene que haber ido bien: si reventara, "evals" se
+    # saltaría y quedaría en "skipped", que es justo lo que aquí se acepta como
+    # bueno. Sin esta línea, un fallo al decidir publicaría sin pasar los evals.
+    if: |
+      always()
+      && needs.decidir.result == 'success'
+      && needs.comprobar.result == 'success'
+      && (needs.evals.result == 'success' || needs.evals.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Instalar la herramienta de Vercel
+        run: npm install --global vercel@latest
+
+      - name: Decidir producción o vista previa
+        id: destino
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/master" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "entorno=production" >> "$GITHUB_OUTPUT"
+            echo "flag=--prod" >> "$GITHUB_OUTPUT"
+            echo "etiqueta=PRODUCCIÓN (la web que ven tus compañeras)" >> "$GITHUB_OUTPUT"
+          else
+            echo "entorno=preview" >> "$GITHUB_OUTPUT"
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "etiqueta=vista previa (nadie más la ve)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Traer la configuración del proyecto
+        run: vercel pull --yes --environment=${{ steps.destino.outputs.entorno }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Construir
+        run: vercel build ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Publicar
+        id: desplegar
+        run: |
+          URL=$(vercel deploy --prebuilt ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Publicado en $URL"
+
+      - name: Anotar dónde ha quedado
+        run: |
+          {
+            echo '### Publicado'
+            echo ''
+            echo "- Destino: **${{ steps.destino.outputs.etiqueta }}**"
+            echo "- Dirección: ${{ steps.desplegar.outputs.url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

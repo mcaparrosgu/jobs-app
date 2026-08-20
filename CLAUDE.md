@@ -86,9 +86,14 @@ que no se comprueba contra el golden dataset puede arreglar un caso y
 romper otro sin que nadie se entere hasta que le pase a una usuaria real.
 
 ```
-npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml --env-file .env.local -j 1
-npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local -j 1
+npm run evals          # los dos evals seguidos y después la puerta de calidad
+npm run evals:puerta   # solo el veredicto, sobre los resultados ya generados
 ```
+
+Desde el Paso 16 esta regla la cumple también el robot de publicación: si el
+push toca `lib/ia.ts`, `prompts/system.md`, `lib/guardrails.ts`,
+`lib/verificarCv.ts` o `evals/`, los evals corren solos y **bloquean la
+publicación** si bajan de los umbrales de `evals/umbrales.json`.
 
 `-j 1` (sin concurrencia) es obligatorio desde que Groq es el proveedor
 principal: limita por **tokens por minuto** (8000 en esta cuenta), y con la
@@ -99,6 +104,25 @@ Ambos llaman a las funciones reales de `lib/ia.ts` (consumen cuota gratis
 de OpenRouter/Groq, igual que la app en producción). Los umbrales de
 aprobado y cómo leer el resultado están documentados en
 `knowledge/paso-13-evals.md`.
+
+## Publicación (Paso 16)
+
+**Vercel ya no publica solo.** Publica `.github/workflows/publicar.yml`, y solo
+si pasan lint, las pruebas y —cuando el cambio toca la IA— la puerta de
+calidad de los evals. Push a `master` → producción; push a cualquier otra rama
+→ vista previa protegida.
+
+- Antes de mandar algo a producción, **pruébalo en una rama** y abre su vista
+  previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
+  fueron todos directos a producción.
+- Un commit con **`[sin evals]`** en el mensaje salta los evals a conciencia
+  (lint y pruebas siguen). Es para cuando hace falta la cuota de Groq para
+  otra cosa, no para esquivar un rojo.
+- Si la puerta dice **NO CONCLUYENTE**, no es un fallo del prompt: es falta de
+  cuota o el modelo juez sin responder. Relanzar, no "arreglar".
+- **Deshacer una publicación mala**: `docs/07-emergencia.md` §1. El rollback de
+  Vercel devuelve el código, **no** las migraciones, las variables de entorno
+  ni la configuración de Supabase Auth.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

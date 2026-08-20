@@ -1,0 +1,180 @@
+---
+type: Decision
+title: Paso 16 — Publicación con puerta de calidad, vista previa y marcha atrás
+description: La publicación deja de ser automática de Vercel y pasa a un robot de GitHub Actions que solo publica si lint, pruebas y (cuando el cambio toca la IA) los evals del Paso 13 superan sus umbrales. Incluye vistas previas protegidas, entrada cerrada por invitación y docs/07-emergencia.md.
+tags: [jobs-app, publicacion, vercel, github-actions, evals, puerta-calidad, paso-16, okf]
+timestamp: 2026-08-20T17:30:00Z
+---
+
+# El punto de partida
+
+La app ya estaba publicada desde el [Hito 9](hito-9-publicar.md): repositorio
+privado en GitHub, proyecto en Vercel y primer recorrido probado desde el
+móvil. El Paso 16 no era, por tanto, "publicar", sino **proteger lo ya
+publicado**.
+
+Dos hechos del estado real motivaron casi todo lo que sigue:
+
+1. **Los 7 despliegues existentes eran de producción.** Ni una sola vista
+   previa: cada push a `master` iba directo a la web que ven las cinco
+   usuarias, sin ninguna comprobación por el camino.
+2. **La entrada estaba abierta.** `signInWithOtp` sin `shouldCreateUser:false`
+   y el registro habilitado en Supabase: cualquiera que diera con la URL se
+   convertía en usuaria. Ya lo había señalado el
+   [red team](paso-15-revision-opus.md); aquí se cierra.
+
+# Las cuatro decisiones de Mar
+
+Preguntadas una a una, con las opciones y sus costes reales sobre la mesa
+(regla 7 de `CLAUDE.md`).
+
+## 1. La puerta bloquea, no avisa
+
+Vercel deja de publicar por su cuenta. Publica un workflow de GitHub Actions
+(`.github/workflows/publicar.yml`) y **solo si las comprobaciones pasan**.
+
+La alternativa descartada era dejar que Vercel publicara y que el robot avisara
+después por email. Se descartó por un detalle del caso concreto: las cinco
+compañeras entran **una vez, el día que Mar se lo enseña**. Un fallo de veinte
+minutos no se diluye como en una app de uso diario — se lleva por delante la
+única oportunidad.
+
+Coste asumido: un `VERCEL_TOKEN` guardado como secreto del repositorio, y una
+pieza más que mantener.
+
+## 2. Los evals solo cuando el cambio toca la IA
+
+El robot mira los archivos del commit. Si toca `lib/ia.ts`,
+`prompts/system.md`, `lib/guardrails.ts`, `lib/verificarCv.ts` o `evals/`,
+lanza los 25 casos. Si no, se los salta.
+
+**El número que decidió esto**: una pasada completa consume unos **105.000
+tokens**, más o menos **la mitad de los 200.000 diarios** de la capa gratuita
+de Groq. Con 25 casos que llaman a la IA más 10 aserciones `llm-rubric` que
+consultan al modelo juez (también en Groq), correrlos en cada push habría
+dejado a la app sin gasolina en dos pushes. Y como 5 usuarias × 5 documentos
+son 25, y el día da para ~30: **una pasada de evals y una clase entera usando
+la app no caben el mismo día.**
+
+Se añadió un **freno manual**: `[sin evals]` en el mensaje del commit los
+salta a conciencia (lint y pruebas siguen corriendo). Sirve para el caso real
+de "los lancé a mano hace diez minutos" o "voy a enseñar la app esta tarde y
+necesito la cuota entera". Queda escrito en el historial, que es lo que lo
+hace honesto.
+
+Esto automatiza la regla que ya estaba escrita a mano en `CLAUDE.md` desde el
+[Paso 13](paso-13-evals.md).
+
+## 3. Entrada cerrada por invitación
+
+Se apaga el registro en Supabase (*Authentication → Sign In / Providers →
+Allow new users to sign up*) y Mar invita a las cinco desde el panel.
+
+**Por qué en Supabase y no en el código**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+viaja al navegador por definición, así que una comprobación en la web es un
+cartel de "solo socios" con la puerta de servicio abierta — se puede llamar a
+Supabase directamente saltándose la pantalla. Cerrarlo en Supabase es el mismo
+principio que ya sostiene [RLS](hito-1-base-de-datos.md): **la garantía no
+depende de que el código esté bien escrito.**
+
+`shouldCreateUser: false` se añade igualmente en `app/page.tsx`, pero no como
+barrera: como forma de dar un mensaje honesto ("ese email no está en la lista
+de personas invitadas") en vez de un error genérico.
+
+**Es además el tope de gasto más eficaz del sistema.** Los límites de
+`lib/generaciones.ts` (5 documentos/día) y `lib/extracciones.ts` (10
+análisis/día) se aplican *por persona*: sin lista cerrada, seis desconocidos
+agotan la cuota diaria de Groq entera.
+
+## 4. Vistas previas protegidas
+
+*Vercel Authentication* activado **solo para preview** (`deploymentType:
+"preview"`), gratis en el plan Hobby, sin tocar producción.
+
+El motivo concreto: una vista previa es una app completa funcionando y
+**enchufada a la misma base de datos de Supabase que producción**, con los CVs
+reales dentro. Sus URLs quedan además escritas para siempre en el historial de
+GitHub. Se descartó montar una Supabase aparte para pruebas: es gratis, pero
+obliga a mantener dos bases de datos sincronizadas con sus migraciones y su
+correo — más trabajo del que ahorra para cinco usuarias.
+
+Contrapartida aceptada: para abrir un preview desde el móvil hay que iniciar
+sesión en `vercel.com` en ese móvil una vez.
+
+# Qué se construyó
+
+| Pieza | Para qué |
+| :---- | :---- |
+| `.github/workflows/publicar.yml` | El robot: decidir → comprobar → evals → publicar |
+| `evals/puerta-calidad.mjs` | Lee los resultados de Promptfoo y da el veredicto |
+| `evals/umbrales.json` | Los cinco umbrales del Paso 13, editables sin tocar código |
+| `evals/lanzar.mjs` | `npm run evals` portable entre PowerShell y Git Bash |
+| `tests/lib/puerta-calidad.test.ts` | 22 pruebas de la propia puerta |
+| `tests/components/PantallaAcceso.test.tsx` | 6 pruebas de la entrada por invitación |
+| [`docs/07-emergencia.md`](../docs/07-emergencia.md) | Marcha atrás y lista de comprobación previa |
+
+## El detalle que más importa de la puerta: tres veredictos, no dos
+
+`evals/puerta-calidad.mjs` no responde "pasa / no pasa". Responde tres cosas:
+
+- **VERDE** (código 0) — todas las métricas por encima de su umbral.
+- **ROJO** (código 1) — el modelo respondió y la calidad bajó. Bloquea.
+- **NO CONCLUYENTE** (código 2) — 429 de Groq, juez sin responder, tiempo
+  agotado. Bloquea también, **pero dice claramente que no es culpa del
+  prompt**.
+
+Ese tercer estado existe porque el problema ya ha aparecido **tres veces**
+(ver [paso-13-evals.md](paso-13-evals.md)): cuota de OpenRouter agotada, cuota
+del juez agotada, y juez sin endpoints tras apagar el permiso de
+entrenamiento. En los tres casos los evals salieron en rojo con la app
+funcionando perfectamente. Sin esta distinción, la puerta habría mandado a Mar
+a arreglar prompts que no estaban rotos.
+
+La clasificación se apoya en dos señales: el campo `failureReason` de
+Promptfoo (2 = ERROR del proveedor, frente a 1 = ASSERT, que sí es calidad) y
+un catálogo de patrones de infraestructura en el motivo del fallo (429, 5xx,
+*rate limit*, *no endpoints available*, tiempos agotados, errores de red).
+Además, una métrica con más de un 25 % de aserciones sin evaluar, o con menos
+de 3 evaluables, se declara no concluyente en vez de inventarse un porcentaje
+sobre una muestra que no lo soporta.
+
+**Las aserciones no concluyentes se excluyen del denominador**, no cuentan
+como suspensos. Es la diferencia entre medir calidad y medir la suerte que
+tuvo la cuota ese día.
+
+# Efectos colaterales del paso
+
+- **Arreglado un error de lint que estaba en el repositorio**
+  (`react-hooks/set-state-in-effect` en `app/page.tsx`): el aviso de "enlace
+  caducado" se ponía con un `useEffect` que solo servía para llamar a
+  `setState` en el primer render. Ahora se calcula como estado inicial. Sin
+  esto, la puerta habría bloqueado desde el primer día.
+- **Corregidos los comandos de evals de `package.json`**: no llevaban el
+  `-j 1` ni las pausas que `CLAUDE.md` marca como obligatorios desde que Groq
+  es el proveedor principal. Quien lanzara `npm run evals:perfil` se comía
+  429s que parecían fallos de calidad.
+- Las pruebas pasan de 225 a **253**.
+
+# Pendiente de Mar (no automatizable)
+
+1. Crear el `VERCEL_TOKEN` y guardarlo en GitHub → *Settings → Secrets and
+   variables → Actions*.
+2. Apagar *Allow new users to sign up* en Supabase e invitar a las cinco.
+3. Verificar que ninguna cuenta tiene método de pago (§5 de
+   `docs/07-emergencia.md`).
+4. **Solo después de ver el robot publicar con éxito**: desactivar el
+   despliegue automático de Vercel. Hacerlo antes dejaría el proyecto sin
+   ninguna forma de publicar si el robot falla al configurarse.
+
+# Relacionado
+
+- [`docs/07-emergencia.md`](../docs/07-emergencia.md) — la marcha atrás y la
+  lista de comprobación previa al lanzamiento.
+- [hito-9-publicar.md](hito-9-publicar.md) — la primera publicación, que este
+  paso protege.
+- [paso-13-evals.md](paso-13-evals.md) — los umbrales que aplica la puerta y
+  el historial de evals en rojo por infraestructura.
+- [paso-15-revision-opus.md](paso-15-revision-opus.md) — señaló el registro
+  abierto que aquí se cierra.
+- [decision-groq-principal-privacidad.md](decision-groq-principal-privacidad.md) —
+  el cupo de Groq que obliga a racionar los evals.
