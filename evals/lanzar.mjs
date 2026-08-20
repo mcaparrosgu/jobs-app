@@ -17,6 +17,22 @@ import { spawnSync } from 'node:child_process';
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
+// Promptfoo NO tiene límite de tiempo por defecto: sus dos topes valen 0, que
+// significa "esperar para siempre". Verificado en vivo el 20/08/2026 — una
+// ejecución se quedó clavada en el caso 8 de 13 y siguió ahí 20 minutos sin
+// avanzar, hasta que hubo que matarla. Sin esto, un `npm run evals` que pilla
+// al modelo en mal momento se queda colgado en la terminal sin decir nada.
+//
+//   EVAL_TIMEOUT_MS  · por caso. 3 min es de sobra: el peor camino de
+//                      lib/ia.ts (dos rondas de OpenRouter más el respaldo de
+//                      Groq) suma poco más de un minuto.
+//   MAX_EVAL_TIME_MS · por suite entera. Lo que pase de 20 min está colgado.
+//
+// Los casos que se corten salen como error, y la puerta los cuenta como "sin
+// evaluar", no como suspensos de calidad.
+process.env.PROMPTFOO_EVAL_TIMEOUT_MS ??= '180000';
+process.env.PROMPTFOO_MAX_EVAL_TIME_MS ??= '1200000';
+
 function ejecutar(script, { tolerarFallo = false } = {}) {
   console.log(`\n=== npm run ${script} ===\n`);
   const resultado = spawnSync(npm, ['run', script], { stdio: 'inherit', shell: false });

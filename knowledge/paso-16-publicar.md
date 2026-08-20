@@ -183,6 +183,38 @@ Se pierde la elegancia de tener las claves en un solo sitio. A cambio, el
 robot funciona y el fallo es imposible de confundir con un problema de
 calidad.
 
+## Segundo hallazgo (ejecución #2): el arnés de evals no tenía límite de tiempo
+
+Con las claves ya bien puestas, la ejecución #2 llegó al caso **7 de 13 de
+`generarCvYCarta` y se quedó clavada ahí 20 minutos**, sin avanzar ni fallar,
+hasta que hubo que matarla.
+
+La causa está en Promptfoo, y venía de fábrica desde el Paso 13:
+
+| Variable | Valor por defecto | Qué significa |
+| :---- | :---- | :---- |
+| `PROMPTFOO_EVAL_TIMEOUT_MS` | **0** | Ningún límite por caso: espera para siempre |
+| `PROMPTFOO_MAX_EVAL_TIME_MS` | **0** | Ningún límite para la suite entera |
+
+Los tiempos de espera de `lib/ia.ts` (12 s + 15 s de OpenRouter, 20 s de Groq)
+protegen **a la app**, no al arnés: las aserciones `llm-rubric` llaman al
+modelo juez por su cuenta, fuera de ese código, y ahí no había nada que
+cortara. El caso que se colgó (el octavo, con `llm-rubric`) encaja con esa
+explicación.
+
+**Esto afecta igual a las ejecuciones locales**: un `npm run evals` que pillara
+al juez en mal momento se quedaba colgado en la terminal sin decir nada.
+
+Arreglado en los dos sitios — 3 minutos por caso, 20 por suite — y el límite
+del trabajo sube de 40 a 60 minutos para que, si algo se corta, el paso del
+veredicto llegue a ejecutarse y lo explique, en vez de que GitHub mate el
+trabajo sin dejar rastro. Los casos cortados salen como error, así que la
+puerta los cuenta como "sin evaluar" y no como suspensos de calidad.
+
+**Tiempos reales medidos** (útiles para calibrar expectativas): `extraerPerfil`
+12 casos en **3m 14s**; `generarCvYCarta` iba a ritmo de ~1 caso/minuto antes
+de colgarse, es decir unos **12-13 minutos** para sus 13 casos.
+
 ## Lo que queda sin confirmar
 
 **No se pudo verificar si producción está afectada.** No hay tráfico en las

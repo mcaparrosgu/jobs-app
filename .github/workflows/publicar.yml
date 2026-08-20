@@ -151,9 +151,12 @@ jobs:
     needs: decidir
     if: needs.decidir.outputs.lanzar_evals == 'true'
     runs-on: ubuntu-latest
-    # Los dos evals con pausas entre casos rondan los 15 minutos. El margen
-    # cubre un día en el que Groq vaya lento.
-    timeout-minutes: 40
+    # Medido en vivo el 20/08/2026: extraerPerfil 3m 14s, generarCvYCarta unos
+    # 12 minutos cuando el modelo responde de verdad. Con los dos topes de
+    # PROMPTFOO_MAX_EVAL_TIME_MS (20 min por suite) el peor caso son 40; 60 deja
+    # margen para que el paso del veredicto llegue a ejecutarse y explique qué
+    # ha pasado, en vez de que GitHub mate el trabajo sin dejar rastro.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
 
@@ -209,6 +212,8 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
+          PROMPTFOO_MAX_EVAL_TIME_MS: '1200000'
         run: |
           npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml \
             -j 1 --delay 15000 \
@@ -218,6 +223,8 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
+          PROMPTFOO_MAX_EVAL_TIME_MS: '1200000'
         run: |
           npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml \
             -j 1 --delay 20000 \

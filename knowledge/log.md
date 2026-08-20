@@ -44,6 +44,19 @@
   responde 200 a `api.groq.com`, la que recibió el robot 401. Solución: las
   claves de IA pasan a secretos del repositorio, y el job empieza comprobando
   que la clave responde 200 **antes** de gastar 10 minutos y media cuota.
+* **Segundo hallazgo (ejecución #2): el arnés de evals no tenía límite de
+  tiempo, y venía así desde el Paso 13.** Con las claves ya correctas, la
+  ejecución se quedó **clavada en el caso 7 de 13** de `generarCvYCarta`
+  durante 20 minutos, sin avanzar ni fallar. Los dos topes de Promptfoo
+  (`PROMPTFOO_EVAL_TIMEOUT_MS` por caso y `PROMPTFOO_MAX_EVAL_TIME_MS` por
+  suite) valen **0 por defecto, que significa esperar para siempre**. Los
+  tiempos de espera de `lib/ia.ts` protegen a la app, no al arnés: las
+  aserciones `llm-rubric` llaman al modelo juez fuera de ese código, y el caso
+  colgado era justo uno con `llm-rubric`. Afectaba también a las ejecuciones
+  locales (`npm run evals` se colgaba en la terminal sin decir nada). Puestos
+  3 min por caso y 20 por suite, en el robot y en `evals/lanzar.mjs`. Tiempos
+  reales medidos: `extraerPerfil` 12 casos en 3m 14s; `generarCvYCarta` a ~1
+  caso/minuto.
 * **Sin confirmar: si producción está afectada.** Cero tráfico en 8 h, así que
   no hay registros que lo digan. Lo más probable es que producción esté bien
   (el 401 sería solo del `env pull`), pero queda pendiente generar un CV real
