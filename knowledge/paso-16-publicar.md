@@ -331,6 +331,36 @@ agotada, y la agotan los propios evals.
   429s que parecían fallos de calidad.
 - Las pruebas pasan de 225 a **253**.
 
+# Dónde se dejó la sesión del 20/08/2026 (para retomar)
+
+**Estado seguro**: `master` sigue en el commit del Paso 15 (`444793b`), así que
+**producción no ha cambiado en toda la sesión**. Todo el trabajo del Paso 16
+vive en la rama `paso-16-puerta-de-calidad`, subida a GitHub. El despliegue
+automático de Vercel **sigue activo**: nada quedó a medias.
+
+**Lo que estaba corriendo al cerrar**: la ejecución **#5** del robot
+(commit `b2e7052`), con los evals lanzados de verdad y las pausas ya
+corregidas. Corre en GitHub, así que terminó sola.
+
+**Al retomar, por este orden:**
+
+1. Mirar el veredicto de la #5 en **Actions → Publicar → #5**.
+   - **VERDE** → seguir en el punto 2.
+   - **NO CONCLUYENTE por 429** → no es el prompt, es la cuota. Relanzar desde
+     *Run workflow* con la cuota fresca del día.
+   - **ROJO** → entonces sí hay que mirar los prompts.
+2. Abrir la vista previa que publique y **comprobar que ya carga** (la de la #4
+   daba *Internal Server Error*; el arreglo está sin verificar).
+3. Fusionar la rama a `master` → primera publicación a producción pasando por
+   la puerta.
+4. **Solo entonces**, desactivar el despliegue automático de Vercel. Es lo que
+   convierte la puerta en una puerta de verdad, y se deja para el final a
+   propósito: hacerlo antes dejaría el proyecto sin ninguna forma de publicar
+   si el robot fallara.
+
+Ninguno de esos cuatro pasos corre prisa: la clase no vuelve hasta el
+**lunes 24/08/2026**.
+
 # Pendiente de Mar (no automatizable)
 
 - [x] Crear el `VERCEL_TOKEN` en Vercel y guardarlo como secreto del
