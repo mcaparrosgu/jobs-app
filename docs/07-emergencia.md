@@ -277,6 +277,23 @@ Jobs App **no admite registros**: solo entra quien tú invitas desde el panel de
 Supabase. Esta es la rutina completa, pensada para hacerla sin acordarse de
 nada.
 
+> ## ⏳ PENDIENTE — hacer el lunes 24/08/2026
+>
+> **El apartado 6.1 de aquí abajo está sin hacer.** El código ya está
+> preparado (`shouldCreateUser: false` en `app/page.tsx`), pero **el
+> interruptor de Supabase sigue encendido**, así que a día de hoy cualquiera
+> con la URL puede entrar y consumir cuota de IA.
+>
+> Estado de las tres tareas del Paso 16:
+>
+> - [x] Crear el `VERCEL_TOKEN` en Vercel — hecho el 20/08/2026.
+> - [x] Guardarlo como secreto en GitHub — hecho el 20/08/2026.
+> - [ ] **Cerrar el registro en Supabase (§6.1) e invitar a las 4 compañeras
+>       (§6.2)** — aplazado a la vuelta de vacaciones, el **lunes 24/08/2026**.
+>
+> Hasta entonces no hay riesgo real (nadie conoce la URL todavía), pero
+> **hazlo antes de pasarle el enlace a nadie**, no después.
+
 ### 6.1 Cerrar el registro (esto se hace UNA sola vez)
 
 Si ya está hecho, sáltate este apartado. Para comprobarlo, entra y mira que el

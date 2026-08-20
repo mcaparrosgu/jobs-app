@@ -74,9 +74,22 @@ jobs:
           elif [ -n "${ANTES:-}" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
             CAMBIADOS=$(git diff --name-only "$ANTES" "$AHORA")
           else
-            # Rama nueva o ejecución a mano: no hay con qué comparar, así que se
-            # mira solo el último commit.
-            CAMBIADOS=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files)
+            # Rama nueva (su primer push) o ejecución a mano: `github.event.before`
+            # viene en ceros. Mirar solo el último commit sería un error —
+            # dejaría fuera todo lo que la rama trae de antes, y una rama con
+            # dos commits (uno de prompts, otro de documentación) se saltaría
+            # los evals por el orden en que se escribieron. Se compara la rama
+            # entera contra master.
+            git fetch --no-tags --depth=100 origin master 2>/dev/null || true
+            BASE_RAMA=$(git merge-base FETCH_HEAD "$AHORA" 2>/dev/null || echo '')
+
+            if [ -n "$BASE_RAMA" ] && [ "$BASE_RAMA" != "$AHORA" ]; then
+              CAMBIADOS=$(git diff --name-only "$BASE_RAMA" "$AHORA")
+            else
+              # Sin nada con qué comparar (es master, o no se pudo traer):
+              # ante la duda, se evalúa.
+              CAMBIADOS=$(git ls-files)
+            fi
           fi
 
           echo "Archivos cambiados:"

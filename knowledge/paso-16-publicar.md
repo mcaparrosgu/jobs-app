@@ -157,14 +157,24 @@ tuvo la cuota ese día.
 
 # Pendiente de Mar (no automatizable)
 
-1. Crear el `VERCEL_TOKEN` y guardarlo en GitHub → *Settings → Secrets and
-   variables → Actions*.
-2. Apagar *Allow new users to sign up* en Supabase e invitar a las cinco.
-3. Verificar que ninguna cuenta tiene método de pago (§5 de
-   `docs/07-emergencia.md`).
-4. **Solo después de ver el robot publicar con éxito**: desactivar el
-   despliegue automático de Vercel. Hacerlo antes dejaría el proyecto sin
-   ninguna forma de publicar si el robot falla al configurarse.
+- [x] Crear el `VERCEL_TOKEN` en Vercel y guardarlo como secreto del
+      repositorio (*Settings → Secrets and variables → Actions*). Hecho el
+      20/08/2026. Es el único secreto que hace falta en GitHub: las claves de
+      Groq y Supabase no se duplican, el robot se las pide a Vercel con
+      `vercel env pull`.
+- [ ] **Apagar *Allow new users to sign up* en Supabase e invitar a las cuatro
+      compañeras.** Aplazado al **lunes 24/08/2026**, a la vuelta de
+      vacaciones (ver [[project_vuelta_clase_24_agosto]] y
+      [`docs/07-emergencia.md`](../docs/07-emergencia.md) §6, donde está el
+      procedimiento completo con capturas de qué debe verse en cada paso).
+      Hasta que se haga, **la entrada sigue abierta**: el código ya manda
+      `shouldCreateUser: false`, pero la barrera de verdad es el interruptor
+      de Supabase, y ese sigue encendido.
+- [ ] Verificar que ninguna cuenta tiene método de pago (§5 de
+      `docs/07-emergencia.md`).
+- [ ] **Solo después de ver el robot publicar con éxito**: desactivar el
+      despliegue automático de Vercel. Hacerlo antes dejaría el proyecto sin
+      ninguna forma de publicar si el robot falla al configurarse.
 
 # Relacionado
 
