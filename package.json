@@ -9,8 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "evals:perfil": "promptfoo eval -c evals/promptfoo/extraer-perfil.yaml --env-file .env.local -j 1 --delay 15000 -o evals/promptfoo/resultado-perfil.json",
-    "evals:generar": "promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local -j 1 --delay 20000 -o evals/promptfoo/resultado-generar.json",
+    "evals:perfil": "promptfoo eval -c evals/promptfoo/extraer-perfil.yaml --env-file .env.local -j 1 --delay 25000 -o evals/promptfoo/resultado-perfil.json",
+    "evals:generar": "promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local -j 1 --delay 65000 -o evals/promptfoo/resultado-generar.json",
     "evals:puerta": "node evals/puerta-calidad.mjs evals/promptfoo/resultado-perfil.json evals/promptfoo/resultado-generar.json",
     "evals": "node evals/lanzar.mjs"
   },

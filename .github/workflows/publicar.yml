@@ -193,19 +193,61 @@ jobs:
             echo "pareceria un problema de calidad sin serlo."
             exit 1
           fi
-          # Solo el codigo de respuesta: la clave no se imprime nunca.
+          # Una peticion de verdad, minuscula (5 tokens), al mismo modelo que
+          # usa la app. Listar modelos no basta: responde 200 aunque la cuota
+          # del dia este agotada, y entonces los 25 casos se van 25 minutos
+          # para acabar en "no concluyente" por un 429 que se podia haber
+          # visto en dos segundos. (Verificado en vivo: ejecucion #3, 26m 55s
+          # tirados por esto.)
+          #
+          # Solo se imprime el codigo de respuesta; la clave, nunca.
           CODIGO=$(curl -s -o /dev/null -w '%{http_code}' \
-            https://api.groq.com/openai/v1/models \
-            -H "Authorization: Bearer $GROQ_API_KEY")
-          echo "Groq responde $CODIGO a la clave del robot (200 = correcta)."
-          if [ "$CODIGO" != "200" ]; then
-            echo "::error::La clave de Groq del robot no vale (codigo $CODIGO)."
-            exit 1
-          fi
+            https://api.groq.com/openai/v1/chat/completions \
+            -H "Authorization: Bearer $GROQ_API_KEY" \
+            -H 'Content-Type: application/json' \
+            -d '{"model":"qwen/qwen3.6-27b","messages":[{"role":"user","content":"ok"}],"max_tokens":5,"reasoning_effort":"none"}')
+
+          echo "Groq responde $CODIGO a una peticion de prueba."
+
+          case "$CODIGO" in
+            200)
+              echo "Clave correcta y con cuota. Adelante."
+              ;;
+            401|403)
+              echo "::error::La clave de Groq del robot no vale (codigo $CODIGO)."
+              echo "Revisa el secreto GROQ_API_KEY en Settings -> Secrets and variables -> Actions."
+              exit 1
+              ;;
+            429)
+              echo "::error::Groq no tiene cuota ahora mismo (429). NO es un problema de calidad."
+              echo "La cuota diaria se renueva a medianoche UTC (2:00 en España)."
+              echo "Vuelve a lanzarlo entonces desde Actions -> Publicar -> Run workflow."
+              echo "Si el cambio no toca ningun prompt, el commit puede llevar [sin evals]."
+              exit 1
+              ;;
+            *)
+              echo "::error::Groq responde $CODIGO. No se lanzan los evals para no tirar 25 minutos."
+              exit 1
+              ;;
+          esac
 
       # `-j 1` y las pausas son obligatorias desde que Groq es el proveedor
-      # principal: limita por tokens por minuto y sin ellas los casos se pisan
-      # y fallan con un 429 que parece calidad y no lo es.
+      # principal, porque limita por TOKENS POR MINUTO (8.000 en esta cuenta) y
+      # esa cuenta suma la entrada MAS el `max_tokens` pedido, se gaste o no.
+      #
+      # Las pausas salen de una division, no de una corazonada. `lib/ia.ts` ya
+      # lo dice: "una generacion reserva del orden de 7.000 de esos 8.000
+      # tokens, asi que por minuto cabe UNA generacion, o dos o tres
+      # extracciones".
+      #
+      #   extraerPerfil    ~2.000 tokens/caso -> 25 s entre casos = 4.800 TPM
+      #   generarCvYCarta  ~7.000 tokens/caso -> 65 s entre casos = 6.500 TPM
+      #
+      # Los valores anteriores (15 s y 20 s) pedian 8.000 y 21.000 TPM: el
+      # segundo era 2,6 veces el limite, asi que el 429 estaba garantizado.
+      # Verificado en vivo (ejecucion #3): 26m 55s para acabar en "no
+      # concluyente" con medio dataset sin evaluar.
+      #
       # `|| true` deja que el eval termine aunque haya casos en rojo: quien
       # decide no es promptfoo, es la puerta del paso siguiente.
       - name: Evals · extraerPerfil (12 casos)
@@ -213,10 +255,10 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
-          PROMPTFOO_MAX_EVAL_TIME_MS: '1200000'
+          PROMPTFOO_MAX_EVAL_TIME_MS: '900000'
         run: |
           npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml \
-            -j 1 --delay 15000 \
+            -j 1 --delay 25000 \
             -o evals/promptfoo/resultado-perfil.json || true
 
       - name: Evals · generarCvYCarta (13 casos)
@@ -224,10 +266,10 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
-          PROMPTFOO_MAX_EVAL_TIME_MS: '1200000'
+          PROMPTFOO_MAX_EVAL_TIME_MS: '1800000'
         run: |
           npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml \
-            -j 1 --delay 20000 \
+            -j 1 --delay 65000 \
             -o evals/promptfoo/resultado-generar.json || true
 
       # Aquí está la puerta. Sale con 0 (verde), 1 (rojo de calidad) o 2 (no

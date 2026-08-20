@@ -215,6 +215,42 @@ puerta los cuenta como "sin evaluar" y no como suspensos de calidad.
 12 casos en **3m 14s**; `generarCvYCarta` iba a ritmo de ~1 caso/minuto antes
 de colgarse, es decir unos **12-13 minutos** para sus 13 casos.
 
+## Tercer hallazgo (ejecución #3): las pausas de los evals eran matemáticamente insuficientes
+
+Con las claves bien y los tiempos de espera puestos, la #3 completó las dos
+suites (12/12 en 7m 17s, 13/13 en 17m 43s) y volvió a salir **NO
+CONCLUYENTE** — ahora por **429 de Groq** y por seis casos cortados a los 3
+minutos, todos ellos con `llm-rubric`.
+
+Lo primero que hubo que descartar: **no era la cuota diaria**. Medido justo
+después, Groq respondía **200** a una petición de prueba. Luego el 429 venía
+del límite **por minuto**.
+
+Y ahí el cálculo no deja lugar a dudas. Groq limita a **8.000 tokens por
+minuto**, contando la entrada **más** el `max_tokens` pedido, se gaste o no:
+
+| Suite | Tokens por caso | Pausa configurada | TPM que pedía | Veredicto |
+| :---- | :---- | :---- | :---- | :---- |
+| `extraerPerfil` | ~2.000 | 15 s → 4/min | 8.000 | al límite justo, sin margen |
+| `generarCvYCarta` | ~7.000 | 20 s → 3/min | **21.000** | **2,6 veces el límite** |
+
+**El propio `lib/ia.ts` ya lo advertía desde el Paso 15**: *"una generación
+reserva del orden de 7.000 de esos 8.000 tokens, así que por minuto cabe UNA
+generación, o dos o tres extracciones"*. Ese comentario y los `--delay` de
+`knowledge/paso-13-evals.md` nunca se habían cruzado. El arnés llevaba desde
+entonces pidiendo casi el triple de lo que la cuenta admite.
+
+Pausas corregidas a **25 s** y **65 s** (4.800 y 6.500 TPM, con margen), en el
+robot y en `package.json`. Los seis timeouts se explican por lo mismo: el
+modelo juez también es Groq, comía 429 y sus reintentos se pasaban de los 3
+minutos.
+
+**Cuarta mejora, salida de este mismo fallo**: la comprobación previa ya no
+pregunta solo *"¿vale la clave?"* sino *"¿vale la clave **y queda cuota**?"*,
+con una petición real de 5 tokens al mismo modelo. Listar modelos devuelve 200
+aunque no quede cuota — y ese detalle costó los 26m 55s de la #3. Ahora un 429
+se ve en dos segundos y el mensaje dice a qué hora renueva.
+
 ## Lo que queda sin confirmar
 
 **No se pudo verificar si producción está afectada.** No hay tráfico en las

@@ -57,6 +57,23 @@
   3 min por caso y 20 por suite, en el robot y en `evals/lanzar.mjs`. Tiempos
   reales medidos: `extraerPerfil` 12 casos en 3m 14s; `generarCvYCarta` a ~1
   caso/minuto.
+* **Tercer hallazgo (ejecución #3): las pausas de los evals pedían casi el
+  triple de lo que la cuenta de Groq admite, y venía así desde el Paso 15.**
+  Las dos suites completaron (12/12 en 7m 17s, 13/13 en 17m 43s) y salió NO
+  CONCLUYENTE por 429. **No era la cuota diaria**: medido justo después, Groq
+  respondía 200. Era el límite **por minuto** (8.000 TPM, contando entrada más
+  `max_tokens` pedido). Con `--delay 20000`, `generarCvYCarta` lanzaba 3 casos
+  por minuto a ~7.000 tokens cada uno = **21.000 TPM, 2,6 veces el límite**;
+  `extraerPerfil` con 15 s iba justo a 8.000, sin margen. Lo llamativo es que
+  **`lib/ia.ts` ya lo decía** desde el Paso 15 ("por minuto cabe UNA
+  generación, o dos o tres extracciones") — ese comentario y los `--delay` de
+  `paso-13-evals.md` nunca se habían cruzado. Corregido a 25 s y 65 s. Los
+  seis casos cortados por tiempo eran todos con `llm-rubric`: el juez también
+  es Groq, comía 429 y sus reintentos pasaban de los 3 minutos.
+* **La comprobación previa ahora mide cuota, no solo la clave.** Listar
+  modelos devuelve 200 aunque no quede cuota; ese detalle costó los 26m 55s de
+  la #3. Ahora se hace una petición real de 5 tokens al mismo modelo, y un 429
+  se ve en dos segundos con un mensaje que dice a qué hora renueva.
 * **Sin confirmar: si producción está afectada.** Cero tráfico en 8 h, así que
   no hay registros que lo digan. Lo más probable es que producción esté bien
   (el 401 sería solo del `env pull`), pero queda pendiente generar un CV real

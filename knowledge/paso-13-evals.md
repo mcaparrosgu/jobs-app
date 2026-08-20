@@ -203,9 +203,25 @@ de la revisión de seguridad ([paso-15-revision-opus.md](paso-15-revision-opus.m
 las pausas los casos se pisan y fallan con un 429 que parece calidad):
 
 ```
-npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml --env-file .env.local -j 1 --delay 15000
-npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local -j 1 --delay 20000
+npm run evals    # los dos, con los ajustes correctos, y despues la puerta
 ```
+
+> ⚠️ **Corregido el 20/08/2026 (Paso 16).** Las pausas que decía antes esta
+> sección (`--delay 15000` y `--delay 20000`) **no bastan**, y la diferencia
+> no es de matiz: Groq limita por **tokens por minuto** (8.000), contando la
+> entrada más el `max_tokens` pedido.
+>
+> | Suite | Tokens por caso | Pausa vieja | TPM que pedía | Pausa correcta |
+> | :---- | :---- | :---- | :---- | :---- |
+> | `extraerPerfil` | ~2.000 | 15 s | 8.000 — al límite justo | **25 s** |
+> | `generarCvYCarta` | ~7.000 | 20 s | **21.000 — 2,6× el límite** | **65 s** |
+>
+> Lo dice el propio `lib/ia.ts` desde el Paso 15: *"por minuto cabe una
+> generación, o dos o tres extracciones"*. Nadie había cruzado ese comentario
+> con los `--delay` de aquí.
+>
+> Verificado en vivo: con las pausas viejas, media tanda salía con 429 y el
+> veredicto era "no concluyente" después de 26 minutos.
 
 **Antes de tocar un prompt por un eval en rojo, mira el motivo del fallo.**
 Tres de los cuatro motivos que hemos visto hasta ahora no eran del prompt: sin
