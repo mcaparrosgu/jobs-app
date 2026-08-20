@@ -51,7 +51,7 @@ jobs:
       lanzar_evals: ${{ steps.mirar.outputs.lanzar_evals }}
       motivo: ${{ steps.mirar.outputs.motivo }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -128,9 +128,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -155,28 +155,50 @@ jobs:
     # cubre un día en el que Groq vaya lento.
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
 
       - run: npm ci
 
-      - name: Instalar la herramienta de Vercel
-        run: npm install --global vercel@latest
-
-      # Las claves de IA no se duplican como secretos de GitHub: se traen de
-      # Vercel, que ya es donde viven. Un sitio menos donde una clave puede
-      # quedarse olvidada.
-      - name: Traer las claves desde Vercel
+      # Las claves llegan como secretos del repositorio, no desde Vercel.
+      #
+      # El primer intento fue traerlas con `vercel env pull` para no duplicar
+      # secretos. No funciona: las cinco variables del proyecto son de tipo
+      # **Sensitive**, y ese tipo es de solo escritura — su valor no se puede
+      # volver a leer, ni desde el panel ni con el CLI. La descarga dice
+      # "Created .env.local" y aun así la clave llega vacía, así que Groq
+      # responde 401 "Invalid API Key" y los 25 casos salen sin evaluar.
+      # (Verificado en vivo el 20/08/2026, ejecución #1 del robot.)
+      #
+      # Comprobar antes de tocar esto: la clave de `.env.local` responde 200 a
+      # https://api.groq.com/openai/v1/models. Si el robot da 401 con la misma
+      # clave, el problema es el secreto de GitHub, no Groq.
+      - name: Comprobar que las claves han llegado
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          # `vercel pull` deja el proyecto enlazado (crea .vercel/) además de
-          # traer la configuración; sin ese paso, `env pull` falla en algunas
-          # versiones del CLI aunque VERCEL_PROJECT_ID esté puesto.
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          vercel env pull .env.local --environment=production --yes --token=${{ secrets.VERCEL_TOKEN }}
+          set -euo pipefail
+          if [ -z "${GROQ_API_KEY:-}" ]; then
+            echo "::error::Falta el secreto GROQ_API_KEY del repositorio."
+            echo "Ponlo en Settings -> Secrets and variables -> Actions."
+            echo "Sin el, los 25 casos saldrian 'sin evaluar' con un 401 y"
+            echo "pareceria un problema de calidad sin serlo."
+            exit 1
+          fi
+          # Solo el codigo de respuesta: la clave no se imprime nunca.
+          CODIGO=$(curl -s -o /dev/null -w '%{http_code}' \
+            https://api.groq.com/openai/v1/models \
+            -H "Authorization: Bearer $GROQ_API_KEY")
+          echo "Groq responde $CODIGO a la clave del robot (200 = correcta)."
+          if [ "$CODIGO" != "200" ]; then
+            echo "::error::La clave de Groq del robot no vale (codigo $CODIGO)."
+            exit 1
+          fi
 
       # `-j 1` y las pausas son obligatorias desde que Groq es el proveedor
       # principal: limita por tokens por minuto y sin ellas los casos se pisan
@@ -184,15 +206,21 @@ jobs:
       # `|| true` deja que el eval termine aunque haya casos en rojo: quien
       # decide no es promptfoo, es la puerta del paso siguiente.
       - name: Evals · extraerPerfil (12 casos)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml \
-            --env-file .env.local -j 1 --delay 15000 \
+            -j 1 --delay 15000 \
             -o evals/promptfoo/resultado-perfil.json || true
 
       - name: Evals · generarCvYCarta (13 casos)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml \
-            --env-file .env.local -j 1 --delay 20000 \
+            -j 1 --delay 20000 \
             -o evals/promptfoo/resultado-generar.json || true
 
       # Aquí está la puerta. Sale con 0 (verde), 1 (rojo de calidad) o 2 (no
@@ -241,9 +269,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
 

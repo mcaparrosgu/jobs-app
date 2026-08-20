@@ -31,6 +31,26 @@
   variables de entorno, configuración de Supabase Auth), qué clase de "está
   roto" es cada síntoma, las emergencias frecuentes por probabilidad, los
   topes de gasto y la lista de comprobación previa al lanzamiento.
+* **La primera ejecución del robot destapó un fallo real, y la puerta se ganó
+  el sueldo el primer día.** Los 25 casos salieron "sin evaluar" con `Groq
+  respondió 401: Invalid API Key`, y la puerta lo clasificó como **NO
+  CONCLUYENTE** en vez de ROJO — con un diseño de dos estados, esto habría
+  mandado a arreglar unos prompts que estaban perfectamente. Causa: el plan de
+  no duplicar secretos y traerlos con `vercel env pull` **no puede funcionar**,
+  porque las cinco variables del proyecto son de tipo **Sensitive** y ese tipo
+  es de solo escritura: su valor no se recupera ni por panel, ni por CLI, ni
+  por API. Y lo traicionero es que `env pull` **no falla** — dice "✓ Created
+  .env.local" y la clave llega vacía. Medido: la clave de `.env.local`
+  responde 200 a `api.groq.com`, la que recibió el robot 401. Solución: las
+  claves de IA pasan a secretos del repositorio, y el job empieza comprobando
+  que la clave responde 200 **antes** de gastar 10 minutos y media cuota.
+* **Sin confirmar: si producción está afectada.** Cero tráfico en 8 h, así que
+  no hay registros que lo digan. Lo más probable es que producción esté bien
+  (el 401 sería solo del `env pull`), pero queda pendiente generar un CV real
+  para confirmarlo. **Segundo hallazgo, este sí verificado**: el respaldo de
+  OpenRouter estaba a 0 de 50 peticiones del día, así que si Groq fallara hoy
+  en producción **no habría red debajo** — y quien agota esa cuota son los
+  propios evals.
 * **Arreglos colaterales**: el error de lint `react-hooks/set-state-in-effect`
   en `app/page.tsx` (habría bloqueado la puerta desde el primer día); los
   comandos de evals de `package.json`, que no llevaban el `-j 1` ni las pausas

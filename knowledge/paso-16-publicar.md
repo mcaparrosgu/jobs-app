@@ -142,6 +142,69 @@ sobre una muestra que no lo soporta.
 como suspensos. Es la diferencia entre medir calidad y medir la suerte que
 tuvo la cuota ese día.
 
+# Lo que descubrió la primera ejecución del robot
+
+La ejecución #1 (20/08/2026) terminó en **NO CONCLUYENTE**, y eso fue una
+buena noticia por partida doble: la puerta hizo exactamente lo que se diseñó
+que hiciera, y de paso destapó un problema que nadie sabía que existía.
+
+**Los 25 casos salieron "sin evaluar" con `Groq respondió 401: Invalid API
+Key`.** El diseño de tres veredictos se ganó el sueldo el primer día: con una
+puerta de dos estados, esto habría salido como ROJO y habría mandado a Mar a
+arreglar unos prompts que estaban perfectamente.
+
+## La causa: las variables "Sensitive" de Vercel no se pueden volver a leer
+
+El plan era elegante: no duplicar secretos en GitHub y traerlos con
+`vercel env pull` desde Vercel, que ya es donde viven. **No funciona.**
+
+Las cinco variables del proyecto son de tipo **Sensitive**, y ese tipo es de
+*solo escritura*: su valor no se puede recuperar, ni desde el panel ni con el
+CLI ni por la API. Lo traicionero es que **`vercel env pull` no falla**:
+imprime `✓ Created .env.local file` tan tranquilo, y la clave llega vacía. De
+ahí el 401.
+
+Medido para descartar las otras explicaciones:
+
+| Comprobación | Resultado |
+| :---- | :---- |
+| Clave de `.env.local` contra `api.groq.com/v1/models` | **200** — la clave buena funciona |
+| Clave que recibió el robot | **401** `Invalid API Key` |
+| Paso `vercel env pull` en el robot | **éxito**, 2 s, archivo creado |
+| Variables en el panel de Vercel | las 5 presentes, tipo **Sensitive** |
+| Tráfico en producción en las últimas 8 h | **ninguno** |
+
+**Solución**: las claves de IA pasan a ser secretos del repositorio
+(`GROQ_API_KEY`, `OPENROUTER_API_KEY`), y el job de evals empieza con un paso
+que comprueba que la clave responde 200 **antes** de gastar 10 minutos y media
+cuota diaria. Un 401 ahora se detecta en dos segundos, no al final.
+
+Se pierde la elegancia de tener las claves en un solo sitio. A cambio, el
+robot funciona y el fallo es imposible de confundir con un problema de
+calidad.
+
+## Lo que queda sin confirmar
+
+**No se pudo verificar si producción está afectada.** No hay tráfico en las
+últimas 8 horas, así que no hay ni un solo registro que lo demuestre en un
+sentido ni en otro. Quedan dos posibilidades:
+
+- **(A)** La clave de Vercel es correcta y el 401 es solo del `env pull`.
+  Producción está bien. *Es lo más probable*, dado que las cinco variables son
+  Sensitive y el síntoma encaja exactamente.
+- **(B)** La clave guardada en Vercel es distinta o caducada. Entonces
+  producción también daría 401 en Groq.
+
+**Comprobación pendiente** (2 minutos, requiere sesión): generar un CV real en
+producción. Si sale, es (A). Mientras tanto, volver a guardar la clave buena
+en Vercel es barato y descarta (B) sin más análisis.
+
+Un segundo hallazgo, este sí verificado y con consecuencias: **el respaldo de
+OpenRouter estaba hoy a 0 de 50 peticiones** (`free-models-per-day`). Es decir,
+si Groq fallara en producción hoy, **no habría red debajo**. La redundancia
+Groq→OpenRouter solo es real mientras la cuota diaria de OpenRouter no esté
+agotada, y la agotan los propios evals.
+
 # Efectos colaterales del paso
 
 - **Arreglado un error de lint que estaba en el repositorio**

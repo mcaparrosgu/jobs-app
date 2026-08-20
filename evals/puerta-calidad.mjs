@@ -75,7 +75,12 @@ function leerAserciones(rutaArchivo) {
   const aserciones = [];
 
   for (const caso of casos) {
-    const descripcion = caso.description ?? `caso #${caso.testIdx ?? '?'}`;
+    // Promptfoo no siempre sube la descripción al nivel del resultado; cuando
+    // no lo hace, sigue estando dentro del caso de prueba. Sin este respaldo
+    // el detalle sale como "caso #0" y hay que ir al YAML a buscar cuál era —
+    // justo cuando más prisa se tiene.
+    const descripcion =
+      caso.description ?? caso.testCase?.description ?? `caso #${caso.testIdx ?? '?'}`;
     // failureReason 2 = ERROR (excepción del proveedor), frente a 1 = ASSERT
     // (el modelo contestó y la comprobación dijo que no). Es la propia
     // Promptfoo la que ya separa las dos cosas.
@@ -243,9 +248,16 @@ function imprimir({ filas, codigo }, archivos) {
     console.log('           Mira el detalle de arriba antes de tocar el prompt.');
   } else {
     console.log('VEREDICTO: NO CONCLUYENTE. No hay muestra suficiente para juzgar.');
-    console.log('           Causa habitual: cuota de Groq agotada (429), el modelo juez sin');
-    console.log('           responder, o un tiempo de espera agotado. NO es un fallo del prompt.');
-    console.log('           La cuota de Groq se renueva cada dia; vuelve a lanzarlo entonces.');
+    console.log('           NO es un fallo del prompt. Mira el motivo en el detalle de arriba:');
+    console.log('');
+    console.log('           · "401" / "Invalid API Key"  -> la CLAVE que ha recibido el proceso');
+    console.log('             no vale. En local, revisa GROQ_API_KEY en .env.local. En el robot,');
+    console.log('             revisa el secreto GROQ_API_KEY del repositorio en GitHub.');
+    console.log('           · "429" / "rate limit"       -> sin cuota. La de Groq se renueva');
+    console.log('             cada dia; vuelve a lanzarlo entonces.');
+    console.log('           · "no endpoints available"   -> el modelo juez no esta disponible.');
+    console.log('           · "timeout" / "fetch failed" -> red o el proveedor sin responder.');
+    console.log('');
     console.log('           Si tienes prisa y el cambio no toca la IA, el commit puede llevar');
     console.log('           "[sin evals]" en el mensaje para saltarse esta puerta a conciencia.');
   }

@@ -103,12 +103,22 @@ No es una emergencia, pero da la misma sensación. Ve a GitHub → pestaña
 | Veredicto | Significa | Qué hacer |
 | :--- | :--- | :--- |
 | **ROJO** | El modelo respondió y la calidad bajó del umbral | Es un problema real. Mira el detalle: dice qué caso y por qué |
-| **NO CONCLUYENTE** | No hubo cuota, el juez no contestó, se agotó el tiempo | **No es culpa del prompt.** Espera a que Groq renueve cuota (cada día) y relánzalo desde Actions → *Run workflow* |
+| **NO CONCLUYENTE** | No hubo cuota, el juez no contestó, se agotó el tiempo, o la clave no vale | **No es culpa del prompt.** Mira el motivo en el detalle (ver abajo) |
 | Fallan las **pruebas** | Algo determinista se ha roto | `npm test` en local te dice exactamente qué |
 | Falla el **lint** | Código mal escrito según las normas | `npm run lint` en local te lo muestra |
 
 **Antes de tocar un prompt por un eval en rojo, mira el motivo del fallo.**
-Tres de los cuatro motivos vistos hasta hoy no eran del prompt.
+Ninguno de los motivos vistos hasta hoy era del prompt:
+
+| Lo que dice el detalle | Qué pasa de verdad | Solución |
+| :--- | :--- | :--- |
+| `401` · `Invalid API Key` | La clave que recibió el proceso no vale | Revisa el secreto `GROQ_API_KEY` en GitHub → *Settings → Secrets and variables → Actions* |
+| `429` · `rate limit` | Sin cuota | La de Groq se renueva cada día. Relanza mañana |
+| `no endpoints available` | El modelo juez no está disponible | Mirar `evals/promptfoo/*.yaml`, sección `provider` |
+| `timeout` · `fetch failed` | Red o proveedor sin responder | Relanzar sin más |
+
+Para relanzar sin inventarte un commit: GitHub → **Actions** → *Publicar* →
+botón **Run workflow**.
 
 ### El freno manual
 
@@ -284,10 +294,13 @@ nada.
 > interruptor de Supabase sigue encendido**, así que a día de hoy cualquiera
 > con la URL puede entrar y consumir cuota de IA.
 >
-> Estado de las tres tareas del Paso 16:
+> Estado de las tareas del Paso 16:
 >
 > - [x] Crear el `VERCEL_TOKEN` en Vercel — hecho el 20/08/2026.
 > - [x] Guardarlo como secreto en GitHub — hecho el 20/08/2026.
+> - [ ] **Añadir dos secretos más en GitHub**: `GROQ_API_KEY` y
+>       `OPENROUTER_API_KEY`, copiadas de tu `.env.local`. Hacen falta para
+>       que el robot pueda lanzar los evals — ver el aviso de abajo.
 > - [ ] **Cerrar el registro en Supabase (§6.1) e invitar a las 4 compañeras
 >       (§6.2)** — aplazado a la vuelta de vacaciones, el **lunes 24/08/2026**.
 >
