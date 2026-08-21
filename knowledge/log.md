@@ -27,6 +27,16 @@
   `evals/puerta-calidad.mjs` — esa prueba el veredicto de los evals, no si se
   lanzan. Solo se ve empujando un commit de verdad y leyendo el motivo en
   `Actions → Publicar → Decidir si hacen falta los evals`.
+* **Paso 16 cerrado: desconectado el Git de Vercel.** Visto publicar al robot
+  con éxito cuatro veces seguidas, se desconectó el repositorio en
+  *Settings → Git → Disconnect* del panel de Vercel. A partir de ahora Vercel
+  no puede construir ni publicar por sí solo al recibir un push — el
+  `.github/workflows/publicar.yml` es la única vía, y no depende de esa
+  conexión porque despliega con `VERCEL_TOKEN` + los IDs de proyecto/equipo,
+  no con la integración de Git. Se pierden los comentarios automáticos de
+  Vercel en los PRs (no se usaban); todo lo demás (variables, dominios,
+  protección de vistas previas) queda igual, tal como avisaba el propio
+  diálogo de Vercel al desconectar.
 
 ## 2026-08-20
 * **Paso 16: la publicación pasa a tener puerta de calidad.** Partiendo de una

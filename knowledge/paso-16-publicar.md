@@ -402,14 +402,20 @@ probarse empujando un commit de verdad y leyendo el motivo en
 `Actions → Publicar → Decidir si hacen falta los evals`, no solo revisando
 el `grep` a mano.
 
-**Queda un paso:**
+**Último paso, hecho**: con permiso explícito de Mar, se desconectó el
+repositorio Git del proyecto en Vercel (*Settings → Git → Disconnect*,
+21/08/2026) — visto ya publicar con éxito **cuatro** veces seguidas
+(`0d4992d`, `8c443c9`, `2483167`, `48f432c`). Vercel ya no puede construir ni
+publicar por sí solo al recibir un push: el `Connected Git Repository`
+desapareció de su panel. El robot **no depende de esa conexión** — despliega
+solo con `VERCEL_TOKEN` + los IDs de proyecto/organización
+(`vercel pull` / `vercel deploy --token=...`), así que sigue publicando igual.
+Efecto colateral aceptado: se pierden los comentarios automáticos de Vercel
+en los Pull Requests (no se usaban).
 
-- **Solo después de ver al robot publicar con éxito** (ya visto, dos veces:
-  `0d4992d` y el arreglo posterior) — desactivar el despliegue automático de
-  Vercel. Es lo que convierte la puerta en una puerta de verdad. Pendiente de
-  decisión de Mar; no se ha tocado.
-
-Ninguno corre prisa: la clase no vuelve hasta el **lunes 24/08/2026**.
+Con esto, **el Paso 16 queda cerrado**: la puerta bloquea de verdad, es la
+única vía de publicación, y quedó verificada en vivo (incluido un fallo real
+del propio freno, encontrado y arreglado en producción el mismo día).
 
 # Pendiente de Mar (no automatizable)
 
@@ -428,9 +434,9 @@ Ninguno corre prisa: la clase no vuelve hasta el **lunes 24/08/2026**.
       de Supabase, y ese sigue encendido.
 - [ ] Verificar que ninguna cuenta tiene método de pago (§5 de
       `docs/07-emergencia.md`).
-- [ ] **Solo después de ver el robot publicar con éxito**: desactivar el
-      despliegue automático de Vercel. Hacerlo antes dejaría el proyecto sin
-      ninguna forma de publicar si el robot falla al configurarse.
+- [x] Desactivar el despliegue automático de Vercel. Hecho el 21/08/2026,
+      desconectando el repositorio Git en *Settings → Git*, después de ver
+      publicar al robot con éxito cuatro veces.
 
 # Relacionado
 
