@@ -85,12 +85,12 @@ reintentos de `lib/cola.ts` ya absorben solos.
 
 # Pendiente
 
-- **Aplicar `0015_metricas_ia.sql` en el SQL Editor de Supabase** (pegado en
-  una sola línea, como el resto de migraciones). Hasta entonces la rama de
-  alertas de n8n falla en silencio cada día (a propósito, no tumba la
-  ejecución) sin que exista todavía nada que alertar de verdad.
-- Verificar la rama nueva del workflow con una ejecución manual una vez
-  aplicada la migración (mismo patrón que T35/T36 del Hito 4).
+- [x] **Aplicar `0015_metricas_ia.sql` en el SQL Editor de Supabase** — hecho
+  el 21/08/2026. Verificado por consulta directa: 13 columnas, RLS activo
+  (`relrowsecurity = true`), política `metricas_ia_insert_propio`
+  (`INSERT`, `with_check (auth.uid() = user_id)`).
+- Verificar la rama nueva del workflow con una ejecución manual ahora que la
+  migración ya está aplicada (mismo patrón que T35/T36 del Hito 4).
 - Los umbrales son un punto de partida, igual que los de `evals/umbrales.json`
   en su día (`knowledge/paso-13-evals.md`): recalibrarlos con datos reales de
   las 5 usuarias pasadas unas semanas.

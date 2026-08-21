@@ -1,5 +1,12 @@
 # Registro de cambios del bundle
 
+## 2026-08-21 (Paso 17, migración aplicada)
+* **`0015_metricas_ia.sql` aplicada en Supabase**, vía SQL Editor con
+  automatización de navegador (Mar supervisando). Verificado por consulta
+  directa: 13 columnas, RLS activo, política `metricas_ia_insert_propio`
+  correcta. Queda pendiente verificar la rama nueva de alertas del
+  workflow `Jobs App · ingesta` con una ejecución manual.
+
 ## 2026-08-21 (Paso 17, tarde)
 * **`evals/lanzar.mjs` arreglado: `spawnSync` de `npm.cmd` daba `EINVAL` en
   Windows.** `shell: false` no sabe ejecutar un `.cmd` en este Node; pasó a
