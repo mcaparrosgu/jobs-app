@@ -298,9 +298,8 @@ nada.
 >
 > - [x] Crear el `VERCEL_TOKEN` en Vercel — hecho el 20/08/2026.
 > - [x] Guardarlo como secreto en GitHub — hecho el 20/08/2026.
-> - [ ] **Añadir dos secretos más en GitHub**: `GROQ_API_KEY` y
->       `OPENROUTER_API_KEY`, copiadas de tu `.env.local`. Hacen falta para
->       que el robot pueda lanzar los evals — ver el aviso de abajo.
+> - [x] **Añadir dos secretos más en GitHub**: `GROQ_API_KEY` y
+>       `OPENROUTER_API_KEY` — hecho el 21/08/2026.
 > - [ ] **Cerrar el registro en Supabase (§6.1) e invitar a las 4 compañeras
 >       (§6.2)** — aplazado a la vuelta de vacaciones, el **lunes 24/08/2026**.
 >
