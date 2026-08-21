@@ -171,6 +171,12 @@ existe en produccion y no se toca desde aqui.
   solo *mencionaba* el freno lo activó de verdad y la puerta se saltó sin
   deber hacerlo. Arreglado exigiendo que la marca esté al final del asunto
   del commit, verificado contra dos ejecuciones reales en GitHub Actions.
+- [paso-17-vigilancia.md](paso-17-vigilancia.md) — Paso 17: tabla
+  `metricas_ia` en Supabase para coste/cupo, tiempo de respuesta, tasa de
+  éxito, guardrails saltados y escaladas a humano; rama nueva de alertas por
+  email en `Jobs App · ingesta` (sin tocar nodos existentes); y
+  `docs/08-rutina.md` con la rutina semanal de 15 minutos y el ciclo de
+  mejora hacia el golden dataset del Paso 13.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

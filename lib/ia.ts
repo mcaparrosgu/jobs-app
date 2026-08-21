@@ -136,6 +136,12 @@ export type PerfilExtraido = {
   palabras_clave: string[];
   empresas_cv: string[];
   titulos_cv: string[];
+  // Paso 17 (vigilancia) · true si el CV pegado contenía una frase de
+  // intento de inyección conocida. No bloquea (docs/05-ia.md §6.2, capa 2) —
+  // solo permite a app/api/extraer-perfil/route.ts registrar el guardrail
+  // que saltó, igual que ya hace generarCvYCarta con `intentoDeInyeccion`.
+  intentoDeInyeccion: boolean;
+  uso: UsoIA;
 };
 
 const ESQUEMA_PERFIL = {
@@ -171,6 +177,19 @@ const ESQUEMA_PERFIL = {
 
 type Esquema = { name: string; strict: boolean; schema: object };
 
+// Paso 17 (vigilancia) · Además del texto, se guarda de dónde salió y cuántos
+// tokens gastó. No es para calcular una factura —Groq y OpenRouter son
+// gratis, docs/05-ia.md §5— sino para medir el consumo real contra el cuello
+// de botella de verdad: los tokens por minuto de Groq. `tokensEntrada` /
+// `tokensSalida` quedan `null` si el proveedor no informa `usage` en la
+// respuesta (no todos lo hacen igual de fiable).
+export type UsoIA = {
+  proveedor: string;
+  modelo: string;
+  tokensEntrada: number | null;
+  tokensSalida: number | null;
+};
+
 async function llamarModelo(
   proveedor: { nombre: string; url: string; apiKey: string | undefined; extra?: Record<string, unknown> },
   modelo: string,
@@ -178,7 +197,7 @@ async function llamarModelo(
   esquema: Esquema,
   maxTokens: number | undefined,
   senal: AbortSignal,
-): Promise<string> {
+): Promise<{ contenido: string } & UsoIA> {
   const respuesta = await fetch(proveedor.url, {
     method: 'POST',
     headers: {
@@ -209,7 +228,13 @@ async function llamarModelo(
   if (typeof contenido !== 'string' || contenido.trim().length === 0) {
     throw new Error(`${proveedor.nombre} (${modelo}) devolvió una respuesta vacía`);
   }
-  return contenido;
+  return {
+    contenido,
+    proveedor: proveedor.nombre,
+    modelo,
+    tokensEntrada: typeof datos.usage?.prompt_tokens === 'number' ? datos.usage.prompt_tokens : null,
+    tokensSalida: typeof datos.usage?.completion_tokens === 'number' ? datos.usage.completion_tokens : null,
+  };
 }
 
 const PROVEEDOR_OPENROUTER = {
@@ -250,7 +275,7 @@ async function llamarAlModelo(
     maxTokens?: number;
     maxTokensGroq?: number;
   } = {},
-): Promise<string> {
+): Promise<{ contenido: string } & UsoIA> {
   const {
     timeoutOpenRouterMs = TIMEOUT_OPENROUTER_MS,
     timeoutGroqMs = TIMEOUT_GROQ_MS,
@@ -301,7 +326,7 @@ async function llamarAlModelo(
 // La API no garantiza el esquema en modo no-estricto salvo con modelos
 // gpt-oss (descartados, docs/05-ia.md §6.4 nota), así que se valida en
 // código de todas formas.
-function validarPerfil(perfil: unknown): PerfilExtraido {
+function validarPerfil(perfil: unknown): Omit<PerfilExtraido, 'intentoDeInyeccion' | 'uso'> {
   if (typeof perfil !== 'object' || perfil === null) {
     throw new Error('La IA no devolvió un objeto de perfil válido');
   }
@@ -364,7 +389,8 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
   // docs/03-spec.md §2); aquí no hace falta avisar a la usuaria porque ella
   // siempre revisa el puesto y las palabras clave antes de guardar (regla de
   // negocio 4): es ya la capa de revisión humana de este paso.
-  if (detectarIntentoDeInyeccion(cvTexto)) {
+  const intentoDeInyeccion = detectarIntentoDeInyeccion(cvTexto);
+  if (intentoDeInyeccion) {
     console.warn('[GUARDRAIL:inyeccion] Texto sospechoso en el CV pegado al extraer perfil.');
   }
 
@@ -406,8 +432,19 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
     { role: 'user', content: cvTexto },
   ];
 
-  const contenido = await llamarAlModelo(mensajes, ESQUEMA_PERFIL);
-  return anclarAlCv(validarPerfil(JSON.parse(contenido)), cvTexto);
+  const resultado = await llamarAlModelo(mensajes, ESQUEMA_PERFIL);
+  const perfil = anclarAlCv(validarPerfil(JSON.parse(resultado.contenido)), cvTexto);
+
+  return {
+    ...perfil,
+    intentoDeInyeccion,
+    uso: {
+      proveedor: resultado.proveedor,
+      modelo: resultado.modelo,
+      tokensEntrada: resultado.tokensEntrada,
+      tokensSalida: resultado.tokensSalida,
+    },
+  };
 }
 
 // Paso 15 · Que lo extraído esté REALMENTE en el CV, comprobado con código.
@@ -432,7 +469,10 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
 // probó, y se llevaba por delante los sinónimos en inglés que el prompt pide
 // expresamente ("Customer Success" para un CV que dice "atención al cliente"),
 // que son justo los que encuentran las ofertas remotas.
-function anclarAlCv(perfil: PerfilExtraido, cvTexto: string): PerfilExtraido {
+function anclarAlCv(
+  perfil: Omit<PerfilExtraido, 'intentoDeInyeccion' | 'uso'>,
+  cvTexto: string,
+): Omit<PerfilExtraido, 'intentoDeInyeccion' | 'uso'> {
   const cv = paraComparar(cvTexto);
   const apareceEnElCv = (valor: string) => cv.includes(paraComparar(valor));
 
@@ -478,6 +518,9 @@ export type Generacion = {
   // solo permite que quien llama (app/api/generar/route.ts) añada un aviso
   // visible antes de que la usuaria descargue y envíe el documento.
   intentoDeInyeccion: boolean;
+  // Paso 17 (vigilancia): de dónde salió y cuántos tokens gastó, para
+  // docs/08-rutina.md — ver UsoIA.
+  uso: UsoIA;
 };
 
 // Límites de longitud, en caracteres (docs/05-ia.md §6.6, fallo 5: "devuelve
@@ -843,19 +886,29 @@ export async function generarCvYCarta(
     console.warn('[GUARDRAIL:inyeccion] Texto sospechoso en el CV o en la oferta (título, empresa o descripción) al generar.');
   }
 
-  const contenido = await llamarAlModelo(mensajes, ESQUEMA_GENERACION, {
+  const resultado = await llamarAlModelo(mensajes, ESQUEMA_GENERACION, {
     timeoutOpenRouterMs: TIMEOUT_OPENROUTER_GENERACION_MS,
     timeoutGroqMs: TIMEOUT_GROQ_GENERACION_MS,
     maxTokens: 6_000,
     maxTokensGroq: MAX_TOKENS_GROQ_GENERACION,
   });
 
-  const validado = validarGeneracion(JSON.parse(contenido), {
+  const validado = validarGeneracion(JSON.parse(resultado.contenido), {
     puestoPerfil,
     // Recortado igual que al mandarlo al modelo: si el título trae una
     // parrafada, no queremos que sirva de coartada para cualquier titular.
     tituloOferta: oferta.titulo.slice(0, MAXIMO_CARACTERES_TITULO),
   });
 
-  return { ...validado, idioma, intentoDeInyeccion };
+  return {
+    ...validado,
+    idioma,
+    intentoDeInyeccion,
+    uso: {
+      proveedor: resultado.proveedor,
+      modelo: resultado.modelo,
+      tokensEntrada: resultado.tokensEntrada,
+      tokensSalida: resultado.tokensSalida,
+    },
+  };
 }

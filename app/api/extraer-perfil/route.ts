@@ -7,6 +7,7 @@ import {
   LIMITE_EXTRACCIONES_DIARIAS,
   MENSAJE_LIMITE_EXTRACCIONES,
 } from '@/lib/extracciones';
+import { registrarEvento } from '@/lib/metricas';
 import { createClient } from '@/lib/supabase/server';
 
 // Dos rondas de OpenRouter más el respaldo en Groq (lib/ia.ts) pueden sumar
@@ -34,12 +35,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Falta el texto del CV' }, { status: 400 });
   }
 
+  // Paso 17 (vigilancia) · empieza a contar aquí, ya con sesión y payload
+  // válidos: es el tiempo que le cuesta a la IA, no el de la propia usuaria
+  // tecleando o el de una petición mal formada.
+  const inicio = Date.now();
+
   // Paso 14, capa 1 (relevancia): se comprueba también aquí, antes de llamar
   // a extraerPerfil, para que un texto claramente fuera de ámbito no llegue
   // ni a gastar cuota del modelo — el mismo motivo por el que el límite
   // diario (lib/generaciones.ts) también se comprueba en el servidor.
   const ambito = evaluarAmbitoCv(cv);
   if (!ambito.permitido) {
+    await registrarEvento(supabase, {
+      tipo: 'perfil',
+      userId: user.id,
+      duracionMs: Date.now() - inicio,
+      exito: false,
+      guardrailSaltado: 'ambito',
+    });
     return NextResponse.json({ error: ambito.motivo }, { status: 400 });
   }
 
@@ -51,6 +64,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No se pudo analizar el CV.' }, { status: 500 });
   }
   if (analisisDeHoy >= LIMITE_EXTRACCIONES_DIARIAS) {
+    await registrarEvento(supabase, {
+      tipo: 'perfil',
+      userId: user.id,
+      duracionMs: Date.now() - inicio,
+      exito: false,
+      motivoFallo: 'limite_diario',
+    });
     return NextResponse.json({ error: MENSAJE_LIMITE_EXTRACCIONES }, { status: 429 });
   }
 
@@ -58,9 +78,29 @@ export async function POST(request: Request) {
 
   try {
     const perfil = await extraerPerfil(cv);
-    return NextResponse.json(perfil);
+    const { intentoDeInyeccion, uso, ...perfilParaCliente } = perfil;
+
+    await registrarEvento(supabase, {
+      tipo: 'perfil',
+      userId: user.id,
+      duracionMs: Date.now() - inicio,
+      exito: true,
+      guardrailSaltado: intentoDeInyeccion ? 'inyeccion' : null,
+      proveedor: uso.proveedor,
+      tokensEntrada: uso.tokensEntrada,
+      tokensSalida: uso.tokensSalida,
+    });
+
+    return NextResponse.json(perfilParaCliente);
   } catch (error) {
     console.error('Error extrayendo perfil:', error);
+    await registrarEvento(supabase, {
+      tipo: 'perfil',
+      userId: user.id,
+      duracionMs: Date.now() - inicio,
+      exito: false,
+      motivoFallo: 'error_proveedor',
+    });
     return NextResponse.json(
       { error: 'No se pudo analizar el CV. Inténtalo de nuevo en unos segundos.' },
       { status: 502 },

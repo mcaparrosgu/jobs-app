@@ -31,6 +31,7 @@ const GENERACION_IA_OK = {
   carta_texto: 'Estimados señores,\n\nEscribo para presentar mi candidatura a este puesto.\n\nAtentamente.',
   idioma: 'es' as const,
   intentoDeInyeccion: false,
+  uso: { proveedor: 'Groq', modelo: 'qwen/qwen3.6-27b', tokensEntrada: 1200, tokensSalida: 900 },
 };
 
 beforeEach(() => {

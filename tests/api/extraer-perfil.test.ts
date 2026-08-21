@@ -101,11 +101,18 @@ describe('POST /api/extraer-perfil — respuesta del modelo (B2)', () => {
       empresas_cv: ['IES Ejemplo'],
       titulos_cv: ['Grado en Matemáticas'],
     };
-    vi.mocked(extraerPerfil).mockResolvedValue(perfilPropuesto);
+    vi.mocked(extraerPerfil).mockResolvedValue({
+      ...perfilPropuesto,
+      intentoDeInyeccion: false,
+      uso: { proveedor: 'Groq', modelo: 'qwen/qwen3.6-27b', tokensEntrada: 500, tokensSalida: 120 },
+    });
 
     const respuesta = await POST(peticion({ cv: 'Texto de un CV real' }));
 
     expect(respuesta.status).toBe(200);
+    // La respuesta al navegador solo lleva los cuatro campos de siempre: lo
+    // que se añade para la vigilancia del Paso 17 (intentoDeInyeccion, uso)
+    // es interno y no debe salir por la API (app/api/extraer-perfil/route.ts).
     expect(await respuesta.json()).toEqual(perfilPropuesto);
   });
 
@@ -163,6 +170,8 @@ describe('POST /api/extraer-perfil — límite diario de análisis', () => {
       palabras_clave: ['sala'],
       empresas_cv: [],
       titulos_cv: [],
+      intentoDeInyeccion: false,
+      uso: { proveedor: 'Groq', modelo: 'qwen/qwen3.6-27b', tokensEntrada: 400, tokensSalida: 90 },
     });
 
     const respuesta = await POST(peticion({ cv: 'Texto de un CV real' }));
@@ -183,6 +192,8 @@ describe('POST /api/extraer-perfil — límite diario de análisis', () => {
       palabras_clave: ['sala'],
       empresas_cv: [],
       titulos_cv: [],
+      intentoDeInyeccion: false,
+      uso: { proveedor: 'Groq', modelo: 'qwen/qwen3.6-27b', tokensEntrada: 400, tokensSalida: 90 },
     });
 
     await POST(peticion({ cv: 'Texto de un CV real' }));

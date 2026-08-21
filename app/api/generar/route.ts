@@ -11,6 +11,7 @@ import { esErrorDeContenido, generarCvYCarta } from '@/lib/ia';
 import { verificarCv } from '@/lib/verificarCv';
 import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO, MENSAJE_LIMITE } from '@/lib/generaciones';
+import { registrarEvento } from '@/lib/metricas';
 import { createClient } from '@/lib/supabase/server';
 
 // Generar tarda más que una petición normal. 60 s es el máximo del plan
@@ -45,6 +46,10 @@ export async function POST(request: Request) {
   if (typeof oferta_id !== 'string' || oferta_id.trim().length === 0) {
     return NextResponse.json({ error: 'Falta la oferta' }, { status: 400 });
   }
+
+  // Paso 17 (vigilancia) · desde aquí, cualquier salida de esta función es
+  // una interacción real con la generación (o un intento de una) y se mide.
+  const inicio = Date.now();
 
   // 0. Regla de negocio 2: preparar documentos SOLO para una oferta que la
   //    usuaria ha marcado como "me interesa". La pantalla ya lo respeta, pero
@@ -110,6 +115,14 @@ export async function POST(request: Request) {
     // Esa fila ya está dentro del recuento: lo que se comprueba es si el cupo
     // está pasado, no si cabe una más.
     if (cupoGastado > LIMITE_DIARIO) {
+      await registrarEvento(supabase, {
+        tipo: 'generacion',
+        userId: user.id,
+        ofertaId: oferta_id,
+        duracionMs: Date.now() - inicio,
+        exito: false,
+        motivoFallo: 'limite_diario',
+      });
       return NextResponse.json({ estado: 'limite', error: MENSAJE_LIMITE }, { status: 429 });
     }
   }
@@ -144,6 +157,14 @@ export async function POST(request: Request) {
     }
 
     if (!data?.id) {
+      await registrarEvento(supabase, {
+        tipo: 'generacion',
+        userId: user.id,
+        ofertaId: oferta_id,
+        duracionMs: Date.now() - inicio,
+        exito: false,
+        motivoFallo: 'limite_diario',
+      });
       return NextResponse.json({ estado: 'limite', error: MENSAJE_LIMITE }, { status: 429 });
     }
 
@@ -191,6 +212,14 @@ export async function POST(request: Request) {
       ? 'Esa oferta ya no está disponible.'
       : 'Necesitamos el texto de tu CV para preparar el documento. Pégalo en tu perfil y vuelve a intentarlo.';
     await marcarError(supabase, user.id, oferta_id, mensaje);
+    await registrarEvento(supabase, {
+      tipo: 'generacion',
+      userId: user.id,
+      ofertaId: oferta_id,
+      duracionMs: Date.now() - inicio,
+      exito: false,
+      motivoFallo: 'sin_perfil_o_oferta',
+    });
     return NextResponse.json({ estado: 'error', error: mensaje }, { status: 400 });
   }
 
@@ -240,6 +269,18 @@ export async function POST(request: Request) {
 
     if (errorGuardado) throw errorGuardado;
 
+    await registrarEvento(supabase, {
+      tipo: 'generacion',
+      userId: user.id,
+      ofertaId: oferta_id,
+      duracionMs: Date.now() - inicio,
+      exito: true,
+      guardrailSaltado: generado.intentoDeInyeccion ? 'inyeccion' : null,
+      proveedor: generado.uso.proveedor,
+      tokensEntrada: generado.uso.tokensEntrada,
+      tokensSalida: generado.uso.tokensSalida,
+    });
+
     return NextResponse.json({ estado: 'listo', avisos });
   } catch (error) {
     console.error('Error generando el CV y la carta:', error);
@@ -269,6 +310,15 @@ export async function POST(request: Request) {
     }
 
     await marcarError(supabase, user.id, oferta_id, mensaje, intentosFallidos);
+    await registrarEvento(supabase, {
+      tipo: 'generacion',
+      userId: user.id,
+      ofertaId: oferta_id,
+      duracionMs: Date.now() - inicio,
+      exito: false,
+      motivoFallo: deContenido ? 'error_contenido' : 'error_proveedor',
+      escaladoHumano: intentosFallidos >= UMBRAL_FALLOS_HUMANO,
+    });
     return NextResponse.json({ estado: 'error', error: mensaje }, { status: deContenido ? 422 : 502 });
   }
 }

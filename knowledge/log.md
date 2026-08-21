@@ -1,5 +1,26 @@
 # Registro de cambios del bundle
 
+## 2026-08-21 (Paso 17)
+* **Vigilancia en producción montada.** Tabla `metricas_ia` en Supabase
+  (migración `0015`, RLS solo de inserción, sin política de lectura a
+  propósito) que registra cada llamada a `extraerPerfil`/`generarCvYCarta`
+  desde `lib/metricas.ts`. `lib/ia.ts` cambió de forma aditiva para exponer
+  de qué proveedor salió cada respuesta y cuántos tokens gastó (`UsoIA`), y
+  `extraerPerfil` gana `intentoDeInyeccion` igual que ya tenía
+  `generarCvYCarta` — 253 pruebas, `tsc` y lint siguen en verde.
+* **Alertas por email, reutilizando infraestructura que ya existía.** Rama
+  nueva e independiente en el workflow `Jobs App · ingesta` (Supabase →
+  código → IF → Gmail), en paralelo a la ingesta, sin tocar ningún nodo
+  existente y sin poder tumbar la ejecución diaria si falla. Se descartó
+  explícitamente un servicio de observabilidad de pago: para 5 usuarias
+  añadiría coste (contra el presupuesto de 0 €) y un tercero nuevo al que
+  comprobarle la política de datos, sin resolver nada que Supabase + logs
+  de Vercel + Healthchecks.io no cubran ya.
+* **Pendiente**: aplicar `0015_metricas_ia.sql` en el SQL Editor de
+  Supabase — hasta entonces la rama de alertas falla en silencio cada día
+  (a propósito) porque la tabla no existe todavía. Detalle completo en
+  `paso-17-vigilancia.md`.
+
 ## 2026-08-21
 * **Primera fusión a `master` a través de la puerta, y el propio freno falló
   al primer intento.** Con permiso explícito de Mar se subió el commit
