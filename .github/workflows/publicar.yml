@@ -112,9 +112,16 @@ jobs:
           # ej. "El freno [sin evals] funciona") activaba el freno de verdad
           # y saltaba la puerta sin querer. Pasó en la publicación a master
           # del 21/08/2026 (commit 0d4992d) — la puerta no llegó a correr.
+          #
+          # Y no basta con mirar solo el asunto: además tiene que estar AL
+          # FINAL de esa línea, no en cualquier parte. El propio commit que
+          # arregló lo anterior volvió a activar el freno sin querer, porque
+          # su asunto mencionaba "[sin evals]" a mitad de frase. Los usos
+          # reales de la marca siempre la ponen al final — es la convención
+          # que ya se seguía sin estar escrita.
           MENSAJE=$(git log -1 --pretty=%s)
 
-          if echo "$MENSAJE" | grep -qiF '[sin evals]'; then
+          if echo "$MENSAJE" | grep -qiE '\[sin evals\][[:space:]]*$'; then
             echo "lanzar_evals=false" >> "$GITHUB_OUTPUT"
             echo "motivo=El commit lleva el freno [sin evals]" >> "$GITHUB_OUTPUT"
           elif echo "$CAMBIADOS" | grep -qE "$RUTAS_DE_IA"; then
