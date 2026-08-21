@@ -358,20 +358,58 @@ corregidas. Corre en GitHub, así que terminó sola.
 - ✅ **Producción intacta y sana** durante toda la sesión: responde 200 y
   `master` no se ha tocado.
 
-**Quedan dos pasos:**
-
-1. Fusionar la rama a `master` → primera publicación a producción pasando por
-   la puerta.
-2. **Solo entonces**, desactivar el despliegue automático de Vercel. Es lo que
-   convierte la puerta en una puerta de verdad, y se deja para el final a
-   propósito: hacerlo antes dejaría el proyecto sin ninguna forma de publicar
-   si el robot fallara.
-
-Ninguno corre prisa: la clase no vuelve hasta el **lunes 24/08/2026**.
-
 **Pendiente de una tanda con cuota fresca**: un veredicto **VERDE** completo.
 Los umbrales del Paso 13 siguen sin confirmarse contra Groq con el dataset
 entero — lo medido apunta bien (16/16), pero es media muestra.
+
+## Sesión del 21/08/2026: fusión a master y un fallo del propio freno
+
+Con permiso explícito de Mar, se subió el commit pendiente y se fusionó
+`paso-16-puerta-de-calidad` a `master` (fast-forward, `0d4992d`) — primera
+publicación real pasando por la puerta. `Lint y pruebas` y `Publicar en
+Vercel` salieron verdes.
+
+**Pero `Puerta de calidad de la IA` se saltó, y no debía.** El push traía 9
+commits de golpe, con cambios reales en `evals/`. El detector del freno
+(`.github/workflows/publicar.yml`, job `decidir`) hacía
+`git log -1 --pretty=%B | grep -qiF '[sin evals]'` sobre **todo el cuerpo**
+del último commit. Ese commit (`0d4992d`) describía en una viñeta *"El freno
+`[sin evals]` funciona (#6)"* — una mención, no una orden — y la subcadena
+literal activó el freno de verdad. Los cambios de IA de esa tanda **nunca
+pasaron por la puerta en esta ejecución** (mitigado porque ya se habían
+evaluado antes, en la rama: 16/16 aserciones).
+
+Arreglo en dos vueltas, ambas verificadas contra la ejecución real en GitHub
+Actions:
+
+1. Mirar solo el **asunto** del commit (`--pretty=%s`), no el cuerpo entero.
+   Insuficiente por sí solo: el propio commit de este arreglo
+   (`8c443c9`) mencionaba `[sin evals]` a mitad de su asunto y volvió a
+   activar el freno sin querer (sin consecuencias esa vez, porque el cambio
+   no tocaba la IA).
+2. Exigir que la marca esté **al final** de esa línea
+   (`grep -qiE '\[sin evals\][[:space:]]*$'`), que es como se ha usado
+   siempre de verdad (comprobado con `git log --grep`: los dos usos
+   intencionados de la historia la ponen al final; las dos menciones que
+   causaron falsos positivos, no). Verificado en la ejecución `32457063122`:
+   motivo correcto, *"El cambio no toca la IA"*.
+
+**Por qué importa dejarlo escrito**: es la clase de fallo que no se ve en una
+prueba unitaria de `evals/puerta-calidad.mjs` (esa comprueba el veredicto de
+los evals, no la decisión de lanzarlos) — solo se ve mirando la ejecución
+real. Cualquier cambio futuro al texto de este detector debe volver a
+probarse empujando un commit de verdad y leyendo el motivo en
+`Actions → Publicar → Decidir si hacen falta los evals`, no solo revisando
+el `grep` a mano.
+
+**Queda un paso:**
+
+- **Solo después de ver al robot publicar con éxito** (ya visto, dos veces:
+  `0d4992d` y el arreglo posterior) — desactivar el despliegue automático de
+  Vercel. Es lo que convierte la puerta en una puerta de verdad. Pendiente de
+  decisión de Mar; no se ha tocado.
+
+Ninguno corre prisa: la clase no vuelve hasta el **lunes 24/08/2026**.
 
 # Pendiente de Mar (no automatizable)
 

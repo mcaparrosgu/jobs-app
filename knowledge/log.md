@@ -1,5 +1,33 @@
 # Registro de cambios del bundle
 
+## 2026-08-21
+* **Primera fusión a `master` a través de la puerta, y el propio freno falló
+  al primer intento.** Con permiso explícito de Mar se subió el commit
+  pendiente de la sesión anterior y se fusionó `paso-16-puerta-de-calidad`
+  (fast-forward, `0d4992d`): `Lint y pruebas` y `Publicar en Vercel` salieron
+  verdes, pero **`Puerta de calidad de la IA` se saltó sin deber hacerlo**. El
+  push traía 9 commits de golpe con cambios reales en `evals/`, pero el
+  detector del freno leía **todo el cuerpo** del último commit con
+  `grep -qiF '[sin evals]'`, y ese commit solo *mencionaba* el freno en una
+  viñeta ("El freno `[sin evals]` funciona") — la subcadena literal bastó
+  para activarlo de verdad. Sin consecuencias graves porque esos cambios ya
+  se habían evaluado en la rama (16/16 aserciones), pero la puerta no corrió
+  cuando debía.
+* **El arreglo necesitó dos vueltas, cada una verificada contra una ejecución
+  real en GitHub Actions, no solo leyendo el script.** Mirar solo el asunto
+  del commit (`--pretty=%s` en vez de `%B`) no bastó: el propio commit que
+  arreglaba esto volvió a activar el freno, porque su asunto mencionaba
+  `[sin evals]` a mitad de frase. Hizo falta exigir que la marca esté **al
+  final** de la línea (`grep -qiE '\[sin evals\][[:space:]]*$'`) — que es
+  como se había usado siempre de verdad, confirmado con
+  `git log --grep="sin evals"` sobre todo el historial. Detalle completo en
+  `paso-16-publicar.md`.
+* **Lección para el propio proceso**: este tipo de fallo (una decisión que
+  depende de texto libre) no lo detecta ninguna prueba unitaria de
+  `evals/puerta-calidad.mjs` — esa prueba el veredicto de los evals, no si se
+  lanzan. Solo se ve empujando un commit de verdad y leyendo el motivo en
+  `Actions → Publicar → Decidir si hacen falta los evals`.
+
 ## 2026-08-20
 * **Paso 16: la publicación pasa a tener puerta de calidad.** Partiendo de una
   app ya publicada (Hito 9), el trabajo fue protegerla. Dos hechos del estado

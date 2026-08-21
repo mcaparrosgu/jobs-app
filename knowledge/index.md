@@ -166,6 +166,11 @@ existe en produccion y no se toca desde aqui.
   límite por minuto de Groq**; y las vistas previas salían **rotas** porque se
   construían fuera de Vercel. Los cuatro habrían aparecido el día de enseñar
   la app.
+  — **Y un quinto, en la primera fusión real a `master` (21/08/2026)**: el
+  freno `[sin evals]` leía todo el cuerpo del commit, así que una viñeta que
+  solo *mencionaba* el freno lo activó de verdad y la puerta se saltó sin
+  deber hacerlo. Arreglado exigiendo que la marca esté al final del asunto
+  del commit, verificado contra dos ejecuciones reales en GitHub Actions.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
