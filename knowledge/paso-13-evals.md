@@ -265,6 +265,24 @@ relanzar") ya no aporta información nueva — es una señal reproducible, no
 ruido de una petición suelta. `lib/ia.ts` no cambió de prompt ni de esquema
 en este commit, así que el hallazgo no viene de ahí.
 
+## Tercera pasada (misma tarde, cuota fresca de un rato después)
+
+| Pasada | `extraerPerfil` | `generarCvYCarta` |
+| :---- | :---- | :---- |
+| 1ª | 11/12 (91,7 %) | 7/13 (53,8 %) |
+| 2ª | 10/12 (83,3 %) | 5/13 (38,5 %) |
+| 3ª | 11/12 (91,7 %) | 8/13 (61,5 %) |
+
+De nuevo **NO CONCLUYENTE**, y de nuevo por el mismo tipo de motivo — pero esta
+vez con una variante nueva: *"El CV generado no tiene saltos de línea reales
+entre secciones y puntos"*. Es un **tercer modo de fallo distinto** del mismo
+modelo en la misma tarea (antes: JSON que no cumple el esquema, CV por debajo
+del mínimo de caracteres; ahora: CV con longitud y JSON válidos pero sin
+estructura real). El porcentaje de `generarCvYCarta` sube y baja entre
+pasadas (53,8 % → 38,5 % → 61,5 %) sin que haya cambiado nada en el código
+entre medias: **es inestabilidad del modelo, no un umbral que haya que
+ajustar**. No se relanzó una cuarta vez.
+
 ## Pendiente — con más urgencia que un simple "recalibrar umbrales"
 
 - **Esto no es solo un problema de evals: si el patrón se sostiene, las

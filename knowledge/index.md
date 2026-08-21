@@ -124,13 +124,16 @@ existe en produccion y no se toca desde aqui.
   casos y arnés con Promptfoo para los dos prompts de `lib/ia.ts`, con 5
   métricas de alta señal, umbrales iniciales de aprobado y un hallazgo
   real de invención total en un CV vacío.
-  — **Actualización 21/08/2026 (Paso 17)**: dos relanzamientos seguidos de
-  `generarCvYCarta` dieron NO CONCLUYENTE por el mismo motivo, empeorando
-  (53,8 % → 38,5 %): `qwen/qwen3.6-27b`, proveedor **principal** desde el
-  20/08, devuelve CVs por debajo del mínimo o JSON que no cumple el
-  esquema. Confirma una debilidad ya anotada el 20/08 cuando ese modelo era
-  solo el respaldo. Pendiente decidir si conviene otro modelo de Groq para
-  `generarCvYCarta` antes de invitar a las compañeras el 24/08.
+  — **Actualización 21/08/2026 (Paso 17)**: tres relanzamientos de
+  `generarCvYCarta` en la misma tarde, los tres NO CONCLUYENTE, oscilando
+  sin patrón (53,8 % → 38,5 % → 61,5 %) y con **tres motivos de formato
+  distintos** (JSON que no cumple el esquema, CV por debajo del mínimo,
+  CV sin saltos de línea reales): `qwen/qwen3.6-27b`, proveedor
+  **principal** desde el 20/08, es inestable en esta llamada concreta —
+  no es un umbral que recalibrar. Confirma una debilidad ya anotada el
+  20/08 cuando ese modelo era solo el respaldo. Pendiente decidir si
+  conviene otro modelo de Groq para `generarCvYCarta` antes de invitar a
+  las compañeras el 24/08.
 - [paso-14-guardrails.md](paso-14-guardrails.md) — Paso 14: las 7 capas de
   guardrails sobre `lib/ia.ts`, con relevancia/seguridad/moderación como
   reglas deterministas (sin llamadas nuevas al modelo, confirmado con Mar)

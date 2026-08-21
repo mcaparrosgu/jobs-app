@@ -1,5 +1,15 @@
 # Registro de cambios del bundle
 
+## 2026-08-21 (Paso 17, tercera pasada de evals)
+* **Tercer relanzamiento de `npm run evals`, también NO CONCLUYENTE.**
+  `generarCvYCarta`: 61,5 % (tras 53,8 % y 38,5 % en las dos pasadas
+  previas) — oscila sin patrón entre pasadas idénticas, sin ningún cambio
+  de código entre medias. Esta vez el motivo fue un tercer tipo de fallo
+  de formato: "el CV generado no tiene saltos de línea reales entre
+  secciones y puntos" (antes: JSON inválido, CV demasiado corto). Confirma
+  que `qwen/qwen3.6-27b` (proveedor principal) es inestable en esta
+  llamada, no que falte ajustar un umbral. Detalle en `paso-13-evals.md`.
+
 ## 2026-08-21 (Paso 17, migración aplicada)
 * **`0015_metricas_ia.sql` aplicada en Supabase**, vía SQL Editor con
   automatización de navegador (Mar supervisando). Verificado por consulta
