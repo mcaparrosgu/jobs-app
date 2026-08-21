@@ -1,5 +1,19 @@
 # Registro de cambios del bundle
 
+## 2026-08-21 (Paso 17, tarde)
+* **`evals/lanzar.mjs` arreglado: `spawnSync` de `npm.cmd` daba `EINVAL` en
+  Windows.** `shell: false` no sabe ejecutar un `.cmd` en este Node; pasó a
+  `shell: true` (seguro: los argumentos son siempre uno de los tres nombres
+  de script fijos, nunca algo externo).
+* **Relanzados los evals tras el cambio de `lib/ia.ts` de este Paso 17**:
+  dos pasadas seguidas, ambas NO CONCLUYENTE, empeorando en
+  `generarCvYCarta` (53,8 % → 38,5 %). El motivo real, en las dos: el
+  modelo **principal**, `qwen/qwen3.6-27b` en Groq, devuelve CVs por debajo
+  del mínimo o JSON que no cumple el esquema — confirma una debilidad ya
+  anotada el 20/08 cuando ese modelo era solo el respaldo. No se relanzó
+  una tercera vez: con el mismo motivo repitiéndose y empeorando, ya es
+  señal, no ruido. Detalle en `paso-13-evals.md` (actualización de hoy).
+
 ## 2026-08-21 (Paso 17)
 * **Vigilancia en producción montada.** Tabla `metricas_ia` en Supabase
   (migración `0015`, RLS solo de inserción, sin política de lectura a

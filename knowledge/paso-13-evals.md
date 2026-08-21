@@ -226,3 +226,60 @@ npm run evals    # los dos, con los ajustes correctos, y despues la puerta
 **Antes de tocar un prompt por un eval en rojo, mira el motivo del fallo.**
 Tres de los cuatro motivos que hemos visto hasta ahora no eran del prompt: sin
 cuota del modelo, sin cuota del juez, y juez sin endpoints disponibles.
+
+---
+
+# Actualización del 21/08/2026 (Paso 17) — la debilidad de qwen3.6-27b en `generarCvYCarta` se confirma, ya no es respaldo
+
+Al relanzar los evals tras el cambio de `lib/ia.ts` del Paso 17 (aditivo:
+`UsoIA`, `intentoDeInyeccion` en `extraerPerfil` — no toca el prompt ni el
+esquema), dos pasadas seguidas dieron **NO CONCLUYENTE**, y no por falta de
+cuota:
+
+| Pasada | `extraerPerfil` | `generarCvYCarta` |
+| :---- | :---- | :---- |
+| 1ª | 11/12 (91,7 %) | 7/13 (53,8 %) |
+| 2ª | 10/12 (83,3 %) | 5/13 (38,5 %) |
+
+En las dos, la mayoría de los fallos de `generarCvYCarta` son
+`validarGeneracion` rechazando el CV por debajo de `LARGO_MINIMO_CV` (400
+caracteres) — en la 2ª pasada, uno de solo **14 caracteres** — o Groq
+devolviendo 400 "Generated JSON does not match the expected schema". Ninguno
+de los dos es un 429 (sin cuota) ni un 401 (clave inválida): el modelo
+respondió, pero mal.
+
+**Esto no es nuevo.** Es exactamente lo que ya se vio el 20/08 (más arriba en
+este documento) con B09 y B11, cuando `qwen/qwen3.6-27b` era todavía el
+**respaldo** de Groq: *"ese respaldo, aceptable como último recurso, es más
+flojo cumpliendo el formato que los modelos principales. Merece vigilancia si
+se repite."* Ha repetido — dos veces más, el mismo día — y desde el 20/08 ese
+modelo ya no es un respaldo ocasional: es el **proveedor principal** de toda
+la app (`decision-groq-principal-privacidad.md`). El patrón afecta sobre todo
+a `generarCvYCarta` (~7.000 tokens de salida) y mucho menos a `extraerPerfil`
+(salida corta): parece que a este modelo le cuesta mantener el formato en
+respuestas largas, no en respuestas cortas.
+
+**No se relanzó una tercera vez.** Con dos pasadas seguidas mostrando el
+mismo motivo y empeorando, seguir el protocolo mecánico ("NO CONCLUYENTE =
+relanzar") ya no aporta información nueva — es una señal reproducible, no
+ruido de una petición suelta. `lib/ia.ts` no cambió de prompt ni de esquema
+en este commit, así que el hallazgo no viene de ahí.
+
+## Pendiente — con más urgencia que un simple "recalibrar umbrales"
+
+- **Esto no es solo un problema de evals: si el patrón se sostiene, las
+  usuarias reales de `generarCvYCarta` pueden estar recibiendo el mismo
+  error "no se pudo generar el documento" con más frecuencia de la
+  esperada**, no solo en el dataset de prueba. Antes de las invitaciones del
+  24/08, merece la pena decidir si `qwen/qwen3.6-27b` sigue siendo el modelo
+  adecuado para `generarCvYCarta` específicamente, o si Groq ofrece otro
+  modelo con mejor cumplimiento de formato en salidas largas, dentro del
+  plan gratuito y sin salirse de Zero Data Retention.
+- Relanzar los evals con cuota fresca (otro día) para tener una tercera
+  muestra independiente antes de decidir si esto es sistemático de verdad o
+  si cambia con el tiempo.
+- Revisar si `docs/08-rutina.md` (la vigilancia recién montada en este mismo
+  Paso 17) ya habría detectado esto solo, una vez aplicada la migración
+  `0015_metricas_ia.sql`: el `motivo_fallo` `error_contenido`/`error_proveedor`
+  y `duracion_ms` de `metricas_ia` son justo la señal que haría innecesario
+  descubrir esto a mano con evals.

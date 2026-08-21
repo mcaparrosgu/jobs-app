@@ -35,7 +35,11 @@ process.env.PROMPTFOO_MAX_EVAL_TIME_MS ??= '1200000';
 
 function ejecutar(script, { tolerarFallo = false } = {}) {
   console.log(`\n=== npm run ${script} ===\n`);
-  const resultado = spawnSync(npm, ['run', script], { stdio: 'inherit', shell: false });
+  // shell: true (no false) porque en Windows spawnSync no sabe ejecutar
+  // npm.cmd sin pasar por una shell — da EINVAL, verificado en vivo el
+  // 21/08/2026. Seguro aquí: `script` solo puede ser uno de los tres
+  // nombres fijos de más abajo, nunca algo que llegue de fuera.
+  const resultado = spawnSync(npm, ['run', script], { stdio: 'inherit', shell: true });
 
   if (resultado.error) {
     console.error(`No se ha podido ejecutar "npm run ${script}": ${resultado.error.message}`);
