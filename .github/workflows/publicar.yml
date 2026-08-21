@@ -106,7 +106,13 @@ jobs:
           # El mensaje del commit se LEE con git, nunca se interpola dentro del
           # script: un mensaje con comillas o acentos graves podría ejecutar
           # comandos aquí dentro (lección del Paso 15).
-          MENSAJE=$(git log -1 --pretty=%B)
+          #
+          # Solo se mira el ASUNTO (primera línea), no el cuerpo entero: un
+          # commit que solo *describe* el freno en una viñeta del cuerpo (p.
+          # ej. "El freno [sin evals] funciona") activaba el freno de verdad
+          # y saltaba la puerta sin querer. Pasó en la publicación a master
+          # del 21/08/2026 (commit 0d4992d) — la puerta no llegó a correr.
+          MENSAJE=$(git log -1 --pretty=%s)
 
           if echo "$MENSAJE" | grep -qiF '[sin evals]'; then
             echo "lanzar_evals=false" >> "$GITHUB_OUTPUT"
