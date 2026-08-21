@@ -107,26 +107,30 @@ aprobado y cómo leer el resultado están documentados en
 
 ## Publicación (Paso 16)
 
-**Vercel ya no publica solo.** Publica `.github/workflows/publicar.yml`, y solo
-si pasan lint, las pruebas y —cuando el cambio toca la IA— la puerta de
-calidad de los evals. Push a `master` → producción; push a cualquier otra rama
-→ vista previa protegida.
+**Vercel ya no publica solo — y desde el 21/08/2026, ni puede.** El repositorio
+Git se desconectó del proyecto en Vercel (*Settings → Git*), así que la única
+vía de publicación es `.github/workflows/publicar.yml`: solo publica si pasan
+lint, las pruebas y —cuando el cambio toca la IA— la puerta de calidad de los
+evals. Push a `master` → producción; push a cualquier otra rama → vista previa
+protegida. El robot no depende de esa conexión: despliega con `VERCEL_TOKEN` +
+los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
 
 - Antes de mandar algo a producción, **pruébalo en una rama** y abre su vista
   previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
   fueron todos directos a producción.
 - Un commit con **`[sin evals]`** en el mensaje salta los evals a conciencia
   (lint y pruebas siguen). Es para cuando hace falta la cuota de Groq para
-  otra cosa, no para esquivar un rojo.
+  otra cosa, no para esquivar un rojo. **La marca solo cuenta si está al
+  final del asunto del commit** (primera línea) — ver trampa 3 más abajo.
 - Si la puerta dice **NO CONCLUYENTE**, no es un fallo del prompt: es falta de
   cuota o el modelo juez sin responder. Relanzar, no "arreglar".
 - **Deshacer una publicación mala**: `docs/07-emergencia.md` §1. El rollback de
   Vercel devuelve el código, **no** las migraciones, las variables de entorno
   ni la configuración de Supabase Auth.
 
-### Dos trampas verificadas en vivo el 20/08/2026
+### Tres trampas verificadas en vivo (20-21/08/2026)
 
-Las dos costaron horas. No volver a caer:
+Las tres costaron horas. No volver a caer:
 
 1. **Las variables de entorno de Vercel son de tipo *Sensitive*: su valor no
    se puede leer desde fuera.** Y falla **en silencio** — `vercel env pull`
@@ -142,6 +146,18 @@ Las dos costaron horas. No volver a caer:
    de una corazonada. Si cambias `MAX_TOKENS_GROQ_GENERACION` en `lib/ia.ts`,
    **rehaz el cálculo y ajusta los `--delay`** de `package.json` y del
    workflow, o media tanda saldrá con 429 que parecen fallos de calidad.
+
+3. **El freno `[sin evals]` solo cuenta si está al final del asunto del
+   commit** (`.github/workflows/publicar.yml`, job `decidir`). El detector
+   mira solo la primera línea del mensaje, y solo si la marca es lo último
+   de esa línea — nunca una mención en medio de una frase. Dos commits reales
+   de este mismo repositorio (uno explicando que "el freno funciona", otro
+   arreglando este mismo detector) mencionaban `[sin evals]` sin querer
+   activarlo, y la puerta se saltó de verdad. **Al escribir sobre este freno
+   en un mensaje de commit — incluida esta misma documentación —, nunca
+   pongas `[sin evals]` como lo último de la primera línea salvo que de
+   verdad quieras saltarte los evals.** Detalle en `knowledge/paso-16-publicar.md`
+   (sesión 21/08/2026).
 
 Corolario para el ritmo de trabajo: una tanda de evals dura **~25 minutos** y
 se lleva **la mitad de la cuota diaria**. Planifícalo, no lo lances a la
