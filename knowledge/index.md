@@ -143,8 +143,9 @@ existe en produccion y no se toca desde aqui.
   género, "Ingeniero Informático" vs "Ingeniería Informática", arreglado);
   uno es invención real de qwen; los tres de inyección probablemente son el
   guardrail de longitud bloqueando bien una respuesta descarrilada, no un
-  fallo de seguridad — pendiente reforzar el prompt (propuesta sin
-  implementar) antes del 24/08.
+  fallo de seguridad — refuerzo del prompt ya redactado en `lib/ia.ts` y
+  `prompts/system.md`, pendiente de confirmar con una pasada real de evals
+  (cuesta media cuota diaria de Groq) antes del 24/08.
 - [paso-14-guardrails.md](paso-14-guardrails.md) — Paso 14: las 7 capas de
   guardrails sobre `lib/ia.ts`, con relevancia/seguridad/moderación como
   reglas deterministas (sin llamadas nuevas al modelo, confirmado con Mar)
