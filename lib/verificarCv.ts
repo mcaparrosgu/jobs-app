@@ -147,6 +147,29 @@ function palabrasDeSiglasExpandidas(texto: string, permitido: string): Set<strin
   return excusadas;
 }
 
+// Formas de género de un mismo dato ("Ingeniería Informática" en el CV
+// original → "Ingeniero Informático" en la carta generada: la misma
+// titulación, dicha como el nombre de quien la tiene). Verificado en vivo el
+// 22/08/2026 (knowledge/arreglo-puerta-casoreventado.md): Gemini reformuló
+// así una titulación real y `verificarNombres` la marcó como sospechosa
+// porque compara palabra a palabra sin tener en cuenta el género gramatical.
+// Restringido a palabras de 6+ letras y a coincidencia de PALABRA COMPLETA
+// (no subcadena) en el permitido: nombres propios cortos ("Marta"/"Marco")
+// no llegan al mínimo, y una palabra cualquiera que por casualidad termine
+// en "-o"/"-a" no basta para excusarla si no está de verdad en el CV.
+const MINIMO_LETRAS_FORMA_DE_GENERO = 6;
+
+function formaDeGeneroAlternativa(palabraNormalizada: string): string | null {
+  if (palabraNormalizada.length < MINIMO_LETRAS_FORMA_DE_GENERO) return null;
+  if (palabraNormalizada.endsWith('o')) return `${palabraNormalizada.slice(0, -1)}a`;
+  if (palabraNormalizada.endsWith('a')) return `${palabraNormalizada.slice(0, -1)}o`;
+  return null;
+}
+
+function apareceComoPalabraCompleta(textoNormalizado: string, palabra: string): boolean {
+  return new RegExp(`\\b${palabra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(textoNormalizado);
+}
+
 // La unidad de comparación es la **palabra suelta**, no la frase entera.
 // Comparar frases ("Operations Scheduling Officer Althaia Healthcare
 // Institution") falla siempre: basta que el orden cambie un poco para que la
@@ -240,7 +263,10 @@ function verificarNombres(cvGenerado: string, permitido: string): Aviso[] {
     const normalizada = normalizar(palabra);
     if (MAYUSCULAS_INOCENTES.has(normalizada)) return false;
     if (excusadas.has(normalizada)) return false;
-    return !textoPermitido.includes(normalizada);
+    if (textoPermitido.includes(normalizada)) return false;
+    const alternativa = formaDeGeneroAlternativa(normalizada);
+    if (alternativa && apareceComoPalabraCompleta(textoPermitido, alternativa)) return false;
+    return true;
   });
 
   return Array.from(new Set(sospechosas)).map((palabra) => ({

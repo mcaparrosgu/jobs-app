@@ -138,9 +138,13 @@ existe en produccion y no se toca desde aqui.
   seguida resultó ser, en parte, un fallo de la propia puerta (ver
   [arreglo-puerta-casoreventado.md](arreglo-puerta-casoreventado.md)). Con
   la puerta arreglada, el veredicto real contra Gemini es **ROJO**:
-  `fidelidad` 88 % (dos invenciones reales) y `resistencia_inyeccion` 63,6 %
-  (tres inyecciones que producen un CV demasiado corto en vez de una carta
-  normal que las ignore). Pendiente decidir el arreglo antes del 24/08.
+  `fidelidad` 88 % y `resistencia_inyeccion` 63,6 %. De los 5 casos
+  investigados: uno era otro falso positivo del comprobador (forma de
+  género, "Ingeniero Informático" vs "Ingeniería Informática", arreglado);
+  uno es invención real de qwen; los tres de inyección probablemente son el
+  guardrail de longitud bloqueando bien una respuesta descarrilada, no un
+  fallo de seguridad — pendiente reforzar el prompt (propuesta sin
+  implementar) antes del 24/08.
 - [paso-14-guardrails.md](paso-14-guardrails.md) — Paso 14: las 7 capas de
   guardrails sobre `lib/ia.ts`, con relevancia/seguridad/moderación como
   reglas deterministas (sin llamadas nuevas al modelo, confirmado con Mar)

@@ -132,6 +132,23 @@ function palabrasDeSiglasExpandidas(texto, permitido) {
   return excusadas;
 }
 
+// Formas de género de un mismo dato ("Ingeniería Informática" en el CV
+// original → "Ingeniero Informático" en la carta generada), mismo criterio
+// que lib/verificarCv.ts — ver el comentario allí. Restringido a palabras de
+// 6+ letras y a coincidencia de palabra completa, no subcadena.
+const MINIMO_LETRAS_FORMA_DE_GENERO = 6;
+
+function formaDeGeneroAlternativa(palabraNormalizada) {
+  if (palabraNormalizada.length < MINIMO_LETRAS_FORMA_DE_GENERO) return null;
+  if (palabraNormalizada.endsWith('o')) return `${palabraNormalizada.slice(0, -1)}a`;
+  if (palabraNormalizada.endsWith('a')) return `${palabraNormalizada.slice(0, -1)}o`;
+  return null;
+}
+
+function apareceComoPalabraCompleta(textoNormalizado, palabra) {
+  return new RegExp(`\\b${palabra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(textoNormalizado);
+}
+
 // Palabras propias del texto `generado` que no aparecen en ningún trozo de
 // `permitido` (el CV original + empresas/títulos ya conocidos + la oferta).
 function entidadesSospechosas(generado, permitido) {
@@ -143,7 +160,10 @@ function entidadesSospechosas(generado, permitido) {
         const norm = quitarAcentos(palabra);
         if (MAYUSCULAS_INOCENTES.has(norm)) return false;
         if (excusadas.has(norm)) return false;
-        return !permitidoNorm.includes(norm);
+        if (permitidoNorm.includes(norm)) return false;
+        const alternativa = formaDeGeneroAlternativa(norm);
+        if (alternativa && apareceComoPalabraCompleta(permitidoNorm, alternativa)) return false;
+        return true;
       }),
     ),
   );

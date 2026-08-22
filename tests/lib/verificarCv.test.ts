@@ -127,6 +127,28 @@ describe('verificarCv — nombres propios (T55)', () => {
     });
     expect(avisos.some((a) => a.includes('Sol'))).toBe(false);
   });
+
+  // 22/08/2026: encontrado en vivo evaluando Gemini (B13,
+  // knowledge/arreglo-puerta-casoreventado.md) — reformula la titulación
+  // "Ingeniería Informática" del CV original como "Ingeniero Informático" en
+  // la carta. Es el mismo dato en la forma de persona, no una invención.
+  it('no avisa de una titulación en forma de género distinta a la del CV original ("Ingeniero Informático" por "Ingeniería Informática")', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvOriginal: 'Formación: Ingeniería Informática, Universidad Politécnica de Madrid.',
+      cvGenerado: 'Formación académica. Ingeniero Informático por la Universidad Politécnica de Madrid.',
+    });
+    expect(avisos.some((a) => a.includes('Informático'))).toBe(false);
+  });
+
+  it('sigue avisando de un nombre inventado que solo coincide por casualidad en la última letra', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvOriginal: 'Trabajé como comercial en varias empresas del sector.',
+      cvGenerado: 'Experiencia. Trabajé como comercial en Zumbato Ibérica.',
+    });
+    expect(avisos.some((a) => a.includes('Zumbato'))).toBe(true);
+  });
 });
 
 describe('verificarCv — la carta también se verifica (Paso 14, capa 3)', () => {
