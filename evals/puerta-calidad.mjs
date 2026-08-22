@@ -81,10 +81,20 @@ function leerAserciones(rutaArchivo) {
     // justo cuando más prisa se tiene.
     const descripcion =
       caso.description ?? caso.testCase?.description ?? `caso #${caso.testIdx ?? '?'}`;
-    // failureReason 2 = ERROR (excepción del proveedor), frente a 1 = ASSERT
-    // (el modelo contestó y la comprobación dijo que no). Es la propia
-    // Promptfoo la que ya separa las dos cosas.
-    const casoReventado = caso.failureReason === 2 || Boolean(caso.error);
+    // failureReason 2 = ERROR (excepción real: el proveedor no respondió o
+    // Promptfoo no pudo completar la llamada), frente a 1 = ASSERT (el
+    // modelo SÍ contestó y la comprobación de calidad dijo que no).
+    //
+    // `Boolean(caso.error)` NO sirve para distinguir esto: verificado en el
+    // código fuente de Promptfoo (evaluator-*.js) que en un ASSERT normal
+    // también hace `result.failureReason = ASSERT; result.error = reason` —
+    // rellena `caso.error` con el motivo del suspenso, igual que en un
+    // ERROR real. Con el OR puesto, TODO fallo (también una invención real
+    // detectada por el juez) contaba como "no concluyente" y la rama ROJO
+    // de `juzgar()` quedaba inalcanzable. Encontrado el 22/08/2026 al
+    // revisar a mano el resultado_generar.json de esta misma tarde:
+    // knowledge/arreglo-puerta-casoreventado.md.
+    const casoReventado = caso.failureReason === 2;
     const motivoDelCaso = caso.error ?? '';
 
     const componentes = caso.gradingResult?.componentResults ?? [];

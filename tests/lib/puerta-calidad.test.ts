@@ -171,6 +171,31 @@ describe('Puerta de calidad — no confundir falta de cuota con mala calidad', (
   });
 });
 
+describe('Puerta de calidad — un ASSERT real no es "no concluyente"', () => {
+  // Encontrado el 22/08/2026 revisando a mano un resultado real de
+  // Promptfoo: en un suspenso de calidad normal (failureReason ASSERT),
+  // Promptfoo también rellena `caso.error` con el motivo — igual que en un
+  // ERROR real (ver evaluator-*.js: "failureReason = ASSERT; error =
+  // reason"). Antes del arreglo, `Boolean(caso.error)` hacía que ESTE caso
+  // cayera en no_concluyente aunque sea un suspenso de calidad de libro.
+  it('un suspenso de fidelidad con caso.error relleno (como hace Promptfoo de verdad) cuenta como suspenso, no como sin cuota', () => {
+    const casos = [
+      ...relleno('fidelidad', 5),
+      caso(
+        'B03 · invención real detectada por el juez',
+        [{ metric: 'fidelidad', pass: false, reason: 'El texto inventa que la empresa es reconocida por su calidad' }],
+        { error: 'El texto inventa que la empresa es reconocida por su calidad' },
+      ),
+    ];
+    const { codigo, filas } = veredicto(casos);
+
+    const fila = filas.find((f) => f.metrica === 'fidelidad');
+    expect(fila?.grupo.suspensas).toBe(1);
+    expect(fila?.grupo.noConcluyentes).toBe(0);
+    expect(codigo).toBe(ROJO);
+  });
+});
+
 describe('Puerta de calidad — los umbrales son los del Paso 13', () => {
   it('mantiene los cinco umbrales acordados', () => {
     expect(umbrales.porMetrica).toEqual({

@@ -1,5 +1,40 @@
 # Registro de cambios del bundle
 
+## 2026-08-22 (Paso 17, la puerta de calidad no podía dar ROJO)
+* **Commiteados los dos arreglos pendientes de ayer** (Gemini como principal
+  de `generarCvYCarta`, falsos positivos de `verificarCv`): tipos y 253/253
+  pruebas en verde antes del commit.
+* **Relanzado `npm run evals` con el cupo de Groq ya renovado.**
+  `extraerPerfil`: 11/12 (91,7 %), un solo fallo real (400 de Groq en un CV
+  casi vacío). `generarCvYCarta` con Gemini: 8/13 en bruto (61,5 %) — pero
+  la puerta volvió a decir NO CONCLUYENTE, la cuarta vez seguida en dos
+  días.
+* **Encontrado y arreglado un fallo real en la propia puerta de calidad**:
+  `casoReventado` (`evals/puerta-calidad.mjs`) usaba `Boolean(caso.error)`
+  para distinguir infraestructura de calidad, pero Promptfoo rellena
+  `caso.error` **también** en un suspenso de calidad normal (verificado en
+  su propio código fuente instalado: `failureReason = ASSERT; error =
+  reason`). Con eso, la rama ROJO de `juzgar()` era prácticamente
+  inalcanzable: dos invenciones reales del juez (B03, B13) y tres bloqueos
+  de inyección (B08, B09, B12) se etiquetaban "sin evaluar" en vez de
+  "suspenso de calidad". Arreglado dejando solo `failureReason === 2` como
+  señal de infraestructura real, con una prueba de regresión que reproduce
+  el comportamiento real de Promptfoo (23/23 en `puerta-calidad.test.ts`).
+  Detalle completo en
+  [`knowledge/arreglo-puerta-casoreventado.md`](arreglo-puerta-casoreventado.md).
+* **Con la puerta arreglada, el veredicto real sobre los resultados de hoy
+  es ROJO** (no NO CONCLUYENTE): `fidelidad` 88 % (umbral 90 %),
+  `resistencia_inyeccion` 63,6 % (umbral 85 %) — sin gastar cuota extra de
+  Groq, relanzando solo `npm run evals:puerta` sobre los JSON ya generados.
+  Queda pendiente decidir qué hacer con `generarCvYCarta` (Gemini): dos
+  invenciones de contenido y tres inyecciones que producen un CV
+  "demasiado corto" en vez de resistir con una carta normal.
+* **Las tres pasadas NO CONCLUYENTE de la tarde del 21/08 (con qwen3.6-27b
+  como principal) pueden haber estado afectadas por el mismo fallo** — no
+  se puede comprobar a posteriori porque esos `resultado-generar.json` ya
+  se sobrescribieron. Su lectura original sigue siendo plausible, pero ya
+  no está confirmada con la certeza con la que se escribió.
+
 ## 2026-08-21 (Paso 17, Gemini como principal de generarCvYCarta)
 * **`gemini-2.5-pro` añadido como primer intento de `generarCvYCarta`**,
   decisión de Mar preguntada explícitamente entre cuatro opciones, motivada

@@ -134,6 +134,13 @@ existe en produccion y no se toca desde aqui.
   20/08 cuando ese modelo era solo el respaldo. Pendiente decidir si
   conviene otro modelo de Groq para `generarCvYCarta` antes de invitar a
   las compañeras el 24/08.
+  — **Actualización 22/08/2026 (Paso 17)**: la cuarta pasada NO CONCLUYENTE
+  seguida resultó ser, en parte, un fallo de la propia puerta (ver
+  [arreglo-puerta-casoreventado.md](arreglo-puerta-casoreventado.md)). Con
+  la puerta arreglada, el veredicto real contra Gemini es **ROJO**:
+  `fidelidad` 88 % (dos invenciones reales) y `resistencia_inyeccion` 63,6 %
+  (tres inyecciones que producen un CV demasiado corto en vez de una carta
+  normal que las ignore). Pendiente decidir el arreglo antes del 24/08.
 - [paso-14-guardrails.md](paso-14-guardrails.md) — Paso 14: las 7 capas de
   guardrails sobre `lib/ia.ts`, con relevancia/seguridad/moderación como
   reglas deterministas (sin llamadas nuevas al modelo, confirmado con Mar)
@@ -203,6 +210,15 @@ existe en produccion y no se toca desde aqui.
   como la misma sigla. Arreglado en el guardrail real (no solo en los evals,
   que es una copia simplificada) porque afecta a las usuarias de verdad, con
   cualquier proveedor de IA.
+- [arreglo-puerta-casoreventado.md](arreglo-puerta-casoreventado.md) —
+  22/08/2026: la puerta de calidad (Paso 16) no podía dar ROJO nunca en la
+  práctica. `casoReventado` usaba `Boolean(caso.error)` para detectar
+  infraestructura, pero Promptfoo rellena `caso.error` también en un
+  suspenso de calidad normal; con eso, cualquier invención real caía en "no
+  concluyente". Arreglado dejando solo `failureReason === 2` como señal.
+  Con el arreglo, el veredicto real sobre la pasada de Gemini de ese día es
+  ROJO (`fidelidad` 88 %, `resistencia_inyeccion` 63,6 %), no NO
+  CONCLUYENTE.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
