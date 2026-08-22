@@ -7,6 +7,27 @@
 // revés: knowledge/decision-modelo-ia.md explica por qué se eligió OpenRouter
 // en su día, y knowledge/decision-respaldo-groq.md por qué se añadió Groq.
 // OpenRouter se queda de respaldo por si Groq retira su modelo sin aviso.
+//
+// Excepción desde el 21/08/2026: `generarCvYCarta` prueba primero **Gemini**
+// (`gemini-3.7-flash` — el nivel "Pro" no tiene cuota gratis para cuentas
+// nuevas, ver la nota junto a `MODELO_GEMINI` más abajo), con Groq y
+// OpenRouter como respaldo detrás, en ese orden. `extraerPerfil` NO cambia —
+// sigue siendo Groq primero, sin Gemini —
+// porque ahí qwen3.6-27b funciona bien (91,7% en los evals). El cambio es
+// solo para `generarCvYCarta`, donde tres pasadas de evals seguidas el
+// 21/08/2026 mostraron a qwen3.6-27b devolviendo JSON inválido, CV por debajo
+// del mínimo o sin saltos de línea reales, cada vez por un motivo distinto —
+// inestabilidad del modelo en salidas largas, no un umbral mal puesto
+// (knowledge/paso-13-evals.md). Decisión de Mar, explícitamente preguntada.
+// Verificado antes de añadirlo (CLAUDE.md, "comprobar la política de datos
+// antes de cambiar de proveedor"): en el nivel gratuito, Google SÍ entrena
+// con los prompts en general, PERO sus términos dan una excepción para
+// usuarias del Espacio Económico Europeo — como España — que hace que se les
+// aplique el trato de "Paid Services" (sin entrenamiento) aunque no paguen.
+// No es Zero Data Retention real (eso solo existe en el nivel de pago, con
+// aprobación): los datos sí se retienen un tiempo limitado por
+// abuso/seguridad. Detalle completo en
+// knowledge/decision-gemini-generarcv.md.
 
 import { detectarIdioma, NOMBRE_IDIOMA, type Idioma } from '@/lib/idioma';
 import { MAXIMO_CARACTERES, normalizarPalabrasClave, paraComparar } from '@/lib/palabras-clave';
@@ -74,6 +95,30 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODELO_GROQ = 'qwen/qwen3.6-27b';
 const EXTRA_GROQ = { reasoning_format: 'hidden', reasoning_effort: 'none' } as const;
 
+// Gemini, solo para `generarCvYCarta` (ver la nota de cabecera del fichero).
+//
+// ⚠️ `gemini-2.5-pro` (el modelo con el que se diseñó esto en un primer
+// momento) **no vale**: verificado en vivo el 21/08/2026 con una petición
+// real, Google responde 404 "This model models/gemini-2.5-pro is no longer
+// available to new users" — y la cuenta de Mar, recién creada, es nueva a
+// todos los efectos. Probado también `gemini-3.1-pro-preview` (el sustituto
+// que sugiere el propio error de Google): responde 429 con `limit: 0` en las
+// cuatro métricas de cuota — el nivel "Pro" no tiene NADA de nivel gratuito
+// para esta cuenta, ni una tirada de gracia. Es un hallazgo importante que no
+// estaba en la documentación que se consultó al elegir el proveedor: **hoy,
+// para una cuenta nueva, solo el nivel "Flash" tiene cuota gratuita real**.
+// `gemini-3.7-flash` sí responde 200 con cuota real, verificado con una
+// petición del mismo tamaño que usa `generarCvYCarta`.
+//
+// A diferencia de `gemini-2.5-pro` (que exigía un mínimo de 128 tokens de
+// "pensamiento", ver el historial de este fichero), `gemini-3.7-flash` SÍ
+// acepta `thinkingBudget: 0` y lo apaga del todo — igual que
+// `reasoning_effort: 'none'` en Groq, arriba. Verificado en vivo: con
+// presupuesto 0, la respuesta llega completa y sin `thoughtsTokenCount`.
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODELO_GEMINI = 'gemini-3.7-flash';
+const GEMINI_THINKING_BUDGET = 0;
+
 // Tiempo máximo de espera por ronda. Todo el presupuesto (las dos rondas de
 // OpenRouter MÁS el respaldo de Groq) tiene que caber holgadamente en los 60 s
 // que aguanta una función en el plan gratuito de Vercel, porque si se agota
@@ -81,8 +126,16 @@ const EXTRA_GROQ = { reasoning_format: 'hidden', reasoning_effort: 'none' } as c
 // medias.
 const TIMEOUT_OPENROUTER_MS = 12_000;
 const TIMEOUT_GROQ_MS = 15_000;
-const TIMEOUT_OPENROUTER_GENERACION_MS = 15_000;
-const TIMEOUT_GROQ_GENERACION_MS = 20_000;
+
+// Presupuesto de `generarCvYCarta`, recalculado el 21/08/2026 al añadir
+// Gemini como primer intento: 18 (Gemini) + 15 (Groq) + 10 + 10 (las dos
+// rondas de OpenRouter) = 53 s en el peor caso, dejando margen sobre los 60 s
+// de Vercel. Antes de Gemini el reparto era 20+15+15=50 s; se recortan Groq y
+// OpenRouter aquí (no en `extraerPerfil`, que no lleva Gemini y conserva sus
+// tiempos de siempre) para hacerle sitio al intento nuevo.
+const TIMEOUT_GEMINI_GENERACION_MS = 18_000;
+const TIMEOUT_GROQ_GENERACION_MS = 15_000;
+const TIMEOUT_OPENROUTER_GENERACION_MS = 10_000;
 
 // Groq, a diferencia de OpenRouter, limita también por TOKENS POR MINUTO
 // (verificado en vivo: 8000 TPM en esta cuenta para qwen3.6-27b) y esa cuenta
@@ -110,6 +163,13 @@ const MAX_TOKENS_GROQ_POR_DEFECTO = 700;
 // ~1.150 de oferta + el prompt, más estos 3.000, se quedan por debajo de los
 // 8.000 por minuto de la cuenta.
 const MAX_TOKENS_GROQ_GENERACION = 3_000;
+
+// El nivel gratuito de Flash es más holgado que el de Groq (8.000 tokens por
+// minuto), así que aquí no hace falta apurar. 12.000 deja hueco de sobra para
+// el CV y la carta más largos que admite `validarGeneracion` (hasta 20.000 +
+// 8.000 caracteres, ~7.000 tokens en el peor caso) con el pensamiento ya
+// apagado del todo (`GEMINI_THINKING_BUDGET`, arriba).
+const MAX_TOKENS_GEMINI_GENERACION = 12_000;
 
 type Mensaje = { role: 'system' | 'user'; content: string };
 
@@ -237,6 +297,76 @@ async function llamarModelo(
   };
 }
 
+// Gemini habla un formato distinto al de Groq/OpenRouter (que son los dos
+// compatibles con la API de OpenAI): "contents"/"parts" en vez de "messages",
+// "systemInstruction" aparte, y la clave va en la URL, no en la cabecera
+// `Authorization`. Por eso es una función propia y no un `proveedor` más
+// dentro de `llamarModelo`.
+async function llamarGemini(
+  modelo: string,
+  mensajes: Mensaje[],
+  esquema: Esquema,
+  maxTokens: number,
+  senal: AbortSignal,
+): Promise<{ contenido: string } & UsoIA> {
+  const sistema = mensajes.find((mensaje) => mensaje.role === 'system')?.content ?? '';
+  const usuario = mensajes
+    .filter((mensaje) => mensaje.role === 'user')
+    .map((mensaje) => mensaje.content)
+    .join('\n\n');
+
+  const respuesta = await fetch(`${GEMINI_URL}/${modelo}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: sistema }] },
+      contents: [{ role: 'user', parts: [{ text: usuario }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: esquema.schema,
+        maxOutputTokens: maxTokens,
+        thinkingConfig: { thinkingBudget: GEMINI_THINKING_BUDGET },
+      },
+    }),
+    signal: senal,
+  });
+
+  if (!respuesta.ok) {
+    // Mismo cuidado que en `llamarModelo`: solo un trozo del cuerpo, nunca la
+    // URL completa (lleva la clave) ni el eco de la petición (el CV de una
+    // persona real).
+    const detalle = (await respuesta.text()).slice(0, 200);
+    throw new Error(`Gemini (${modelo}) respondió ${respuesta.status}: ${detalle}`);
+  }
+
+  const datos = await respuesta.json();
+  const candidato = datos.candidates?.[0];
+  const contenido = candidato?.content?.parts?.[0]?.text;
+  const uso: UsoIA = {
+    proveedor: 'Gemini',
+    modelo,
+    tokensEntrada: typeof datos.usageMetadata?.promptTokenCount === 'number' ? datos.usageMetadata.promptTokenCount : null,
+    tokensSalida: typeof datos.usageMetadata?.candidatesTokenCount === 'number' ? datos.usageMetadata.candidatesTokenCount : null,
+  };
+
+  if (typeof contenido !== 'string' || contenido.trim().length === 0) {
+    throw new Error(`Gemini (${modelo}) devolvió una respuesta vacía (finishReason: ${candidato?.finishReason ?? 'desconocido'})`);
+  }
+
+  // Validado AQUÍ, no al volver a `generarCvYCarta`: un JSON cortado a medias
+  // por agotar `maxOutputTokens` (el fallo documentado de Gemini 2.5 Pro, ver
+  // la nota de más arriba) tiene que caer en el mismo `catch` que un fallo de
+  // red, para que `llamarAlModelo` siga con Groq en vez de que
+  // `generarCvYCarta` reviente con un `JSON.parse` sin capturar.
+  try {
+    JSON.parse(contenido);
+  } catch {
+    throw new Error(`Gemini (${modelo}) devolvió un JSON incompleto (finishReason: ${candidato?.finishReason ?? 'desconocido'})`);
+  }
+
+  return { contenido, ...uso };
+}
+
 const PROVEEDOR_OPENROUTER = {
   nombre: 'OpenRouter',
   url: OPENROUTER_URL,
@@ -274,6 +404,11 @@ async function llamarAlModelo(
     timeoutGroqMs?: number;
     maxTokens?: number;
     maxTokensGroq?: number;
+    // Presente solo en `generarCvYCarta` (ver nota de cabecera del fichero).
+    // `esquema` puede diferir del genérico: el `responseSchema` de Gemini no
+    // admite todas las palabras clave de JSON Schema que sí acepta
+    // `json_schema` de Groq/OpenRouter (`maxLength` entre ellas).
+    gemini?: { esquema?: Esquema; timeoutMs?: number; maxTokens?: number };
   } = {},
 ): Promise<{ contenido: string } & UsoIA> {
   const {
@@ -281,8 +416,23 @@ async function llamarAlModelo(
     timeoutGroqMs = TIMEOUT_GROQ_MS,
     maxTokens,
     maxTokensGroq = MAX_TOKENS_GROQ_POR_DEFECTO,
+    gemini,
   } = opciones;
   const fallos: unknown[] = [];
+
+  if (gemini) {
+    try {
+      return await llamarGemini(
+        MODELO_GEMINI,
+        mensajes,
+        gemini.esquema ?? esquema,
+        gemini.maxTokens ?? MAX_TOKENS_GEMINI_GENERACION,
+        AbortSignal.timeout(gemini.timeoutMs ?? TIMEOUT_GEMINI_GENERACION_MS),
+      );
+    } catch (error) {
+      fallos.push(error);
+    }
+  }
 
   try {
     return await llamarModelo(
@@ -505,6 +655,33 @@ const ESQUEMA_GENERACION = {
     },
     required: ['puesto', 'cv_texto', 'carta_texto'],
     additionalProperties: false,
+  },
+};
+
+// Variante para Gemini: sin `maxLength` ni `additionalProperties`.
+//
+// ⚠️ Verificado en vivo el 21/08/2026 (las 13 llamadas de una pasada de evals
+// completa, no una suposición): `additionalProperties` hace que Gemini
+// rechace la petición entera con 400 — *"Unknown name \"additionalProperties\"
+// at 'generation_config.response_schema': Cannot find field."* — pese a que
+// la referencia de Vertex AI (un producto distinto de Google, no la misma
+// API) sí lo documenta como campo soportado. Ninguna de las dos cosas se da
+// por buena sin comprobar: ni que "está en la documentación" ni que "el
+// código compila y no da error" — solo una respuesta 200 real. El largo de
+// `puesto` ya lo comprueba `titularSeguro` en código, así que no se pierde
+// protección por quitar `maxLength` de aquí tampoco.
+const ESQUEMA_GENERACION_GEMINI = {
+  name: 'cv_y_carta',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      puesto: { type: 'string' },
+      cv_texto: { type: 'string' },
+      carta_texto: { type: 'string' },
+    },
+    required: ['puesto', 'cv_texto', 'carta_texto'],
+    propertyOrdering: ['puesto', 'cv_texto', 'carta_texto'],
   },
 };
 
@@ -891,6 +1068,7 @@ export async function generarCvYCarta(
     timeoutGroqMs: TIMEOUT_GROQ_GENERACION_MS,
     maxTokens: 6_000,
     maxTokensGroq: MAX_TOKENS_GROQ_GENERACION,
+    gemini: { esquema: ESQUEMA_GENERACION_GEMINI },
   });
 
   const validado = validarGeneracion(JSON.parse(resultado.contenido), {

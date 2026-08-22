@@ -28,10 +28,39 @@ function incluyeAlguno(haystack, needles) {
   return needles.some((needle) => incluye(haystack, needle));
 }
 
-function cifrasDe(texto) {
+function digitosDe(texto) {
   return (String(texto ?? '').match(/\d[\d.,]*/g) ?? [])
     .map((numero) => numero.replace(/[.,]/g, '').replace(/^0+(?=\d)/, ''))
     .filter((numero) => numero.length > 0);
+}
+
+// Números escritos con letra ("tres años", "three years") — mismo criterio y
+// misma exclusión deliberada de "un/una/uno" y "cien/ciento" que
+// lib/verificarCv.ts (ver el comentario allí). Añadido el 21/08/2026 al
+// verificar que Gemini reformula "tres meses" del CV original como "3 meses":
+// fiel al dato, solo cambia la forma, y sin esto `sinCifrasInventadas` lo
+// marcaba en rojo como cifra inventada.
+const PALABRAS_NUMERO = {
+  cero: '0',
+  dos: '2', tres: '3', cuatro: '4', cinco: '5', seis: '6', siete: '7', ocho: '8', nueve: '9', diez: '10',
+  once: '11', doce: '12', trece: '13', catorce: '14', quince: '15',
+  dieciseis: '16', diecisiete: '17', dieciocho: '18', diecinueve: '19', veinte: '20',
+  veintiuno: '21', veintiun: '21', veintidos: '22', veintitres: '23', veinticuatro: '24', veinticinco: '25',
+  veintiseis: '26', veintisiete: '27', veintiocho: '28', veintinueve: '29',
+  treinta: '30', cuarenta: '40', cincuenta: '50', sesenta: '60', setenta: '70', ochenta: '80', noventa: '90',
+  zero: '0', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10',
+  eleven: '11', twelve: '12', thirteen: '13', fourteen: '14', fifteen: '15',
+  sixteen: '16', seventeen: '17', eighteen: '18', nineteen: '19', twenty: '20',
+  thirty: '30', forty: '40', fifty: '50', sixty: '60', seventy: '70', eighty: '80', ninety: '90',
+};
+
+function numerosEscritosDe(texto) {
+  const palabras = quitarAcentos(texto).match(/\b[a-z]+\b/g) ?? [];
+  return palabras.map((palabra) => PALABRAS_NUMERO[palabra]).filter(Boolean);
+}
+
+function cifrasDe(texto) {
+  return [...digitosDe(texto), ...numerosEscritosDe(texto)];
 }
 
 // Cifras que aparecen en `generado` y NO están en `original`. Vacío = bien.
@@ -71,18 +100,49 @@ const MAYUSCULAS_INOCENTES = new Set(
     'septiembre', 'octubre', 'noviembre', 'diciembre', 'espanol', 'castellano',
     'ingles', 'frances', 'aleman', 'nativo', 'experiencia', 'formacion',
     'educacion', 'perfil', 'resumen', 'estimados', 'atentamente', 'senores',
+    // Añadidas el 21/08/2026, misma razón que en lib/verificarCv.ts: son
+    // etiquetas genéricas de CV, no nombres propios.
+    'nivel', 'duracion', 'sector', 'area', 'funcion', 'rol', 'cargo',
+    'ubicacion', 'modalidad', 'sueldo', 'salario', 'disponibilidad',
+    'referencias', 'objetivo', 'competencias', 'aptitudes', 'logros',
+    'responsabilidades', 'funciones', 'tareas', 'herramientas',
+    'tecnologias', 'certificados', 'cursos',
   ].map(quitarAcentos),
 );
+
+// Añadido el 21/08/2026, mismo criterio que lib/verificarCv.ts: una sigla ya
+// permitida ("AWS") expandida en el texto generado ("Amazon Web Services
+// (AWS)") no es una invención nueva, es la misma sigla con más letras.
+function palabrasDeSiglasExpandidas(texto, permitido) {
+  const excusadas = new Set();
+  const patron = /((?:\p{Lu}[\p{L}]+\s+){1,4}\p{Lu}[\p{L}]+)\s*\(([\p{Lu}]{2,6})\)/gu;
+  let coincidencia;
+  while ((coincidencia = patron.exec(texto))) {
+    const [, frase, sigla] = coincidencia;
+    const iniciales = frase
+      .trim()
+      .split(/\s+/)
+      .map((palabra) => palabra[0])
+      .join('')
+      .toUpperCase();
+    if (iniciales === sigla && incluye(permitido, sigla)) {
+      frase.trim().split(/\s+/).forEach((palabra) => excusadas.add(quitarAcentos(palabra)));
+    }
+  }
+  return excusadas;
+}
 
 // Palabras propias del texto `generado` que no aparecen en ningún trozo de
 // `permitido` (el CV original + empresas/títulos ya conocidos + la oferta).
 function entidadesSospechosas(generado, permitido) {
   const permitidoNorm = quitarAcentos(permitido);
+  const excusadas = palabrasDeSiglasExpandidas(generado, permitido);
   return Array.from(
     new Set(
       palabrasPropiasDe(generado).filter((palabra) => {
         const norm = quitarAcentos(palabra);
         if (MAYUSCULAS_INOCENTES.has(norm)) return false;
+        if (excusadas.has(norm)) return false;
         return !permitidoNorm.includes(norm);
       }),
     ),

@@ -44,10 +44,41 @@ function normalizar(texto: string): string {
 
 // "1.500" y "1,500" son el mismo número escrito a la europea o a la
 // americana; el CV original puede usar una forma y el generado la otra.
-function numerosDe(texto: string): string[] {
+function digitosDe(texto: string): string[] {
   return (texto.match(/\d[\d.,]*/g) ?? [])
     .map((numero) => numero.replace(/[.,]/g, '').replace(/^0+(?=\d)/, ''))
     .filter((numero) => numero.length > 0);
+}
+
+// Números escritos con letra ("tres años", "three years"). Verificado en vivo
+// el 21/08/2026 (knowledge/decision-gemini-generarcv.md): Gemini reformula
+// "tres meses" del CV original como "3 meses" — fiel al dato, solo cambia la
+// forma — y sin esto `verificarCifras` lo marcaba como cifra inventada. Se
+// excluyen a propósito "un/una/uno" (artículo indefinido, no cuenta como
+// número casi nunca) y "cien/ciento" (colisiona con "por ciento"): admitirlos
+// convertiría cualquier CV en "cualquier cifra 1 o 100 vale", que es peor que
+// el falso positivo que se está arreglando.
+const PALABRAS_NUMERO: Record<string, string> = {
+  cero: '0',
+  dos: '2', tres: '3', cuatro: '4', cinco: '5', seis: '6', siete: '7', ocho: '8', nueve: '9', diez: '10',
+  once: '11', doce: '12', trece: '13', catorce: '14', quince: '15',
+  dieciseis: '16', diecisiete: '17', dieciocho: '18', diecinueve: '19', veinte: '20',
+  veintiuno: '21', veintiun: '21', veintidos: '22', veintitres: '23', veinticuatro: '24', veinticinco: '25',
+  veintiseis: '26', veintisiete: '27', veintiocho: '28', veintinueve: '29',
+  treinta: '30', cuarenta: '40', cincuenta: '50', sesenta: '60', setenta: '70', ochenta: '80', noventa: '90',
+  zero: '0', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10',
+  eleven: '11', twelve: '12', thirteen: '13', fourteen: '14', fifteen: '15',
+  sixteen: '16', seventeen: '17', eighteen: '18', nineteen: '19', twenty: '20',
+  thirty: '30', forty: '40', fifty: '50', sixty: '60', seventy: '70', eighty: '80', ninety: '90',
+};
+
+function numerosEscritosDe(texto: string): string[] {
+  const palabras = normalizar(texto).match(/\b[a-z]+\b/g) ?? [];
+  return palabras.map((palabra) => PALABRAS_NUMERO[palabra]).filter((numero): numero is string => Boolean(numero));
+}
+
+function numerosDe(texto: string): string[] {
+  return [...digitosDe(texto), ...numerosEscritosDe(texto)];
 }
 
 function verificarCifras(cvGenerado: string, cvOriginal: string): Aviso[] {
@@ -77,8 +108,44 @@ const MAYUSCULAS_INOCENTES = new Set(
     'experiencia', 'formacion', 'educacion', 'habilidades', 'idiomas',
     'perfil', 'resumen', 'contacto', 'proyectos', 'certificaciones',
     'estimados', 'atentamente', 'cordialmente', 'senores', 'senoras',
+    // Añadidas el 21/08/2026 (knowledge/decision-gemini-generarcv.md):
+    // etiquetas y secciones genéricas de CV, no nombres propios. Salieron de
+    // Gemini escribiendo "Inglés (Nivel B2)" cuando el original solo decía
+    // "inglés B2" — "Nivel" es una etiqueta que añade claridad, no un dato
+    // nuevo, y el detector no distinguía eso de una empresa inventada.
+    'nivel', 'duracion', 'sector', 'area', 'funcion', 'rol', 'cargo',
+    'ubicacion', 'modalidad', 'sueldo', 'salario', 'disponibilidad',
+    'referencias', 'objetivo', 'competencias', 'aptitudes', 'logros',
+    'responsabilidades', 'funciones', 'tareas', 'herramientas',
+    'tecnologias', 'certificados', 'cursos',
   ].map(normalizar),
 );
+
+// Añadido el 21/08/2026 (knowledge/decision-gemini-generarcv.md): cuando el
+// CV generado expande una sigla que YA estaba en el permitido ("AWS" en el
+// original → "Amazon Web Services (AWS)" en el generado), las palabras de esa
+// expansión no son una invención — son la misma sigla, con más letras. Se
+// exige que la sigla entre paréntesis coincida letra a letra con las
+// iniciales de la frase que la precede, para no excusar cualquier cosa que
+// por casualidad termine en un paréntesis.
+function palabrasDeSiglasExpandidas(texto: string, permitido: string): Set<string> {
+  const excusadas = new Set<string>();
+  const patron = /((?:\p{Lu}[\p{L}]+\s+){1,4}\p{Lu}[\p{L}]+)\s*\(([\p{Lu}]{2,6})\)/gu;
+  let coincidencia: RegExpExecArray | null;
+  while ((coincidencia = patron.exec(texto))) {
+    const [, frase, sigla] = coincidencia;
+    const iniciales = frase
+      .trim()
+      .split(/\s+/)
+      .map((palabra) => palabra[0])
+      .join('')
+      .toUpperCase();
+    if (iniciales === sigla && normalizar(permitido).includes(normalizar(sigla))) {
+      frase.trim().split(/\s+/).forEach((palabra) => excusadas.add(normalizar(palabra)));
+    }
+  }
+  return excusadas;
+}
 
 // La unidad de comparación es la **palabra suelta**, no la frase entera.
 // Comparar frases ("Operations Scheduling Officer Althaia Healthcare
@@ -167,10 +234,12 @@ function verificarDatosDeContacto(textoGenerado: string, permitido: string): Avi
 
 function verificarNombres(cvGenerado: string, permitido: string): Aviso[] {
   const textoPermitido = normalizar(permitido);
+  const excusadas = palabrasDeSiglasExpandidas(cvGenerado, permitido);
 
   const sospechosas = palabrasPropiasDe(cvGenerado).filter((palabra) => {
     const normalizada = normalizar(palabra);
     if (MAYUSCULAS_INOCENTES.has(normalizada)) return false;
+    if (excusadas.has(normalizada)) return false;
     return !textoPermitido.includes(normalizada);
   });
 

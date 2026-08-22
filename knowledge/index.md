@@ -187,6 +187,22 @@ existe en produccion y no se toca desde aqui.
   email en `Jobs App · ingesta` (sin tocar nodos existentes); y
   `docs/08-rutina.md` con la rutina semanal de 15 minutos y el ciclo de
   mejora hacia el golden dataset del Paso 13.
+- [decision-gemini-generarcv.md](decision-gemini-generarcv.md) — 21/08/2026:
+  Gemini (`gemini-2.5-pro`) pasa a ser el primer intento de
+  `generarCvYCarta` (Groq y OpenRouter siguen detrás, como respaldo);
+  `extraerPerfil` no cambia. Motivado por tres pasadas de evals inestables
+  con `qwen/qwen3.6-27b` en esa llamada. Verificada la política de datos
+  antes de añadirlo: el nivel gratuito entrena en general, pero una
+  excepción de los términos de Google para el Espacio Económico Europeo
+  hace que no entrene con los datos de Mar ni de sus compañeras.
+- [arreglo-verificarcv-falsos-positivos.md](arreglo-verificarcv-falsos-positivos.md)
+  — 21/08/2026: la primera pasada de evals contra Gemini salió 30,77 %, pero
+  3 de 9 fallos eran falsos positivos del propio comprobador de invenciones
+  (`lib/verificarCv.ts`), no del modelo: no reconocía "tres" y "3" como el
+  mismo número ni una sigla expandida ("AWS" → "Amazon Web Services (AWS)")
+  como la misma sigla. Arreglado en el guardrail real (no solo en los evals,
+  que es una copia simplificada) porque afecta a las usuarias de verdad, con
+  cualquier proveedor de IA.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

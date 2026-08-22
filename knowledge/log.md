@@ -1,5 +1,84 @@
 # Registro de cambios del bundle
 
+## 2026-08-21 (Paso 17, Gemini como principal de generarCvYCarta)
+* **`gemini-2.5-pro` añadido como primer intento de `generarCvYCarta`**,
+  decisión de Mar preguntada explícitamente entre cuatro opciones, motivada
+  por la inestabilidad de `qwen/qwen3.6-27b` confirmada en las tres pasadas
+  de evals de esta misma tarde (entrada anterior de este log). `extraerPerfil`
+  no cambia — sigue en Groq, sin Gemini, porque ahí no hay ningún problema que
+  resolver (91,7 % estable). Detalle completo, con las citas literales de la
+  política de datos de Google y las dos trampas técnicas evitadas (el
+  "pensamiento" de Gemini 2.5 Pro no se puede apagar del todo y cuenta contra
+  el mismo tope de tokens de salida; un JSON cortado a medias por ese motivo
+  se valida dentro de `llamarGemini`, no al volver a `generarCvYCarta`, para
+  que caiga en la misma cadena de respaldo hacia Groq) en
+  `knowledge/decision-gemini-generarcv.md`.
+* **Verificada antes de escribir código la política de datos del nivel
+  gratuito de Gemini** (`CLAUDE.md`, "antes de cambiar de proveedor... hay
+  que comprobar su política de datos"): en general SÍ entrena con los
+  prompts del nivel gratuito (mismo problema que ya se descartó en
+  OpenRouter), pero los términos de Google dan una excepción explícita para
+  usuarias del Espacio Económico Europeo — España incluida — que hace que a
+  Mar y a sus compañeras se les aplique el trato de "Paid Services" (sin
+  entrenamiento) aunque no paguen. No es Zero Data Retention real como en
+  Groq (eso solo existe en el nivel de pago, con aprobación).
+* `npx tsc --noEmit` y `npx eslint lib/ia.ts` en verde; 253/253 pruebas de
+  Vitest sin cambios (ninguna llama a un modelo real).
+* **Primera pasada de evals contra Gemini: 4/13 (30,77 %) — peor que qwen, en
+  apariencia.** Revisado caso a caso antes de sacar conclusiones: 3 de los 9
+  fallos eran **falsos positivos del propio comprobador de invenciones**
+  (`lib/verificarCv.ts`), no del modelo — no reconocía "tres" y "3" como el
+  mismo número, ni "AWS" y "Amazon Web Services (AWS)" como la misma sigla
+  expandida. Detalle completo, con el arreglo aplicado en el guardrail real
+  (no solo en la copia de los evals, porque afecta a lo que ve cualquier
+  usuaria con cualquier proveedor) y los otros 6 fallos (todos por el mínimo
+  de 400 caracteres, con CVs de origen brevísimos), en
+  `knowledge/arreglo-verificarcv-falsos-positivos.md`. 29/29 pruebas de
+  `verificarCv.test.ts` siguen en verde tras el arreglo (no se pierde
+  sensibilidad a una invención real). Evals relanzados con el comprobador
+  corregido — resultado pendiente de anotar aquí al terminar.
+* **Las dos primeras pasadas de evals no medían a Gemini — medían a Groq sin
+  que nadie se diera cuenta.** Al parar a comprobar el campo `uso.proveedor`
+  de cada resultado (en vez de fiarse del porcentaje agregado), los 13 casos
+  de las dos pasadas habían caído a Groq en cada uno: `gemini-2.5-pro`
+  respondía **404** — *"no longer available to new users"*, porque la cuenta
+  de Mar es nueva. Probado el sustituto que sugiere el propio error de
+  Google (`gemini-3.1-pro-preview`): **429 con `limit: 0`** en las cuatro
+  métricas de cuota — el nivel **"Pro" no tiene NADA de nivel gratuito** para
+  una cuenta nueva, ni de prueba. Solo el nivel "Flash" sí lo tiene,
+  verificado con una petición real. Cambiado `MODELO_GEMINI` a
+  `gemini-3.7-flash`, que además acepta `thinkingBudget: 0` (apagar el
+  pensamiento del todo) donde `gemini-2.5-pro` exigía un mínimo de 128 — un
+  paralelismo más limpio con `reasoning_effort: 'none'` de Groq. Relanzados
+  los evals una tercera vez, ahora sí contra el modelo real. Detalle en
+  `knowledge/decision-gemini-generarcv.md`.
+* **Tercera pasada de evals contra `gemini-3.7-flash`: 0/13, y tampoco fue un
+  veredicto real.** Los 13 casos fallaron con el mismo 400 de Gemini —
+  *"Unknown name \"additionalProperties\"... Cannot find field"* — un campo
+  que sí acepta el Schema de Vertex AI (lo que se había consultado al
+  escribir el esquema) pero no la API de Gemini para desarrolladores, que es
+  la que usa esta app. Quitado de `ESQUEMA_GENERACION_GEMINI`. Y esta vez el
+  respaldo tampoco pudo disimularlo: Groq devolvió 429 por **cuota diaria
+  agotada** (198.825 de 200.000 tokens, gastados por los relanzamientos
+  repetidos de la propia tarde) — sin Gemini y sin Groq, cayó la cadena
+  entera. El esquema corregido se verificó con una petición directa a Gemini
+  (JSON válido, sin gastar cuota de Groq); **queda pendiente una pasada
+  automática real de los 13 casos**, bloqueada hasta que Groq renueve su
+  cuota (medianoche UTC). Cuarto intento consecutivo de relanzar los evals
+  hoy: demasiados para un solo día, la lección repetida de `CLAUDE.md`
+  ("planifícalo, no lo lances a la ligera") se confirma una vez más. Detalle
+  en `knowledge/decision-gemini-generarcv.md`.
+* **Bloqueador de n8n encontrado y arreglado de paso**: `Jobs App · ingesta`
+  no se disparó a las 13:00 de hoy pese a estar activo. Causa, confirmada con
+  el historial real de ejecuciones (no adivinada): al editar esta mañana un
+  workflow activo **a través de la API** (la rama de alertas de este mismo
+  Paso 17), el proceso de n8n en marcha no vuelve a registrar el cron del
+  Schedule Trigger — comportamiento conocido de n8n autoalojado, no un fallo
+  del ordenador ni de la cuenta. Arreglado desactivando y reactivando el
+  workflow (`unpublish_workflow` + `publish_workflow`), que fuerza el
+  reregistro sin ejecutar nada. Apunte para el futuro: repetir ese toggle
+  cada vez que se edite por API un workflow activo.
+
 ## 2026-08-21 (Paso 17, tercera pasada de evals)
 * **Tercer relanzamiento de `npm run evals`, también NO CONCLUYENTE.**
   `generarCvYCarta`: 61,5 % (tras 53,8 % y 38,5 % en las dos pasadas
