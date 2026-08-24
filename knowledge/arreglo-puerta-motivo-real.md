@@ -125,15 +125,29 @@ consumo de cuota fuera de esta sesión que no se puede ver desde aquí, o un
 límite distinto del cupo diario agregado) — no se puede confirmar sin
 acceso al panel de uso de Cloudflare (dash.cloudflare.com → Workers AI).
 
+# Segunda prueba suelta, tras el ajuste de T103: sigue igual, y OpenRouter empeora
+
+Repetida la llamada suelta después de subir el timeout a 34 s: **falla
+igual, a los 34,7 s** — confirma que el timeout nuevo es exactamente el
+cuello de botella otra vez, no una coincidencia. Además, esta vez **los
+dos modelos de respaldo de OpenRouter devuelven 429** (antes solo uno):
+el cupo compartido de 50 peticiones/día de la cuenta se ha ido agotando
+con las propias pruebas de hoy (evals + llamadas sueltas de esta
+investigación). **Se deja de probar aquí** para no seguir gastando ese
+cupo ya escaso — cada intento adicional hoy solo lo empeora.
+
 # Pendiente
 
-- **T95 sigue sin confirmar de verdad**: esta tanda no aportó ninguna
-  señal de contenido sobre el arreglo de T94. Hace falta repetirla con
-  cuota fresca de Cloudflare — recomendado antes de que entren las 5
-  usuarias mañana, no a mitad del día.
-- Si el mismo patrón (100% timeout) se repite en el relanzamiento de
-  mañana, revisar el panel de uso de Cloudflare a mano (fuera del alcance
-  de este agente) antes de seguir ajustando timeouts a ciegas.
+- **T95 sigue sin confirmar de verdad, y hoy ya no es buen momento para
+  reintentarlo**: Cloudflare sigue fallando al mismo timeout y OpenRouter
+  se ha quedado sin cupo del día por las propias pruebas de esta
+  investigación. Recomendado esperar a mañana temprano (antes de que
+  entren las 5 usuarias), cuando los dos cupos se hayan renovado.
+- Si el mismo patrón (100% timeout de Cloudflare) se repite en el
+  relanzamiento de mañana con cuota fresca, revisar el panel de uso de
+  Cloudflare a mano (dash.cloudflare.com → Workers AI, fuera del alcance
+  de este agente) antes de seguir ajustando timeouts a ciegas — a esas
+  alturas ya no sería explicable por cupo agotado.
 
 # Relacionado
 

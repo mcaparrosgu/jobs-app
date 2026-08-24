@@ -1,5 +1,18 @@
 # Registro de cambios del bundle
 
+## 2026-08-24 (quater — confirmado: hoy ya no es buen momento para T95)
+* Tras subir `TIMEOUT_CLOUDFLARE_GENERACION_MS` a 34s (T103), una llamada
+  suelta repitió el mismo fallo, esta vez a los 34,7s — confirma que el
+  timeout sigue siendo el cuello de botella real, no una coincidencia. Y
+  esta vez **los dos modelos de respaldo de OpenRouter devolvieron 429**
+  (antes solo uno): el cupo compartido de 50/día se agotó con las propias
+  pruebas de esta investigación.
+* Decisión: dejar de probar hoy — cada intento adicional solo gasta más el
+  cupo de OpenRouter sin aportar nada nuevo. T95 queda pendiente para
+  mañana temprano, con los dos cupos (Cloudflare y OpenRouter) renovados,
+  antes de que entren las 5 usuarias. Detalle en
+  [arreglo-puerta-motivo-real.md](arreglo-puerta-motivo-real.md).
+
 ## 2026-08-24 (ter — P1/P2/P4: modelo roto fuera, timeout con más margen, presupuesto de cuota)
 * **Corrección al resumen de T94**: `generarCvYCarta` en Cloudflare usa un
   modelo DISTINTO al de `extraerPerfil` desde el 23/08/2026
