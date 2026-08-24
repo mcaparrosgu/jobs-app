@@ -175,6 +175,17 @@ es una decisión tuya (presupuesto de 0 €).
 **Prevención**: no lances los evals el día que vayas a enseñar la app. Una
 pasada se lleva más o menos la mitad de la cuota diaria de Groq (el juez).
 
+> ⚠️ **Pasó de verdad el 24/08/2026**, la mañana del primer día con usuarias
+> reales: una tanda de evals + una investigación en vivo del mismo problema
+> dejaron `generarCvYCarta` fallando el 100% de las veces por timeout de
+> Cloudflare, Y ADEMÁS agotaron el cupo compartido de OpenRouter (50/día) —
+> los dos a la vez, no solo Cloudflare. El aviso de arriba ("no lances los
+> evals el día de enseñar la app") no bastaba: tampoco conviene investigar un
+> fallo con llamadas sueltas repetidas ese mismo día, porque cada intento
+> gasta el mismo cupo escaso de OpenRouter que necesitan las usuarias reales.
+> Detalle completo en
+> [`knowledge/arreglo-puerta-motivo-real.md`](../knowledge/arreglo-puerta-motivo-real.md).
+
 ### 4.3 El enlace del email no lleva a ningún sitio
 
 Ya pasó una vez (T76). La causa nunca está en el código: está en

@@ -424,9 +424,20 @@ de más automáticamente: al llegar al límite se paran, no facturan.
 | :---- | :---- | :---- | :---- |
 | **Vercel** (Hobby) | 100 GB tráfico, 1M peticiones/mes | insignificante | Enorme |
 | **Supabase** | 500 MB datos, 50.000 usuarias activas/mes | 5 usuarias, unos pocos MB | Enorme |
-| **Cloudflare Workers AI** | **10.000 "neuronas"/día**, sin tope por minuto (Groq, retirado el 23/08/2026, sí lo tenía — ver §6.2) | máx. 25 CVs/día (5 × 5) + extracciones | Por confirmar en vivo con uso real: cupo nuevo, sin medir todavía cuántas "neuronas" gasta cada documento |
+| **Cloudflare Workers AI** | **10.000 "neuronas"/día**, sin tope por minuto (Groq, retirado el 23/08/2026, sí lo tenía — ver §6.2) | hasta 35 `generarCvYCarta`/día (5 usuarias × 5 generaciones + 2 rehechos, T93) + extracciones de perfil | **Calculado el 24/08/2026** (`knowledge/arreglo-puerta-motivo-real.md`): típico ~3.650/10.000 neuronas (margen de sobra), peor caso absoluto (todo el mundo al límite con CVs y ofertas largas) ~10.450/10.000 — rozaría el tope. Ajustado, no enorme |
 | **Apify** | 5 $/mes de crédito | 1 ejecución diaria de ingesta | Ajustado, depende del actor |
 | **Gmail** | ~500 envíos/día | máx. 5 avisos/día + accesos | Enorme |
+
+> ⚠️ **Actualización (2026-08-24)**: el 24/08/2026, con la cuota del día ya
+> gastada en pruebas (evals + una investigación de un timeout en vivo),
+> `generarCvYCarta` empezó a fallar el 100% de las veces por timeout de
+> Cloudflare, y el respaldo de OpenRouter se quedó sin su propio cupo
+> compartido (50 peticiones/día) por las mismas pruebas. No se pudo
+> confirmar si la causa fue el cupo diario de Cloudflare agotado — el
+> cálculo de arriba no lo explica por sí solo con un uso típico — o una
+> degradación puntual del servicio. Detalle completo en
+> [`knowledge/arreglo-puerta-motivo-real.md`](../knowledge/arreglo-puerta-motivo-real.md).
+> Vale la pena vigilar si se repite con tráfico real de las 5 usuarias.
 
 **La primera señal de alarma sería Apify**, no los demás: si el actor que
 usas consume mucho, esos 5 $ se agotan antes de fin de mes y la ingesta
