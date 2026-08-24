@@ -1,5 +1,23 @@
 # Registro de cambios del bundle
 
+## 2026-08-24 (sexies — incidente en producción: perfil ilegible, se publica con [sin evals])
+* Primer día real de clase: al pinchar el enlace del email de aviso de la
+  ingesta de las 13:00, Mar ve "No se pudo leer tu perfil." en `/ofertas`,
+  en Android y en portátil.
+* Causa encontrada: producción sigue en el commit del 22/08 (`c1049ed`,
+  bloqueado por el NO CONCLUYENTE de más abajo), cuyo código pide la columna
+  `perfiles.puesto`. La migración `0017_perfiles_puestos.sql` (T89, 23/08)
+  ya la había borrado en Supabase, sustituyéndola por `puestos`. No es un
+  problema del dispositivo ni del enlace: cualquier usuaria con perfil
+  guardado lo sufre. Detalle en
+  [incidente-esquema-desajuste-24-08.md](incidente-esquema-desajuste-24-08.md).
+* Decisión de Mar, preguntada explícitamente entre tres opciones: publicar
+  ya el código ya commiteado (275/275 pruebas unitarias en verde, incluye
+  T94) con el freno `[sin evals]`, en vez de dejar la app rota hasta mañana
+  o parchear la base de datos a mano. T99 (claves de Cloudflare en Vercel)
+  queda en paralelo, sin bloquear: sin ellas la app cae a OpenRouter, no se
+  rompe.
+
 ## 2026-08-24 (quinquies — cierre del día: push a master, robot confirma NO CONCLUYENTE, nada publicado)
 * Mar decidió publicar de todas formas, aceptando explícitamente el riesgo
   explicado (cuota probablemente seguía agotada, T94 sin confirmar de

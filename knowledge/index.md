@@ -276,6 +276,13 @@ existe en produccion y no se toca desde aqui.
   el error crudo de la respuesta) — recalculado sin gastar cuota nueva,
   veredicto correcto: NO CONCLUYENTE. T95 sigue sin confirmar de verdad.
 
+- [incidente-esquema-desajuste-24-08.md](incidente-esquema-desajuste-24-08.md)
+  — 24/08/2026: producción (commit del 22/08) quedó activamente rota para
+  cualquier usuaria con perfil guardado — pedía la columna `puesto`, que la
+  migración 0017 (23/08) ya había borrado. Descubierto al probar el enlace
+  del email de aviso (T68). Mar decide publicar ya con `[sin evals]` en vez
+  de esperar a mañana.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
