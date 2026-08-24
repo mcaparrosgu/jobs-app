@@ -6,6 +6,14 @@ tags: [jobs-app, ia, privacidad, decision, paso-15, okf]
 timestamp: 2026-08-20T14:30:00Z
 ---
 
+> **⚠️ SUPERADO el 23/08/2026**: Groq se retiró del todo del proyecto —
+> decisión de Mar, junto con hacer principal de las dos llamadas a
+> Cloudflare Workers AI. Ver
+> [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md). Esta
+> ficha se conserva como historial de por qué Groq pasó a ser principal en su
+> momento (y de por qué OpenRouter sigue siendo seguro como respaldo), no
+> como estado actual del código.
+
 # El hallazgo
 
 Revisando la configuración real de las cuentas durante el Paso 15

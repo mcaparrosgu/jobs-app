@@ -276,6 +276,47 @@ function idiomaPerfilEsEspanol(output) {
   return { pass: detectado === 'es', score: detectado === 'es' ? 1 : 0, reason: `extraerPerfil siempre responde en español; detectado "${detectado}"` };
 }
 
+// T88 (23/08/2026) · puestos_sugeridos tiene que existir, no estar vacía, y
+// contener al puesto principal (lib/ia.ts lo añade siempre en código).
+//
+// Aserción global (`defaultTest.assert` en extraer-perfil.yaml): se aplica
+// también al caso A12 (CV vacío), donde un fallo controlado (`output.error`)
+// es el resultado CORRECTO esperado, no un defecto de esta lista en
+// concreto — por eso pasa igual que `formatoValidoPerfil` no forma parte del
+// `assert` de A12. Sin este caso especial, ese fallo limpio contaba como un
+// suspenso de "puestos_sugeridos" que no tiene nada que ver con ella.
+function puestosSugeridosValidos(output) {
+  if (!output) return { pass: false, score: 0, reason: 'Sin salida que comprobar' };
+  if (output.error) return { pass: true, score: 1, reason: 'Fallo controlado (no aplica: no hay perfil que evaluar)' };
+  const lista = output.puestos_sugeridos;
+  const formaOk = Array.isArray(lista) && lista.length >= 1 && lista.every((p) => typeof p === 'string' && p.trim().length > 0);
+  const incluyePrincipal = formaOk && lista.some((p) => quitarAcentos(p) === quitarAcentos(output.puesto));
+  const pass = formaOk && incluyePrincipal;
+  return {
+    pass,
+    score: pass ? 1 : 0,
+    reason: pass
+      ? 'puestos_sugeridos tiene forma correcta e incluye el puesto principal'
+      : `puestos_sugeridos mal formada o sin el puesto principal: ${JSON.stringify(lista)}`,
+  };
+}
+
+// T86 (23/08/2026) · palabras_clave_sugeridas puede venir vacía (CV escueto,
+// ver el esquema en lib/ia.ts), pero tiene que ser una lista de strings.
+// Mismo caso especial que `puestosSugeridosValidos` con A12: un fallo
+// controlado no es un defecto de esta lista.
+function palabrasClaveSugeridasValidas(output) {
+  if (!output) return { pass: false, score: 0, reason: 'Sin salida que comprobar' };
+  if (output.error) return { pass: true, score: 1, reason: 'Fallo controlado (no aplica: no hay perfil que evaluar)' };
+  const lista = output.palabras_clave_sugeridas;
+  const pass = Array.isArray(lista) && lista.every((p) => typeof p === 'string');
+  return {
+    pass,
+    score: pass ? 1 : 0,
+    reason: pass ? 'palabras_clave_sugeridas es una lista de strings' : `palabras_clave_sugeridas mal formada: ${JSON.stringify(lista)}`,
+  };
+}
+
 function sinDatosDeContacto(output) {
   if (!output || output.error) return { pass: false, score: 0, reason: 'Sin salida que comprobar' };
   const texto = String(output.cv_texto ?? '');
@@ -306,6 +347,8 @@ module.exports = {
   formatoValidoPerfil,
   formatoValidoGeneracion,
   palabrasClaveConFormato,
+  puestosSugeridosValidos,
+  palabrasClaveSugeridasValidas,
   sinCifrasInventadas,
   soloEntidadesConocidas,
   idiomaEsperado,

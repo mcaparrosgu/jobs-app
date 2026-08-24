@@ -13,8 +13,8 @@ Es el primer proyecto estructurado de Mar, que **no tiene experiencia
 programando**. Explica cada término técnico la primera vez que lo uses, con
 una analogía cotidiana. Todo se escribe **en castellano**.
 
-**Stack**: Next.js + Supabase + Groq + Vercel, más un workflow de n8n.
-Detalle en `docs/04-plan-tecnico.md`.
+**Stack**: Next.js + Supabase + Cloudflare Workers AI + Vercel, más un
+workflow de n8n. Detalle en `docs/04-plan-tecnico.md`.
 
 ## La restricción principal
 
@@ -34,8 +34,10 @@ son Mar: sus cuatro compañeras de clase.
   fila lleva su dueña grabada), no con lógica en el código.
 - El texto de los CVs sale hacia el proveedor de IA. **Antes de cambiar de
   proveedor o de añadir uno nuevo, hay que comprobar su política de datos** —
-  no basta con que sea gratis. Estado verificado el 20/08/2026:
-  - **Groq** (principal): *Zero Data Retention* global activado. ✓
+  no basta con que sea gratis. Estado verificado el 23/08/2026:
+  - **Cloudflare Workers AI** (principal desde el 23/08/2026, sustituye a
+    Groq): declaración oficial de que no entrena con el contenido por
+    defecto. Ver `knowledge/decision-cloudflare-generarcv.md`.
   - **OpenRouter** (respaldo): tenía activado "Allow free endpoints that train
     on request data", es decir, los modelos gratuitos podían **entrenar con
     los CVs**. Se apagó. Ver
@@ -80,7 +82,7 @@ son Mar: sus cuatro compañeras de clase.
 ejecutable con Promptfoo en `evals/promptfoo/`.
 
 **Relanza los evals siempre que cambie el prompt (`lib/ia.ts`,
-`prompts/system.md`), el modelo (`MODELO_GROQ` / `RONDAS_MODELOS` en
+`prompts/system.md`), el modelo (`MODELO_CLOUDFLARE` / `RONDAS_MODELOS` en
 `lib/ia.ts`), o el formato de los datos de entrada o salida.** Un cambio
 que no se comprueba contra el golden dataset puede arreglar un caso y
 romper otro sin que nadie se entere hasta que le pase a una usuaria real.
@@ -95,15 +97,19 @@ push toca `lib/ia.ts`, `prompts/system.md`, `lib/guardrails.ts`,
 `lib/verificarCv.ts` o `evals/`, los evals corren solos y **bloquean la
 publicación** si bajan de los umbrales de `evals/umbrales.json`.
 
-`-j 1` (sin concurrencia) es obligatorio desde que Groq es el proveedor
-principal: limita por **tokens por minuto** (8000 en esta cuenta), y con la
-concurrencia por defecto de 4 los casos se pisan entre sí y fallan con un 429
-que parece un fallo de calidad y no lo es.
+`-j 1` (sin concurrencia) sigue activo desde que Groq era el proveedor
+principal: limitaba por **tokens por minuto** (8000 en esa cuenta), y con la
+concurrencia por defecto de 4 los casos se pisaban entre sí y fallaban con un
+429 que parecía un fallo de calidad y no lo era. Groq se retiró del todo de
+la app el 23/08/2026 (Cloudflare es ahora el principal, sin ese límite por
+minuto — ver `knowledge/decision-cloudflare-generarcv.md`), pero el juez de
+las aserciones "llm-rubric" **sigue llamando a Groq** y sigue sujeto al mismo
+límite, así que `-j 1` y las pausas no se han tocado.
 
-Ambos llaman a las funciones reales de `lib/ia.ts` (consumen cuota gratis
-de OpenRouter/Groq, igual que la app en producción). Los umbrales de
-aprobado y cómo leer el resultado están documentados en
-`knowledge/paso-13-evals.md`.
+Ambos llaman a las funciones reales de `lib/ia.ts` (consumen cuota gratis de
+Cloudflare/OpenRouter, igual que la app en producción, más la cuota de Groq
+del modelo juez). Los umbrales de aprobado y cómo leer el resultado están
+documentados en `knowledge/paso-13-evals.md`.
 
 ## Publicación (Paso 16)
 
@@ -119,9 +125,10 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
   previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
   fueron todos directos a producción.
 - Un commit con **`[sin evals]`** en el mensaje salta los evals a conciencia
-  (lint y pruebas siguen). Es para cuando hace falta la cuota de Groq para
-  otra cosa, no para esquivar un rojo. **La marca solo cuenta si está al
-  final del asunto del commit** (primera línea) — ver trampa 3 más abajo.
+  (lint y pruebas siguen). Es para cuando hace falta la cuota de Cloudflare o
+  de Groq (el juez) para otra cosa, no para esquivar un rojo. **La marca solo
+  cuenta si está al final del asunto del commit** (primera línea) — ver
+  trampa 3 más abajo.
 - Si la puerta dice **NO CONCLUYENTE**, no es un fallo del prompt: es falta de
   cuota o el modelo juez sin responder. Relanzar, no "arreglar".
 - **Deshacer una publicación mala**: `docs/07-emergencia.md` §1. El rollback de
@@ -141,10 +148,16 @@ Las tres costaron horas. No volver a caer:
    *"Invalid supabaseUrl"*. Detalle en `docs/04-plan-tecnico.md` §3.8.
 
 2. **Groq cuenta el `max_tokens` que PIDES, no el que gastas**, contra su
-   límite de 8.000 por minuto. Una generación reserva ~7.000: **cabe una por
-   minuto**. Las pausas de los evals (25 s y 65 s) salen de esa división, no
-   de una corazonada. Si cambias `MAX_TOKENS_GROQ_GENERACION` en `lib/ia.ts`,
-   **rehaz el cálculo y ajusta los `--delay`** de `package.json` y del
+   límite de 8.000 por minuto. Cuando Groq generaba de verdad (hasta el
+   23/08/2026), una generación reservaba ~7.000: **cabía una por minuto**.
+   Las pausas de los evals (25 s y 65 s) salen de esa división, no de una
+   corazonada. Groq se retiró del todo de la app el 23/08/2026 (Cloudflare no
+   tiene ese límite por minuto), pero el juez de las aserciones "llm-rubric"
+   **sigue llamando a Groq**, así que las pausas no se han tocado sin poder
+   comprobarlo en vivo — son más conservadoras de lo estrictamente necesario,
+   no un problema. Si algún día tocas el tamaño de lo que le pide el juez, o
+   quieres relajar las pausas, **rehaz el cálculo primero contra el límite de
+   8.000/minuto de Groq** y ajusta los `--delay` de `package.json` y del
    workflow, o media tanda saldrá con 429 que parecen fallos de calidad.
 
 3. **El freno `[sin evals]` solo cuenta si está al final del asunto del

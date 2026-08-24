@@ -30,7 +30,7 @@ propio perfil.
 | :---- | :---- |
 | **Next.js** | La web y sus pantallas |
 | **Supabase** | Base de datos y acceso por enlace de email |
-| **Groq** | El modelo de IA que lee el CV y redacta |
+| **Cloudflare Workers AI** | El modelo de IA que lee el CV y redacta |
 | **Vercel** | Donde vive la web publicada |
 | **n8n** | Trae las ofertas cada día y manda los avisos |
 
@@ -42,8 +42,8 @@ Todo funciona dentro de las capas gratuitas: **coste 0 €/mes**.
   lo garantiza la propia base de datos, que se niega a entregar una ficha a
   quien no es su dueña.
 - Los datos (perfil, CV, documentos generados) **se borran solos al mes**.
-- El texto de tu CV se procesa en Groq, que no entrena con él y tiene la
-  retención de datos desactivada.
+- El texto de tu CV se procesa en Cloudflare Workers AI, que declara
+  oficialmente que no entrena con él por defecto.
 
 > ⚠️ **Revisa siempre el documento antes de enviarlo a una empresa.** La
 > aplicación comprueba automáticamente que no aparezcan cifras ni empresas
@@ -74,8 +74,9 @@ npm test         # 253 pruebas de la parte que no usa IA (segundos)
 npm run evals    # los 25 casos de la parte de IA (~25 min, gasta cuota real)
 ```
 
-`npm run evals` llama de verdad a Groq con tus claves y **se lleva más o menos
-la mitad de la cuota del día**. No lo lances el día que vayas a enseñar la
+`npm run evals` llama de verdad a Cloudflare y a OpenRouter con tus claves
+(más a Groq, para el juez de las aserciones) y **se lleva más o menos la
+mitad de la cuota del día**. No lo lances el día que vayas a enseñar la
 app. Al terminar da un veredicto: **VERDE**, **ROJO** (calidad de verdad) o
 **NO CONCLUYENTE** (sin cuota, clave mala o el modelo juez sin responder —
 que no es culpa del prompt).
@@ -108,7 +109,7 @@ git checkout master && git merge lo-que-voy-a-cambiar && git push
 | :---- | :---- |
 | `app/` | Las pantallas y el código de servidor |
 | `components/` | Trozos de pantalla reutilizables |
-| `lib/` | Utilidades compartidas (Groq, Supabase, PDF) |
+| `lib/` | Utilidades compartidas (Cloudflare, Supabase, PDF) |
 | `supabase/migrations/` | Historial de cambios de la base de datos |
 | `docs/` | Cómo se pensó el proyecto, paso a paso |
 | `knowledge/` | Las decisiones tomadas y por qué |

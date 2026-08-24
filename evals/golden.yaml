@@ -17,6 +17,13 @@
 # Diez de estos casos vienen literalmente de evals/casos-dificiles.md
 # (Paso 10) — el resto son casos "fáciles" y "límite" añadidos para que el
 # dataset no sea solo un catálogo de ataques.
+#
+# 23/08/2026 (T86/T88): extraerPerfil devuelve ahora también
+# `puestos_sugeridos` (3-5 puestos alternativos) y `palabras_clave_sugeridas`
+# (una lista ampliada para el autocompletado del formulario). No se repite
+# como criterio en cada uno de los 12 casos A01-A12: es una comprobación de
+# FORMA igual para todos, y vive como aserción global en
+# `evals/promptfoo/extraer-perfil.yaml` (`defaultTest.assert`), no aquí.
 
 - id: A01
   tarea: extraerPerfil

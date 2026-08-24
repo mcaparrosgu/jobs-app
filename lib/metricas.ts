@@ -8,8 +8,9 @@
 // extraerPerfil o a generarCvYCarta), acabe bien o mal, con lo necesario
 // para las cinco señales que pide el Paso 17: coste (aquí, tokens
 // consumidos — 0 € siempre, docs/05-ia.md §5, así que el número que importa
-// de verdad es el cupo gastado contra el límite de Groq), tiempo de
-// respuesta, tasa de éxito, guardrails saltados y escaladas a humano.
+// de verdad es el cupo gastado contra el límite diario de Cloudflare, el
+// proveedor principal), tiempo de respuesta, tasa de éxito, guardrails
+// saltados y escaladas a humano.
 //
 // Regla de oro: registrar una métrica NUNCA puede romper la generación real.
 // Si el insert falla, se avisa por consola y se sigue — una fila de métrica

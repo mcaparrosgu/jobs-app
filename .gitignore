@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────
 #  CLAVES Y SECRETOS — lo más importante de este archivo.
 #  Si algo de esto llega a GitHub, cualquiera puede gastar
-#  con tus cuentas de Supabase y Groq.
+#  con tus cuentas de Supabase y Cloudflare.
 # ─────────────────────────────────────────────────────────────
 .env
 .env.local

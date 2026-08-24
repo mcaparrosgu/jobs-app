@@ -37,6 +37,16 @@ defaultTest:
         reasoning_effort: none
         reasoning_format: hidden
         temperature: 0
+  # T86/T88 (23/08/2026): se aplican a los 12 casos sin repetirlas en cada
+  # uno — comprueban la forma de los dos campos nuevos (lib/ia.ts), no su
+  # contenido concreto, así que valen igual para cualquier CV de entrada.
+  assert:
+    - metric: puestos_sugeridos
+      type: javascript
+      value: file://helpers.cjs:puestosSugeridosValidos
+    - metric: palabras_clave_sugeridas
+      type: javascript
+      value: file://helpers.cjs:palabrasClaveSugeridasValidas
 
 tests:
   - description: 'A01 · CV normal, diseñadora UX'

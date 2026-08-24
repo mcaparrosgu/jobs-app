@@ -6,6 +6,11 @@ tags: [jobs-app, okf, ia, decision, incidente]
 timestamp: 2026-08-19T00:00:00Z
 ---
 
+> **⚠️ SUPERADO el 23/08/2026**: Groq se retiró del todo del proyecto — ver
+> [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md). Esta
+> ficha se conserva como historial de por qué se añadió en su momento, no
+> como estado actual del código.
+
 # El problema
 
 Mar reporto que "Ver oferta" (global marketing operations manager) fallaba

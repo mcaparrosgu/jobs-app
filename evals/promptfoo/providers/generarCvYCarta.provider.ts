@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../');
 
 function asegurarEntorno(): void {
-  if (process.env.OPENROUTER_API_KEY && process.env.GROQ_API_KEY) return;
+  if (process.env.OPENROUTER_API_KEY && process.env.CLOUDFLARE_API_TOKEN) return;
   try {
     process.loadEnvFile(path.join(repoRoot, '.env.local'));
   } catch {

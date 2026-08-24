@@ -8,7 +8,7 @@
 #
 #   1. decidir       ¿este cambio toca la IA? ¿lleva el freno "[sin evals]"?
 #   2. comprobar     lint + pruebas (rápido, gratis, no llama a ninguna IA)
-#   3. evals         solo si toca la IA. Llama a Groq de verdad y gasta cuota
+#   3. evals         solo si toca la IA. Llama a Cloudflare de verdad y gasta cuota
 #   4. publicar      vista previa en cualquier rama, producción solo en master
 #
 # Para deshacer una publicación mala, NO hace falta este robot: se hace en el
@@ -191,75 +191,121 @@ jobs:
       # Las claves llegan como secretos del repositorio, no desde Vercel.
       #
       # El primer intento fue traerlas con `vercel env pull` para no duplicar
-      # secretos. No funciona: las cinco variables del proyecto son de tipo
+      # secretos. No funciona: las variables del proyecto son de tipo
       # **Sensitive**, y ese tipo es de solo escritura — su valor no se puede
       # volver a leer, ni desde el panel ni con el CLI. La descarga dice
-      # "Created .env.local" y aun así la clave llega vacía, así que Groq
-      # responde 401 "Invalid API Key" y los 25 casos salen sin evaluar.
-      # (Verificado en vivo el 20/08/2026, ejecución #1 del robot.)
+      # "Created .env.local" y aun así la clave llega vacía, así que el
+      # proveedor responde 401 "Invalid API Key" y los 25 casos salen sin
+      # evaluar. (Verificado en vivo el 20/08/2026, ejecución #1 del robot.)
       #
-      # Comprobar antes de tocar esto: la clave de `.env.local` responde 200 a
-      # https://api.groq.com/openai/v1/models. Si el robot da 401 con la misma
-      # clave, el problema es el secreto de GitHub, no Groq.
+      # Dos claves a comprobar, con roles distintos desde que Groq se retiró
+      # del todo el 23/08/2026 (decisión de Mar, lib/ia.ts):
+      #   - CLOUDFLARE_*: el proveedor PRINCIPAL de las dos llamadas reales
+      #     que hace la app (extraerPerfil y generarCvYCarta).
+      #   - GROQ_API_KEY: ya NO la usa la app, pero sí el juez de las
+      #     aserciones "llm-rubric" en extraer-perfil.yaml y
+      #     generar-cv-carta.yaml (elegido por privacidad, mismo motivo que
+      #     cuando era el principal). Sin ella, esas aserciones fallan con un
+      #     "no concluyente" que parece un problema de calidad y no lo es.
       - name: Comprobar que las claves han llegado
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ] || [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::Falta CLOUDFLARE_ACCOUNT_ID o CLOUDFLARE_API_TOKEN del repositorio."
+            echo "Ponlos en Settings -> Secrets and variables -> Actions."
+            echo "Sin ellos, la app no tiene proveedor principal y los evals"
+            echo "caerian a OpenRouter en silencio, o fallarian si tampoco"
+            echo "responde."
+            exit 1
+          fi
           if [ -z "${GROQ_API_KEY:-}" ]; then
             echo "::error::Falta el secreto GROQ_API_KEY del repositorio."
             echo "Ponlo en Settings -> Secrets and variables -> Actions."
-            echo "Sin el, los 25 casos saldrian 'sin evaluar' con un 401 y"
-            echo "pareceria un problema de calidad sin serlo."
+            echo "Ya no lo usa la app, pero si el juez de las aserciones"
+            echo "llm-rubric: sin el, esos casos saldrian 'sin evaluar'."
             exit 1
           fi
-          # Una peticion de verdad, minuscula (5 tokens), al mismo modelo que
-          # usa la app. Listar modelos no basta: responde 200 aunque la cuota
-          # del dia este agotada, y entonces los 25 casos se van 25 minutos
-          # para acabar en "no concluyente" por un 429 que se podia haber
-          # visto en dos segundos. (Verificado en vivo: ejecucion #3, 26m 55s
-          # tirados por esto.)
+          # Una peticion de verdad, minuscula (5 tokens), a Cloudflare. Listar
+          # modelos no basta: responde 200 aunque la cuota del dia este
+          # agotada, y entonces los 25 casos se van 25 minutos para acabar en
+          # "no concluyente" por un 429 que se podia haber visto en dos
+          # segundos (leccion de Groq, ejecucion #3, 26m 55s tirados).
           #
           # Solo se imprime el codigo de respuesta; la clave, nunca.
-          CODIGO=$(curl -s -o /dev/null -w '%{http_code}' \
+          CODIGO_CF=$(curl -s -o /dev/null -w '%{http_code}' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"model":"@cf/mistralai/mistral-small-3.1-24b-instruct","messages":[{"role":"user","content":"ok"}],"max_tokens":5}')
+
+          echo "Cloudflare responde $CODIGO_CF a una peticion de prueba."
+
+          case "$CODIGO_CF" in
+            200)
+              echo "Clave de Cloudflare correcta y con cuota. Adelante."
+              ;;
+            401|403)
+              echo "::error::La clave de Cloudflare del robot no vale (codigo $CODIGO_CF)."
+              echo "Revisa CLOUDFLARE_ACCOUNT_ID y CLOUDFLARE_API_TOKEN en Settings -> Secrets and variables -> Actions."
+              exit 1
+              ;;
+            429)
+              echo "::error::Cloudflare no tiene cuota ahora mismo (429). NO es un problema de calidad."
+              echo "El cupo diario de neuronas se renueva cada dia."
+              echo "Vuelve a lanzarlo mas tarde desde Actions -> Publicar -> Run workflow."
+              echo "Si el cambio no toca ningun prompt, el commit puede llevar [sin evals]."
+              exit 1
+              ;;
+            *)
+              echo "::error::Cloudflare responde $CODIGO_CF. No se lanzan los evals para no tirar 25 minutos."
+              exit 1
+              ;;
+          esac
+
+          # Groq ya no genera ni extrae nada, pero el juez de las aserciones
+          # llm-rubric (extraer-perfil.yaml, generar-cv-carta.yaml) sigue
+          # llamandolo — misma comprobacion minima que antes.
+          CODIGO_GROQ=$(curl -s -o /dev/null -w '%{http_code}' \
             https://api.groq.com/openai/v1/chat/completions \
             -H "Authorization: Bearer $GROQ_API_KEY" \
             -H 'Content-Type: application/json' \
             -d '{"model":"qwen/qwen3.6-27b","messages":[{"role":"user","content":"ok"}],"max_tokens":5,"reasoning_effort":"none"}')
 
-          echo "Groq responde $CODIGO a una peticion de prueba."
+          echo "Groq (juez) responde $CODIGO_GROQ a una peticion de prueba."
 
-          case "$CODIGO" in
+          case "$CODIGO_GROQ" in
             200)
-              echo "Clave correcta y con cuota. Adelante."
+              echo "Clave del juez correcta y con cuota. Adelante."
               ;;
             401|403)
-              echo "::error::La clave de Groq del robot no vale (codigo $CODIGO)."
+              echo "::error::La clave de Groq del robot no vale (codigo $CODIGO_GROQ)."
               echo "Revisa el secreto GROQ_API_KEY en Settings -> Secrets and variables -> Actions."
               exit 1
               ;;
             429)
-              echo "::error::Groq no tiene cuota ahora mismo (429). NO es un problema de calidad."
+              echo "::error::Groq (el juez) no tiene cuota ahora mismo (429). NO es un problema de calidad."
               echo "La cuota diaria se renueva a medianoche UTC (2:00 en España)."
               echo "Vuelve a lanzarlo entonces desde Actions -> Publicar -> Run workflow."
               echo "Si el cambio no toca ningun prompt, el commit puede llevar [sin evals]."
               exit 1
               ;;
             *)
-              echo "::error::Groq responde $CODIGO. No se lanzan los evals para no tirar 25 minutos."
+              echo "::error::Groq (el juez) responde $CODIGO_GROQ. No se lanzan los evals para no tirar 25 minutos."
               exit 1
               ;;
           esac
 
-      # `-j 1` y las pausas son obligatorias desde que Groq es el proveedor
-      # principal, porque limita por TOKENS POR MINUTO (8.000 en esta cuenta) y
-      # esa cuenta suma la entrada MAS el `max_tokens` pedido, se gaste o no.
+      # `-j 1` y las pausas se fijaron mientras Groq era el proveedor
+      # principal de la app, porque limitaba por TOKENS POR MINUTO (8.000 en
+      # esta cuenta) y esa cuenta sumaba la entrada MAS el `max_tokens`
+      # pedido, se gastara o no.
       #
-      # Las pausas salen de una division, no de una corazonada. `lib/ia.ts` ya
-      # lo dice: "una generacion reserva del orden de 7.000 de esos 8.000
-      # tokens, asi que por minuto cabe UNA generacion, o dos o tres
-      # extracciones".
+      # Las pausas salen de una division, no de una corazonada:
       #
       #   extraerPerfil    ~2.000 tokens/caso -> 25 s entre casos = 4.800 TPM
       #   generarCvYCarta  ~7.000 tokens/caso -> 65 s entre casos = 6.500 TPM
@@ -269,12 +315,22 @@ jobs:
       # Verificado en vivo (ejecucion #3): 26m 55s para acabar en "no
       # concluyente" con medio dataset sin evaluar.
       #
+      # Desde el 23/08/2026 Groq ya no genera ni extrae nada (Cloudflare no
+      # limita por minuto, solo por cupo diario) — pero el juez de las
+      # aserciones llm-rubric SIGUE llamando a Groq una vez por caso, y ese
+      # mismo limite de TOKENS POR MINUTO le sigue aplicando a él. No se ha
+      # tocado `-j 1` ni estas pausas sin poder relanzar los evals para
+      # comprobarlo en vivo (Mar pidió no relanzarlos ahora, 23/08/2026): son
+      # un techo mas conservador de lo que hace falta, no un problema.
+      #
       # `|| true` deja que el eval termine aunque haya casos en rojo: quien
       # decide no es promptfoo, es la puerta del paso siguiente.
       - name: Evals · extraerPerfil (12 casos)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
           PROMPTFOO_MAX_EVAL_TIME_MS: '900000'
         run: |
@@ -286,6 +342,8 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
           PROMPTFOO_MAX_EVAL_TIME_MS: '1800000'
         run: |

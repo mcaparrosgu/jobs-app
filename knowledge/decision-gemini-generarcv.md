@@ -6,6 +6,12 @@ tags: [jobs-app, ia, gemini, decision, paso-17, okf]
 timestamp: 2026-08-21T21:00:00Z
 ---
 
+> **⚠️ SUPERADO el 23/08/2026**: Mar reportó un CV real con datos inventados
+> generado por Gemini. Sustituido por Cloudflare Workers AI — ver
+> [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md). Esta
+> ficha se conserva como historial de por qué se eligió Gemini en su momento,
+> no como estado actual del código.
+
 # El hallazgo que lo motiva
 
 [paso-13-evals.md](paso-13-evals.md) documenta tres relanzamientos seguidos de

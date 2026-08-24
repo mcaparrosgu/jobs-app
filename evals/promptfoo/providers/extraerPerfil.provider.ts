@@ -17,7 +17,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 // `callApi`) en vez de estático arriba del fichero: un `import` estático se
 // adelanta (hoisting) a cualquier otra línea, y `process.env` llegaría vacío.
 function asegurarEntorno(): void {
-  if (process.env.OPENROUTER_API_KEY && process.env.GROQ_API_KEY) return;
+  if (process.env.OPENROUTER_API_KEY && process.env.CLOUDFLARE_API_TOKEN) return;
   try {
     // Node 20.6+. Jobs App corre en Node 24 (ver package.json / entorno).
     process.loadEnvFile(path.join(repoRoot, '.env.local'));

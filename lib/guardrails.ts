@@ -2,9 +2,12 @@
 // lib/ia.ts y lib/verificarCv.ts). Decisión confirmada con Mar: las capas de
 // relevancia, seguridad y moderación se implementan como reglas en código,
 // SIN ninguna llamada nueva a un modelo — docs/05-ia.md ya identifica el
-// límite de tokens/minuto de Groq como el cuello de botella real y rechaza
-// expresamente subir de peldaño por coste y fiabilidad (§3). Detalle completo
-// en knowledge/paso-14-guardrails.md.
+// límite de tokens/minuto de Groq (retirado del todo el 23/08/2026; el
+// principal actual, Cloudflare, no tiene ese mismo límite) como el cuello de
+// botella real en su momento, y rechaza expresamente subir de peldaño por
+// coste y fiabilidad (§3) — el argumento de fondo (menos llamadas a IA es
+// menos superficie de fallo) sigue en pie con cualquier proveedor. Detalle
+// completo en knowledge/paso-14-guardrails.md.
 
 // Caracteres invisibles con los que se parte una palabra sin que se note al
 // leerla: espacios de ancho cero, marca de orden de bytes, guion suave. Un
@@ -45,10 +48,13 @@ function normalizar(texto: string): string {
 // o marcado técnico en vez de prosa.
 
 // 20.000 caracteres son ya un CV larguísimo (unas 3.000 palabras, ocho
-// páginas). Se bajó de 40.000 tras el red team: al modelo solo se le mandan
-// 12.000 (MAXIMO_CARACTERES_CV en lib/ia.ts), así que el resto no servía para
-// nada salvo para gastar cuota — y en Groq, con 8.000 tokens por minuto, una
-// sola petición de 40.000 caracteres ya reventaba el límite del minuto.
+// páginas). Se bajó de 40.000 tras el red team: al modelo solo se le manda
+// una fracción (MAXIMO_CARACTERES_CV en lib/ia.ts), así que el resto no
+// servía para nada salvo para gastar cuota — y en Groq (retirado del todo el
+// 23/08/2026), con 8.000 tokens por minuto, una sola petición de 40.000
+// caracteres ya reventaba el límite del minuto. Cloudflare (el principal
+// actual) no tiene ese límite por minuto, pero el tope se mantiene: menos
+// texto de entrada sigue ayudando a la latencia.
 export const LIMITE_CARACTERES_CV_ENTRADA = 20_000;
 
 // Patrones que casi nunca aparecen en un CV real, y sí en código fuente,

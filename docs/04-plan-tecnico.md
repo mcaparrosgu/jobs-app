@@ -32,6 +32,18 @@
 > privacidad. Detalle en
 > [`knowledge/decision-groq-principal-privacidad.md`](../knowledge/decision-groq-principal-privacidad.md).
 
+> ⚠️ **Actualización (2026-08-23)**: Groq se retiró **del todo** del
+> proyecto (decisión de Mar). El proveedor principal de las dos llamadas a
+> IA es ahora **Cloudflare Workers AI**, con OpenRouter como único
+> respaldo — ya no hay un tercer proveedor en la cascada. El motivo no fue
+> el riesgo de "Preview" que arrastraba Groq desde T25, sino que Mar
+> reportó un CV real con datos inventados generado por Gemini (que ocupaba
+> un hueco aparte solo en `generarCvYCarta`); al investigar el reemplazo se
+> verificó que Cloudflare funciona bien también para `extraerPerfil`, y se
+> decidió unificar ahí y quitar Groq entero en vez de dejarlo como
+> respaldo. Detalle en
+> [`knowledge/decision-cloudflare-generarcv.md`](../knowledge/decision-cloudflare-generarcv.md).
+
 ## 1. Tres opciones de stack
 
 Un **stack** es simplemente la lista de herramientas que trabajan juntas
@@ -128,10 +140,12 @@ del flujo original.
   fichas dentro (filas), y cada ficha con las mismas casillas rellenas
   (columnas). Supabase además trae el sistema de entrada por enlace de un
   solo uso ya resuelto.
-- **OpenRouter** — el servicio que ejecuta el modelo de IA (sustituye a
-  Groq, ver aviso al principio del documento). Le mandas texto por
-  internet y te devuelve texto. Es la pieza que lee el CV pegado y propone
-  puesto y palabras clave, y la que redacta el CV y la carta adaptados.
+- **Cloudflare Workers AI** — el servicio que ejecuta el modelo de IA
+  principal (sustituye a Groq desde el 23/08/2026, ver aviso al principio
+  del documento). Le mandas texto por internet y te devuelve texto. Es la
+  pieza que lee el CV pegado y propone puesto y palabras clave, y la que
+  redacta el CV y la carta adaptados. **OpenRouter** se queda como
+  respaldo, por si Cloudflare falla o agota su cupo diario.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
   el sitio con dirección pública al que entran tus compañeras.
 - **n8n** — un workflow **nuevo e independiente**, `Jobs App · ingesta`,
@@ -410,7 +424,7 @@ de más automáticamente: al llegar al límite se paran, no facturan.
 | :---- | :---- | :---- | :---- |
 | **Vercel** (Hobby) | 100 GB tráfico, 1M peticiones/mes | insignificante | Enorme |
 | **Supabase** | 500 MB datos, 50.000 usuarias activas/mes | 5 usuarias, unos pocos MB | Enorme |
-| **Groq** | **200.000 tokens/día · 8.000 por minuto** (medido en vivo, 20/08/2026) | máx. 25 CVs/día (5 × 5) + extracciones | **Ajustado**: el día da para ~30 documentos y el minuto para uno — ver §6.2 |
+| **Cloudflare Workers AI** | **10.000 "neuronas"/día**, sin tope por minuto (Groq, retirado el 23/08/2026, sí lo tenía — ver §6.2) | máx. 25 CVs/día (5 × 5) + extracciones | Por confirmar en vivo con uso real: cupo nuevo, sin medir todavía cuántas "neuronas" gasta cada documento |
 | **Apify** | 5 $/mes de crédito | 1 ejecución diaria de ingesta | Ajustado, depende del actor |
 | **Gmail** | ~500 envíos/día | máx. 5 avisos/día + accesos | Enorme |
 
@@ -442,6 +456,14 @@ nunca llega a estar 7 días inactivo. Aun así, apúntate que si alguna vez
 ves "proyecto pausado", se arregla con dos clics y no has perdido nada.
 
 ### 6.2 El límite por minuto de Groq cuando varias generáis a la vez
+
+> ⚠️ **Superado el 23/08/2026**: Groq se retiró del todo del proyecto;
+> Cloudflare (su sustituto) no limita por tokens por minuto, solo por cupo
+> diario de "neuronas" (§5). Esta sección se conserva porque explica una
+> lección real (cómo se mide el límite, y el fallo de los evals que causó) y
+> porque **el juez de las aserciones llm-rubric de los evals sigue usando
+> Groq** y sigue sujeto a este mismo límite — pero ya no describe una
+> restricción de la app en producción.
 
 El tope por **tokens por minuto** es estrecho: **8.000**, medido en vivo en
 esta cuenta. Un **token** es un trozo de palabra: la unidad con la que se

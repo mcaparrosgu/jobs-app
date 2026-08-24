@@ -47,7 +47,7 @@ sigue.
 
 | Señal que pide el Paso 17 | Cómo se mide aquí | Columna en `metricas_ia` |
 | :---- | :---- | :---- |
-| **Coste por interacción** | Jobs App no paga por token — Groq y OpenRouter son gratis (`docs/05-ia.md` §5) — así que "coste" no es dinero. Lo que sí aprieta de verdad es el **cupo de tokens por minuto de Groq** (8.000, `docs/04-plan-tecnico.md` §6.2): se guardan los tokens de entrada/salida que informa el proveedor, como proxy de ese cupo. | `tokens_entrada`, `tokens_salida`, `proveedor` |
+| **Coste por interacción** | Jobs App no paga por token — Cloudflare y OpenRouter son gratis (`docs/05-ia.md` §5) — así que "coste" no es dinero. Lo que sí aprieta de verdad es el **cupo diario de "neuronas" de Cloudflare** (10.000/día, `docs/04-plan-tecnico.md` §5; Groq, retirado el 23/08/2026, limitaba en cambio por minuto — ver §6.2): se guardan los tokens de entrada/salida que informa el proveedor, como proxy de ese cupo. | `tokens_entrada`, `tokens_salida`, `proveedor` |
 | **Tiempo de respuesta** | Milisegundos entre que llega la petición al endpoint y se responde, IA incluida. | `duracion_ms` |
 | **Tasa de éxito** | Si la interacción terminó en un documento/perfil válido o no, y por qué no cuando no. | `exito`, `motivo_fallo` |
 | **Guardrail saltado** | Qué capa de `docs/14-guardrails.md` (`lib/guardrails.ts`) se disparó, si alguna: ámbito, inyección, contenido inapropiado, titular inseguro, marcador de relleno. | `guardrail_saltado` |
@@ -60,7 +60,7 @@ distinta (sección 6):
 | :---- | :---- | :---- |
 | `limite_diario` | Se cortó **antes** de llamar a la IA: la usuaria ya había gastado su cupo del día (regla de negocio 5). | No — el sistema funcionando como está diseñado. |
 | `error_contenido` | La IA respondió, pero el resultado no pasó `validarGeneracion`/`validarPerfil` (texto corto, marcador sin resolver, contenido inapropiado…). | A veces — ver Fallo 1 y 5 de `docs/05-ia.md` §6: parte de esto es esperable. |
-| `error_proveedor` | Ni Groq ni el respaldo de OpenRouter respondieron a tiempo o con éxito. | Depende del volumen — ver sección 6. |
+| `error_proveedor` | Ni Cloudflare ni el respaldo de OpenRouter respondieron a tiempo o con éxito. | Depende del volumen — ver sección 6. |
 | `sin_perfil_o_oferta` | Faltaba el CV de la usuaria o la oferta ya no existía. | Casi siempre un caso límite legítimo (oferta borrada, perfil incompleto), no una avería. |
 
 ## 2. Alertas
@@ -98,7 +98,7 @@ diaria completa ni tapar un fallo real de la ingesta — igual que ya hacía
 | :---- | :---- | :---- |
 | Caída de disponibilidad | ≥ 3 intentos de generación y menos de la mitad terminan bien (excluyendo `limite_diario`) | Con este volumen (~2 generaciones/día por usuaria activa), exigir un solo fallo dispararía ruido con cualquier 429 puntual; menos del 50 % con al menos 3 intentos ya no es una mala racha |
 | Escalada a humano | ≥ 1 fila con `escalado_humano = true` | Son 3 fallos **seguidos** en la misma oferta (Paso 14) — ya es raro por diseño, así que ni una sola merece esperar a la revisión semanal |
-| Proveedor caído | ≥ 3 fallos con `motivo_fallo = 'error_proveedor'` | Un 429 aislado lo absorben los reintentos de `lib/cola.ts`; tres en el mismo día sugiere que Groq y el respaldo de OpenRouter están fallando a la vez |
+| Proveedor caído | ≥ 3 fallos con `motivo_fallo = 'error_proveedor'` | Un 429 aislado lo absorben los reintentos de `lib/cola.ts`; tres en el mismo día sugiere que Cloudflare y el respaldo de OpenRouter están fallando a la vez |
 | Guardrails en racha | ≥ 5 filas con `guardrail_saltado` distinto de vacío | Un intento de inyección suelto ya se registra y no bloquea (`docs/05-ia.md` §6.2); varios en el mismo día es la señal de abuso o ataque de `seguridad/red-team-opus.md` |
 
 Si se cumple cualquiera, llega un email a Mar con el motivo y el recuento.
@@ -178,7 +178,7 @@ ejemplo, todos los lunes).
    veredicto (`docs/07-emergencia.md` §3): un ROJO real necesita la
    sección 5 de este documento; un NO CONCLUYENTE solo necesita
    relanzarse.
-6. **(2 min) Groq y Supabase** — un vistazo a que ninguno de los dos
+6. **(2 min) Cloudflare y Supabase** — un vistazo a que ninguno de los dos
    paneles muestre nada raro (cupo agotado de forma sostenida, proyecto
    pausado). El detalle de cada aviso está en `docs/07-emergencia.md` §4.
 
@@ -266,7 +266,7 @@ diferencia:
 | `error_contenido` disperso, distinto motivo cada vez (a veces un CV corto, otras un marcador de relleno) | El **mismo** `motivo_fallo` repitiéndose para la **misma** oferta o el **mismo** tipo de entrada — es la señal de `escalado_humano`, ya automática |
 | Un aviso de guardrail suelto en la semana | Una racha de guardrails el mismo día (umbral de la sección 2) — probablemente alguien probando los límites a propósito |
 | `limite_diario` que aparece a diario cerca del máximo de 5 | `limite_diario` que aparece **constantemente muy por debajo** de lo esperado — indicaría que el contador está mal, no que hay mucho uso |
-| Duración algo por encima de la media un día concreto | Duración media al alza **semana tras semana** en la consulta de la sección 4 — señal de que Groq o el respaldo se están degradando de verdad, no un pico de tráfico |
+| Duración algo por encima de la media un día concreto | Duración media al alza **semana tras semana** en la consulta de la sección 4 — señal de que Cloudflare o el respaldo se están degradando de verdad, no un pico de tráfico |
 
 La regla corta: **un dato suelto es ruido; un patrón que se repite —misma
 causa, mismos síntomas, o una tendencia que persiste de una semana a la
