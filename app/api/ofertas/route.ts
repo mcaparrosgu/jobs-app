@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
-import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
+import { haceDiasEnMadridISO, inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO } from '@/lib/generaciones';
 import { normalizarPalabrasClave } from '@/lib/palabras-clave';
 import { createClient } from '@/lib/supabase/server';
+
+// Añadido el 23/08/2026 (T85), a petición de Mar: una oferta se queda
+// visible 15 días desde que se encontró, aunque siga coincidiendo con el
+// perfil — así hay margen para pensárselo sin que la lista crezca sin fin.
+// Pasados los 15 días desaparece de verdad (no es solo un separador visual).
+const DIAS_CADUCIDAD_OFERTAS = 15;
 
 // Quita caracteres que romperían la sintaxis del filtro .or() de Supabase.
 function limpiarTermino(termino: string): string {
@@ -21,7 +27,7 @@ export async function GET() {
 
   const { data: perfil, error: errorPerfil } = await supabase
     .from('perfiles')
-    .select('puesto, palabras_clave, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('puestos, palabras_clave, usar_experiencia_cv, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -30,7 +36,7 @@ export async function GET() {
     return NextResponse.json({ error: 'No se pudo leer tu perfil.' }, { status: 500 });
   }
 
-  if (!perfil || !perfil.puesto) {
+  if (!perfil || !perfil.puestos || perfil.puestos.length === 0) {
     return NextResponse.json({ sinPerfil: true, huboIngestaHoy: true, ofertas: [] });
   }
 
@@ -52,7 +58,7 @@ export async function GET() {
   // enteros ("Grado en Administración y Dirección de Empresas") no coinciden
   // con ninguna oferta. Ver lib/palabras-clave.ts.
   const terminos = normalizarPalabrasClave([
-    perfil.puesto,
+    ...perfil.puestos,
     ...(perfil.palabras_clave ?? []),
     ...(perfil.usar_experiencia_cv
       ? [...(perfil.empresas_cv ?? []), ...(perfil.titulos_cv ?? [])]
@@ -70,6 +76,7 @@ export async function GET() {
   const { data: ofertas, error: errorOfertas } = await supabase
     .from('ofertas')
     .select('id, titulo, empresa, enlace, ingerida_en')
+    .gte('ingerida_en', haceDiasEnMadridISO(DIAS_CADUCIDAD_OFERTAS))
     .or(filtro)
     .order('ingerida_en', { ascending: false })
     .limit(50);
@@ -83,7 +90,10 @@ export async function GET() {
   let idsConInteres = new Set<string>();
   // Estado de preparación del CV y la carta de cada oferta (Hito 6): es lo que
   // mueve el indicador de "preparando…" y, más adelante, el botón de descarga.
-  const generaciones = new Map<string, { estado: string; avisos: string[]; error: string | null }>();
+  const generaciones = new Map<
+    string,
+    { estado: string; avisos: string[]; error: string | null; rehechos: number }
+  >();
 
   if (ids.length > 0) {
     const { data: intereses, error: errorIntereses } = await supabase
@@ -100,7 +110,7 @@ export async function GET() {
 
     const { data: filas, error: errorGeneraciones } = await supabase
       .from('generaciones')
-      .select('oferta_id, estado, avisos, error_mensaje')
+      .select('oferta_id, estado, avisos, error_mensaje, rehechos')
       .eq('user_id', user.id)
       .in('oferta_id', ids);
 
@@ -112,6 +122,7 @@ export async function GET() {
           estado: fila.estado,
           avisos: fila.avisos ?? [],
           error: fila.error_mensaje,
+          rehechos: fila.rehechos ?? 0,
         });
       }
     }
@@ -122,6 +133,7 @@ export async function GET() {
     titulo: o.titulo,
     empresa: o.empresa,
     enlace: o.enlace,
+    ingerida_en: o.ingerida_en,
     interesada: idsConInteres.has(o.id),
     generacion: generaciones.get(o.id) ?? null,
   }));

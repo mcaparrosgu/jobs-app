@@ -16,9 +16,7 @@ function peticionPost(cuerpo: unknown) {
 
 const BODY_VALIDO = {
   nombre: 'Ana García',
-  puesto: 'Project Manager',
-  telefono: '',
-  enlace: '',
+  puestos: ['Project Manager'],
   palabras_clave: ['Project Manager', 'SAP'],
   cv_texto: 'Texto del CV',
   usar_experiencia_cv: false,
@@ -42,7 +40,7 @@ describe('GET /api/perfil', () => {
   });
 
   it('devuelve el perfil de la usuaria con sesión', async () => {
-    const perfilGuardado = { nombre: 'Ana García', puesto: 'Project Manager', palabras_clave: ['SAP'] };
+    const perfilGuardado = { nombre: 'Ana García', puestos: ['Project Manager'], palabras_clave: ['SAP'] };
     const { cliente, llamadasPorTabla } = crearClienteFalso({
       user: USUARIA,
       tablas: { perfiles: [{ data: perfilGuardado, error: null }] },
@@ -100,11 +98,11 @@ describe('POST /api/perfil — validación', () => {
     expect(respuesta.status).toBe(400);
   });
 
-  it('rechaza si falta el puesto', async () => {
+  it('rechaza si no hay ningún puesto marcado', async () => {
     const { cliente } = crearClienteFalso({ user: USUARIA });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
 
-    const respuesta = await POST(peticionPost({ ...BODY_VALIDO, puesto: '' }));
+    const respuesta = await POST(peticionPost({ ...BODY_VALIDO, puestos: [] }));
 
     expect(respuesta.status).toBe(400);
     expect((await respuesta.json()).error).toMatch(/puesto/i);
@@ -162,20 +160,18 @@ describe('POST /api/perfil — guardado y permisos', () => {
     expect(filaGuardada.user_id).toBe(USUARIA.id);
   });
 
-  it('recorta espacios del nombre y convierte teléfono/enlace vacíos en null', async () => {
+  it('recorta espacios del nombre', async () => {
     const { cliente, llamadasPorTabla } = crearClienteFalso({
       user: USUARIA,
       tablas: { perfiles: [{ data: null, error: null }] },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
 
-    await POST(peticionPost({ ...BODY_VALIDO, nombre: '  Ana García  ', telefono: '', enlace: '   ' }));
+    await POST(peticionPost({ ...BODY_VALIDO, nombre: '  Ana García  ' }));
 
     const llamadaUpsert = llamadasPorTabla.perfiles[0].find((l) => l.metodo === 'upsert');
     const fila = llamadaUpsert?.args[0] as Record<string, unknown>;
     expect(fila.nombre).toBe('Ana García');
-    expect(fila.telefono).toBeNull();
-    expect(fila.enlace).toBeNull();
   });
 
   it('devuelve 500 si falla el guardado', async () => {
@@ -209,7 +205,7 @@ describe('POST /api/perfil — empresas y titulaciones ancladas al CV', () => {
     await POST(
       peticionPost({
         nombre: 'Mar',
-        puesto: 'Camarera',
+        puestos: ['Camarera'],
         palabras_clave: ['sala'],
         cv_texto: CV,
         empresas_cv: ['Bar Manolo', 'Google', 'McKinsey'],
@@ -234,7 +230,7 @@ describe('POST /api/perfil — empresas y titulaciones ancladas al CV', () => {
     const respuesta = await POST(
       peticionPost({
         nombre: 'Mar',
-        puesto: 'Camarera',
+        puestos: ['Camarera'],
         palabras_clave: ['sala'],
         cv_texto: 'a'.repeat(25_000),
       }),

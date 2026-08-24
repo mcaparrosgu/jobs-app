@@ -58,17 +58,21 @@ primera prueba, un grupo cerrado y conocido de 5 personas). Cada usuaria:
 3. **Contar su perfil** (solo la primera vez, o cuando quiera actualizarlo
    más adelante) — pensado para llevarle poco tiempo. Pega el texto de su
    CV actual en un espacio de texto, y el sistema **le propone
-   automáticamente** un puesto y unas palabras clave a partir de lo que
-   lee en ese CV, en vez de pedirle que los escriba de cero. La usuaria
-   solo tiene que revisar esa propuesta: quitar lo que no le representa y
-   añadir lo que falte. También puede indicar si quiere que, a la hora de
+   automáticamente** un puesto principal con varias alternativas (que
+   puede marcar con una casilla cada una, además de añadir las suyas
+   propias) y unas palabras clave a partir de lo que lee en ese CV, en vez
+   de pedirle que los escriba de cero. La usuaria solo tiene que revisar
+   esa propuesta: quitar lo que no le representa y añadir lo que falte
+   (con autocompletado, sobre una lista más amplia de palabras clave
+   relacionadas que también propone la IA). También puede indicar si
+   quiere que, a la hora de
    valorar qué ofertas encajan con ella, se tenga en cuenta la experiencia
    que aparece en ese CV pegado (además de las palabras clave). Los años
    de experiencia se rellenan a mano, es el único dato que no se propone
    solo.
 4. **Ver ofertas.** Pulsa "Buscar" y, en cuestión de segundos, ve una
-   lista de ofertas de empleo remoto asalariado que coinciden con su
-   puesto y sus palabras clave — de cualquier sector, no solo tecnología.
+   lista de ofertas de empleo remoto asalariado que coinciden con sus
+   puestos y sus palabras clave — de cualquier sector, no solo tecnología.
    Cada oferta muestra al menos su título, la empresa y un enlace al
    anuncio original. Ninguna oferta trae todavía un CV ni una carta
    asociados.
@@ -127,16 +131,22 @@ En lenguaje natural, lo que el sistema necesita recordar:
   identifica (no hay nombre de usuario ni contraseña que guardar).
 - **Perfil de búsqueda**, por usuaria: su nombre completo (tal como debe
   aparecer en el CV y la carta que se generen — un dato suyo, no algo que
-  la IA adivine), el puesto que busca y sus palabras clave (propuestos
-  automáticamente al leer el CV pegado, y luego editables por la usuaria
-  — puede añadir o quitar los que quiera), el texto de su CV tal como lo
-  pegó, y si quiere o no que ese CV se tenga en cuenta al valorar qué
-  ofertas le encajan. Un perfil por usuaria — al actualizarlo,
-  sustituye al anterior para las búsquedas futuras (no afecta a lo que ya
-  se generó, ver más abajo).
+  la IA adivine), **uno o varios puestos** que busca y sus palabras clave
+  (propuestos automáticamente al leer el CV pegado — la IA sugiere un
+  puesto principal más entre 3 y 5 alternativos, y una lista ampliada de
+  palabras clave relacionadas para autocompletar — y luego editables por
+  la usuaria: puede marcar los puestos que le interesen, añadir los suyos
+  propios, y añadir o quitar las palabras clave que quiera; desde el
+  23/08/2026, marcar varios puestos a la vez amplía las ofertas que
+  puede encontrar), el texto de su CV tal como lo pegó, y si quiere o no
+  que ese CV se tenga en cuenta al valorar qué ofertas le encajan. Un
+  perfil por usuaria — al actualizarlo, sustituye al anterior para las
+  búsquedas futuras (no afecta a lo que ya se generó, ver más abajo).
 - **Ofertas de empleo**: compartidas entre todas las usuarias (no son
   propiedad de una persona), con al menos título, empresa y enlace al
-  anuncio original. Se renuevan una vez al día.
+  anuncio original. Se renuevan una vez al día, y cada una deja de
+  mostrarse pasados 15 días desde que se encontró (regla de negocio 11),
+  aunque siga coincidiendo con algún perfil.
 - **Selección de interés**, por usuaria y por oferta: si esa usuaria
   marcó "me interesa" en esa oferta concreta o no. Es lo que decide si
   existe o no un CV/carta para esa combinación.
@@ -157,14 +167,19 @@ En lenguaje natural, lo que el sistema necesita recordar:
 2. **Una oferta solo tiene CV y carta si la usuaria la marcó como "me
    interesa" explícitamente.** No se genera nada por defecto ni de forma
    automática al aparecer en la lista.
-3. **El emparejamiento entre perfil y ofertas se basa en el puesto y las
+3. **El emparejamiento entre perfil y ofertas se basa en los puestos y las
    palabras clave** que queden en el perfil de la usuaria, más —si ella lo
-   pide explícitamente— la experiencia que aparece en el CV que pegó.
-4. **El puesto y las palabras clave se proponen automáticamente al pegar
-   el CV**, para que la usuaria no tenga que escribirlos desde cero. La
-   usuaria tiene la última palabra: puede añadir o quitar cualquiera antes
-   de guardar su perfil, y lo que quede guardado es lo único que se usa
-   para emparejar con las ofertas.
+   pide explícitamente— la experiencia que aparece en el CV que pegó. Una
+   oferta que coincida con cualquiera de los puestos marcados o cualquier
+   palabra clave cuenta como una coincidencia.
+4. **El puesto principal, varios puestos alternativos y las palabras clave
+   se proponen automáticamente al pegar el CV** (más una lista ampliada de
+   palabras clave sugeridas para el autocompletado del paso siguiente),
+   para que la usuaria no tenga que escribirlos desde cero. La usuaria
+   tiene la última palabra: puede marcar o desmarcar los puestos que le
+   interesen, añadir los suyos propios, y añadir o quitar cualquier
+   palabra clave antes de guardar su perfil — lo que quede guardado es lo
+   único que se usa para emparejar con las ofertas.
 5. **Existe un máximo de 5 CVs+cartas generados por usuaria y día.**
    Alcanzado ese máximo, el sistema impide generar más ese día y se lo
    explica a la usuaria; por debajo del máximo, la generación funciona con
@@ -177,7 +192,14 @@ En lenguaje natural, lo que el sistema necesita recordar:
    coinciden con su propio perfil.
 7. **Un CV/carta generado es definitivo en el momento en que se genera.**
    Cambios posteriores en el perfil o el CV pegado no regeneran
-   automáticamente lo que ya existía.
+   automáticamente lo que ya existía. La única excepción es que la propia
+   usuaria pida explícitamente "Rehacer" (añadido el 23/08/2026, T93): puede
+   escribir qué le gustaría cambiar (tono, estilo, longitud...) y la IA
+   redacta otra vez el CV y la carta de esa oferta con esa instrucción,
+   reemplazando el documento anterior. "Rehacer" tiene su propio límite —2
+   veces por documento— **aparte** del máximo diario de la regla 5: no gasta
+   ese cupo. Detalle en
+   [`knowledge/decision-rehacer-cv-carta.md`](../knowledge/decision-rehacer-cv-carta.md).
 8. **El aviso por email solo se envía si, ese día, hay ofertas nuevas Y la
    usuaria ya tiene un perfil guardado.** Si falta cualquiera de las dos
    condiciones, no se envía nada ese día.
@@ -197,6 +219,11 @@ En lenguaje natural, lo que el sistema necesita recordar:
 10. **Los datos de cada usuaria se conservan durante un mes** (perfil, CV
     pegado, CVs/cartas generados); pasado ese tiempo se eliminan
     automáticamente.
+11. **Una oferta deja de mostrarse a los 15 días de haberse encontrado**
+    (añadido el 23/08/2026), aunque siga coincidiendo con el perfil de la
+    usuaria — para que la lista no crezca sin límite. Mientras tanto, las
+    ofertas se agrupan visualmente por el día en que se encontraron, de
+    más recientes a más antiguas.
 
 ## 6. Casos límite
 
@@ -265,9 +292,11 @@ Remitido en detalle a `docs/02-mvp.md` sección 3 (Versión 2). En resumen,
 quedan fuera de este MVP:
 
 - Sugerencias de puesto mientras la usuaria escribe letra a letra (la
-  propuesta automática de puesto y palabras clave ocurre una vez, al
-  pegar el CV — no es un autocompletado en vivo), y varios puestos a la
-  vez en un mismo perfil.
+  propuesta automática de puestos y palabras clave ocurre una vez, al
+  pegar el CV — no es un autocompletado en vivo de puestos; el
+  autocompletado que sí existe, desde el 23/08/2026, es solo para añadir
+  palabras clave a mano, sobre la lista ampliada que también propone la
+  IA al analizar el CV).
 - Permitir varias búsquedas o generaciones en paralelo con lógica de
   detección de duplicados.
 - Mensajes de error con sugerencias accionables (ampliar palabras clave,

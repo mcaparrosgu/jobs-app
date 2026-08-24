@@ -116,9 +116,13 @@ ahora la carta) a cada oferta.
 
 Lo que queda fuera del MVP porque el recorrido crítico funciona sin ello:
 
-- **B2 · Varios puestos a la vez en un mismo perfil**, y sugerencias
-  mientras se escribe letra a letra (la propuesta automática al pegar el
-  CV, ver arriba, ya cubre el objetivo de fondo con menos esfuerzo).
+- ~~**B2 · Varios puestos a la vez en un mismo perfil**~~ — construido el
+  23/08/2026, antes de lo previsto: Mar lo pidió tras usar la app para
+  ampliar las ofertas que encuentra cada usuaria (`docs/03-spec.md` §4-5,
+  `docs/06-tareas.md` T86-T90). Sigue aparcada la otra mitad de B2:
+  sugerencias de puesto mientras se escribe letra a letra (la propuesta
+  automática al pegar el CV sigue cubriendo el objetivo de fondo con menos
+  esfuerzo).
 - **C1 · Búsquedas en paralelo cuando no hay campos duplicados.** Lógica
   fina que no aporta nada si de partida solo se permite una búsqueda a la
   vez por usuaria.

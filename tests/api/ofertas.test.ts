@@ -51,7 +51,7 @@ describe('GET /api/ofertas — casos límite (F1)', () => {
   it('indica sinPerfil cuando el perfil existe pero no tiene puesto', async () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
-      tablas: { perfiles: [{ data: { puesto: null, palabras_clave: [] }, error: null }] },
+      tablas: { perfiles: [{ data: { puestos: null, palabras_clave: [] }, error: null }] },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
 
@@ -74,7 +74,7 @@ describe('GET /api/ofertas — casos límite (F1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [{ count: null, error: new Error('conexión perdida') }],
       },
     });
@@ -89,7 +89,7 @@ describe('GET /api/ofertas — casos límite (F1)', () => {
       // "de" es una palabra vacía: normalizarPalabrasClave la descarta y no
       // queda ningún término, así que no llega a consultar ofertas por filtro.
       tablas: {
-        perfiles: [{ data: { puesto: 'de', palabras_clave: [] }, error: null }],
+        perfiles: [{ data: { puestos: ['de'], palabras_clave: [] }, error: null }],
         ofertas: [{ count: 0, error: null }],
       },
     });
@@ -104,7 +104,7 @@ describe('GET /api/ofertas — casos límite (F1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'de', palabras_clave: [] }, error: null }],
+        perfiles: [{ data: { puestos: ['de'], palabras_clave: [] }, error: null }],
         ofertas: [{ count: 4, error: null }],
       },
     });
@@ -119,7 +119,7 @@ describe('GET /api/ofertas — casos límite (F1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 1, error: null },
           { data: null, error: new Error('conexión perdida') },
@@ -137,7 +137,7 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
           {
@@ -147,7 +147,12 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         ],
         intereses: [{ data: [{ oferta_id: 'oferta-1' }], error: null }],
         generaciones: [
-          { data: [{ oferta_id: 'oferta-1', estado: 'listo', avisos: [], error_mensaje: null }], error: null },
+          {
+            data: [
+              { oferta_id: 'oferta-1', estado: 'listo', avisos: [], error_mensaje: null, rehechos: 1 },
+            ],
+            error: null,
+          },
           { count: 2, error: null },
         ],
       },
@@ -164,8 +169,9 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         titulo: 'PM en Acme',
         empresa: 'Acme',
         enlace: 'https://x',
+        ingerida_en: '2026-01-01',
         interesada: true,
-        generacion: { estado: 'listo', avisos: [], error: null },
+        generacion: { estado: 'listo', avisos: [], error: null, rehechos: 1 },
       },
     ]);
   });
@@ -174,7 +180,7 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
           {
@@ -198,7 +204,7 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     const { cliente, llamadasPorTabla } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
           { data: [{ id: 'oferta-1', titulo: 'PM', empresa: 'Acme', enlace: 'x', ingerida_en: '2026-01-01' }], error: null },
@@ -221,7 +227,7 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
           { data: [{ id: 'oferta-1', titulo: 'PM', empresa: 'Acme', enlace: 'x', ingerida_en: '2026-01-01' }], error: null },
@@ -240,11 +246,32 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     expect(cuerpo.ofertas[0].generacion).toBeNull();
   });
 
+  it('las ofertas de hace más de 15 días quedan fuera de la consulta (caducidad, T85)', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
+        ofertas: [
+          { count: 5, error: null },
+          { data: [], error: null },
+        ],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await GET();
+
+    const llamadaGte = llamadasPorTabla.ofertas[1].find((l) => l.metodo === 'gte');
+    expect(llamadaGte?.args[0]).toBe('ingerida_en');
+    expect(() => new Date(llamadaGte?.args[1] as string)).not.toThrow();
+    expect(new Date(llamadaGte?.args[1] as string).toString()).not.toBe('Invalid Date');
+  });
+
   it('marca limiteAlcanzado cuando la usuaria ya gastó su cupo diario', async () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,
       tablas: {
-        perfiles: [{ data: { puesto: 'Project Manager', palabras_clave: ['SAP'] }, error: null }],
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 1, error: null },
           { data: [], error: null }, // sin ofertas que coincidan: ids vacío, no hay join con intereses/generaciones

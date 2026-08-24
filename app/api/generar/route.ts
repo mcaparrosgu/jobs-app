@@ -7,7 +7,7 @@
 // recarga, la pantalla sigue sabiendo por dónde iba.
 
 import { NextResponse } from 'next/server';
-import { esErrorDeContenido, generarCvYCarta } from '@/lib/ia';
+import { esErrorDeContenido, generarCvYCarta, puestoMasRelevante } from '@/lib/ia';
 import { verificarCv } from '@/lib/verificarCv';
 import { inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO, MENSAJE_LIMITE } from '@/lib/generaciones';
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
   // 4. Reunir lo que necesita la IA: el CV de la usuaria y la oferta.
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('cv_texto, puesto, empresas_cv, titulos_cv')
+    .select('cv_texto, puestos, empresas_cv, titulos_cv')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -225,7 +225,8 @@ export async function POST(request: Request) {
 
   // 5. Generar, verificar y guardar.
   try {
-    const generado = await generarCvYCarta(perfil.cv_texto, perfil.puesto ?? '', {
+    const puestoPerfil = puestoMasRelevante(perfil.puestos ?? [], oferta.titulo);
+    const generado = await generarCvYCarta(perfil.cv_texto, puestoPerfil, {
       titulo: oferta.titulo,
       empresa: oferta.empresa,
       descripcion: oferta.descripcion,

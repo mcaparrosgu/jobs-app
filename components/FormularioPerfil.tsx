@@ -2,13 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { esPalabraClaveLarga } from '@/lib/palabras-clave';
+import { esPalabraClaveLarga, paraComparar } from '@/lib/palabras-clave';
 
 type PerfilGuardado = {
   nombre: string | null;
-  puesto: string | null;
-  telefono: string | null;
-  enlace: string | null;
+  puestos: string[] | null;
   palabras_clave: string[];
   empresas_cv: string[];
   titulos_cv: string[];
@@ -19,10 +17,20 @@ type PerfilGuardado = {
 export default function FormularioPerfil({ perfilInicial }: { perfilInicial: PerfilGuardado | null }) {
   const [cvTexto, setCvTexto] = useState(perfilInicial?.cv_texto ?? '');
   const [nombre, setNombre] = useState(perfilInicial?.nombre ?? '');
-  const [puesto, setPuesto] = useState(perfilInicial?.puesto ?? '');
-  const [telefono, setTelefono] = useState(perfilInicial?.telefono ?? '');
-  const [enlace, setEnlace] = useState(perfilInicial?.enlace ?? '');
+  // T88/T90 · `puestosSugeridos` son las casillas que se ven (el principal
+  // de la IA más las alternativas, o los puestos ya guardados si todavía no
+  // se ha vuelto a analizar); `puestosSeleccionados` es el subconjunto
+  // marcado, que es lo único que se guarda. Añadir un puesto a mano lo mete
+  // en las dos listas a la vez, marcado — así siempre hay una única casilla
+  // por puesto, venga de la IA o de la usuaria.
+  const [puestosSugeridos, setPuestosSugeridos] = useState<string[]>(perfilInicial?.puestos ?? []);
+  const [puestosSeleccionados, setPuestosSeleccionados] = useState<string[]>(perfilInicial?.puestos ?? []);
+  const [nuevoPuesto, setNuevoPuesto] = useState('');
   const [palabrasClave, setPalabrasClave] = useState<string[]>(perfilInicial?.palabras_clave ?? []);
+  // T86/T87 · Sugerencias más amplias que trae la IA al analizar el CV, solo
+  // para alimentar el autocompletado del campo de abajo — no se guardan en
+  // el perfil, no son las palabras clave en sí.
+  const [palabrasClaveSugeridas, setPalabrasClaveSugeridas] = useState<string[]>([]);
   const [empresasCv, setEmpresasCv] = useState<string[]>(perfilInicial?.empresas_cv ?? []);
   const [titulosCv, setTitulosCv] = useState<string[]>(perfilInicial?.titulos_cv ?? []);
   const [usarExperienciaCv, setUsarExperienciaCv] = useState(perfilInicial?.usar_experiencia_cv ?? false);
@@ -48,8 +56,13 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       if (!respuesta.ok) {
         throw new Error(datos.error ?? 'No se pudo analizar el CV.');
       }
-      setPuesto(datos.puesto);
+      // Un análisis nuevo sustituye a las sugerencias anteriores, igual que
+      // ya hacía siempre con las palabras clave: la usuaria revisa y ajusta
+      // lo que quede antes de guardar (regla de negocio 4).
+      setPuestosSugeridos(datos.puestos_sugeridos);
+      setPuestosSeleccionados([datos.puesto]);
       setPalabrasClave(datos.palabras_clave);
+      setPalabrasClaveSugeridas(datos.palabras_clave_sugeridas ?? []);
       setEmpresasCv(datos.empresas_cv);
       setTitulosCv(datos.titulos_cv);
     } catch (err) {
@@ -59,12 +72,32 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
     }
   }
 
+  function alternarPuesto(puesto: string) {
+    setPuestosSeleccionados((actuales) =>
+      actuales.includes(puesto) ? actuales.filter((p) => p !== puesto) : [...actuales, puesto],
+    );
+  }
+
+  function anadirPuesto() {
+    const puesto = nuevoPuesto.trim();
+    if (puesto.length === 0) {
+      setNuevoPuesto('');
+      return;
+    }
+    if (!puestosSugeridos.some((p) => paraComparar(p) === paraComparar(puesto))) {
+      setPuestosSugeridos((actuales) => [...actuales, puesto]);
+    }
+    setPuestosSeleccionados((actuales) =>
+      actuales.some((p) => paraComparar(p) === paraComparar(puesto)) ? actuales : [...actuales, puesto],
+    );
+    setNuevoPuesto('');
+  }
+
   function quitarPalabra(palabra: string) {
     setPalabrasClave((actuales) => actuales.filter((p) => p !== palabra));
   }
 
-  function anadirPalabra() {
-    const palabra = nuevaPalabra.trim();
+  function anadirPalabraConcreta(palabra: string) {
     if (palabra.length === 0 || palabrasClave.includes(palabra)) {
       setNuevaPalabra('');
       return;
@@ -80,13 +113,31 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
     setNuevaPalabra('');
   }
 
+  function anadirPalabra() {
+    anadirPalabraConcreta(nuevaPalabra.trim());
+  }
+
+  // T87 · El autocompletado: sugerencias de `palabrasClaveSugeridas` (T86)
+  // que contienen lo que lleva escrito, sin las que ya están añadidas. Se
+  // limita a 6 para que la lista no tape el resto del formulario.
+  const sugerenciasVisibles =
+    nuevaPalabra.trim().length === 0
+      ? []
+      : palabrasClaveSugeridas
+          .filter((sugerida) => !palabrasClave.includes(sugerida))
+          .filter((sugerida) => paraComparar(sugerida).includes(paraComparar(nuevaPalabra.trim())))
+          .slice(0, 6);
+
   async function guardarPerfil() {
     if (nombre.trim().length === 0) {
       setMensaje({ tipo: 'error', texto: 'Escribe tu nombre completo: es lo primero que verá quien lea tu CV.' });
       return;
     }
-    if (puesto.trim().length === 0 || palabrasClave.length === 0) {
-      setMensaje({ tipo: 'error', texto: 'Analiza tu CV primero, o rellena el puesto y al menos una palabra clave.' });
+    if (puestosSeleccionados.length === 0 || palabrasClave.length === 0) {
+      setMensaje({
+        tipo: 'error',
+        texto: 'Analiza tu CV primero, o marca al menos un puesto y añade al menos una palabra clave.',
+      });
       return;
     }
 
@@ -98,9 +149,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre,
-          puesto,
-          telefono,
-          enlace,
+          puestos: puestosSeleccionados,
           palabras_clave: palabrasClave,
           empresas_cv: empresasCv,
           titulos_cv: titulosCv,
@@ -134,38 +183,6 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
       />
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="telefono" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Teléfono <span className="font-normal text-zinc-400">(opcional)</span>
-          </label>
-          <input
-            id="telefono"
-            type="tel"
-            value={telefono}
-            onChange={(evento) => setTelefono(evento.target.value)}
-            placeholder="+34 600 000 000"
-            className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-          />
-        </div>
-        <div>
-          <label htmlFor="enlace" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            LinkedIn u otro enlace <span className="font-normal text-zinc-400">(opcional)</span>
-          </label>
-          <input
-            id="enlace"
-            type="text"
-            value={enlace}
-            onChange={(evento) => setEnlace(evento.target.value)}
-            placeholder="linkedin.com/in/tu-perfil"
-            className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-          />
-        </div>
-      </div>
-      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        Se muestran junto a tu email en la cabecera del CV y la carta.
-      </p>
-
       <label htmlFor="cv" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Tu CV
       </label>
@@ -183,20 +200,51 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         disabled={cvTexto.trim().length === 0 || analizando}
         className="mt-3 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
       >
-        {analizando ? 'Analizando tu CV…' : puesto ? 'Volver a analizar con la IA' : 'Analizar con la IA'}
+        {analizando ? 'Analizando tu CV…' : puestosSugeridos.length > 0 ? 'Volver a analizar con la IA' : 'Analizar con la IA'}
       </button>
 
-      <label htmlFor="puesto" className="mt-8 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Puesto
-      </label>
-      <input
-        id="puesto"
-        type="text"
-        value={puesto}
-        onChange={(evento) => setPuesto(evento.target.value)}
-        placeholder="Aparecerá aquí al analizar tu CV"
-        className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-      />
+      <label className="mt-8 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Puestos</label>
+      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        Marca los que te interesen: cuantos más, más ofertas encontrarás.
+      </p>
+      {puestosSugeridos.length > 0 && (
+        <div className="mt-2 flex flex-col gap-1.5">
+          {puestosSugeridos.map((puestoSugerido) => (
+            <label key={puestoSugerido} className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+              <input
+                type="checkbox"
+                checked={puestosSeleccionados.includes(puestoSugerido)}
+                onChange={() => alternarPuesto(puestoSugerido)}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              {puestoSugerido}
+            </label>
+          ))}
+        </div>
+      )}
+      <div className="mt-2 flex gap-2">
+        <input
+          type="text"
+          value={nuevoPuesto}
+          onChange={(evento) => setNuevoPuesto(evento.target.value)}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Enter') {
+              evento.preventDefault();
+              anadirPuesto();
+            }
+          }}
+          placeholder="Añadir otro puesto"
+          className="flex-1 rounded-lg border border-zinc-300 bg-white p-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+        />
+        <button
+          type="button"
+          onClick={anadirPuesto}
+          aria-label="Añadir puesto"
+          className="rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+        >
+          Añadir
+        </button>
+      </div>
 
       <label className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Palabras clave
@@ -219,27 +267,46 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
           </span>
         ))}
       </div>
-      <div className="mt-2 flex gap-2">
-        <input
-          type="text"
-          value={nuevaPalabra}
-          onChange={(evento) => setNuevaPalabra(evento.target.value)}
-          onKeyDown={(evento) => {
-            if (evento.key === 'Enter') {
-              evento.preventDefault();
-              anadirPalabra();
-            }
-          }}
-          placeholder="Añadir palabra clave"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white p-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-        />
-        <button
-          type="button"
-          onClick={anadirPalabra}
-          className="rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-        >
-          Añadir
-        </button>
+      <div className="relative mt-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={nuevaPalabra}
+            onChange={(evento) => setNuevaPalabra(evento.target.value)}
+            onKeyDown={(evento) => {
+              if (evento.key === 'Enter') {
+                evento.preventDefault();
+                anadirPalabra();
+              }
+            }}
+            placeholder="Añadir palabra clave"
+            autoComplete="off"
+            className="flex-1 rounded-lg border border-zinc-300 bg-white p-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          />
+          <button
+            type="button"
+            onClick={anadirPalabra}
+            aria-label="Añadir palabra clave"
+            className="rounded-lg border border-zinc-300 px-3 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+          >
+            Añadir
+          </button>
+        </div>
+        {sugerenciasVisibles.length > 0 && (
+          <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+            {sugerenciasVisibles.map((sugerida) => (
+              <li key={sugerida}>
+                <button
+                  type="button"
+                  onClick={() => anadirPalabraConcreta(sugerida)}
+                  className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  {sugerida}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       {avisoPalabra && (
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{avisoPalabra}</p>
@@ -260,15 +327,15 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
           className={`mt-4 text-sm ${mensaje.tipo === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}
         >
           {mensaje.texto}
-          {mensaje.tipo === 'ok' && (
-            <>
-              {' '}
-              <Link href="/ofertas" className="font-medium underline underline-offset-2">
-                Ver mis ofertas →
-              </Link>
-            </>
-          )}
         </p>
+      )}
+      {mensaje?.tipo === 'ok' && (
+        <Link
+          href="/ofertas"
+          className="mt-4 block w-full rounded-lg bg-green-700 px-4 py-3 text-center text-base font-semibold text-white hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700"
+        >
+          Ver mis ofertas →
+        </Link>
       )}
 
       <button

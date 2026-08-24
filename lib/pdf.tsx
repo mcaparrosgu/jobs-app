@@ -230,28 +230,23 @@ export function bloqueTexto(texto: string) {
 
 // El masthead del CV: nombre real de la candidata (imprescindible para que
 // un ATS identifique de quién es el documento), el puesto al que aspira y,
-// debajo, sus datos de contacto (email, teléfono, LinkedIn/enlace — los que
-// tenga rellenos) — nada de franjas laterales ni texto girado que puedan
-// desordenar la lectura automática.
+// debajo, su email — nada de franjas laterales ni texto girado que puedan
+// desordenar la lectura automática. Teléfono y LinkedIn se quitaron
+// (migración 0016): suelen venir ya en el cuerpo del CV que se pega, y
+// pedirlos aparte solo añadía fricción al formulario.
 //
-// El puesto va en su propia fila, separado del contacto: con dos o tres
-// datos de contacto ya no cabían siempre en una sola línea junto al puesto,
-// y al partirse (flexWrap) dejaban un "·" suelto al principio de la
-// segunda línea. Cada fila ajusta su propia línea por separado.
+// El puesto va en su propia fila, separado del contacto: así el ajuste de
+// línea (flexWrap) de cada fila no interfiere con el de la otra.
 function Masthead({
   nombre,
   puesto,
   email,
-  telefono,
-  enlace,
 }: {
   nombre: string;
   puesto: string;
   email: string;
-  telefono: string;
-  enlace: string;
 }) {
-  const contacto = [email, telefono, enlace].filter((valor) => valor.trim().length > 0);
+  const contacto = [email].filter((valor) => valor.trim().length > 0);
 
   return (
     <View>
@@ -296,8 +291,6 @@ export function DocumentoGeneracion({
   nombre = '',
   puesto = '',
   email = '',
-  telefono = '',
-  enlace = '',
   idioma = 'es',
 }: {
   cvTexto: string;
@@ -305,15 +298,13 @@ export function DocumentoGeneracion({
   nombre?: string;
   puesto?: string;
   email?: string;
-  telefono?: string;
-  enlace?: string;
   idioma?: Idioma;
 }) {
   return (
     <Document>
       <Page size="A4" style={estilos.pagina}>
         <View style={estilos.rayaVertical} fixed />
-        <Masthead nombre={nombre} puesto={puesto} email={email} telefono={telefono} enlace={enlace} />
+        <Masthead nombre={nombre} puesto={puesto} email={email} />
         {bloqueTexto(cvTexto)}
       </Page>
       <Page size="A4" style={estilos.pagina}>

@@ -9,6 +9,10 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
 vi.mock('@/lib/ia', () => ({
   generarCvYCarta: vi.fn(),
   esErrorDeContenido: vi.fn(() => false),
+  // T89: app/api/generar/route.ts elige el puesto de contexto con esta
+  // función; el mock se queda con el primero de la lista, que es
+  // suficiente para estas pruebas (no comprueban la elección en sí).
+  puestoMasRelevante: vi.fn((puestos: string[]) => puestos[0] ?? ''),
 }));
 
 import { createClient } from '@/lib/supabase/server';
@@ -31,7 +35,7 @@ const GENERACION_IA_OK = {
   carta_texto: 'Estimados señores,\n\nEscribo para presentar mi candidatura a este puesto.\n\nAtentamente.',
   idioma: 'es' as const,
   intentoDeInyeccion: false,
-  uso: { proveedor: 'Groq', modelo: 'qwen/qwen3.6-27b', tokensEntrada: 1200, tokensSalida: 900 },
+  uso: { proveedor: 'Cloudflare', modelo: '@cf/mistralai/mistral-small-3.1-24b-instruct', tokensEntrada: 1200, tokensSalida: 900 },
 };
 
 beforeEach(() => {
@@ -226,7 +230,7 @@ describe('POST /api/generar — casos límite de datos (§6 de la spec)', () => 
           { data: null, error: null },
           { error: null }, // marcarError
         ],
-        perfiles: [{ data: { cv_texto: null, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: null, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -254,7 +258,7 @@ describe('POST /api/generar — casos límite de datos (§6 de la spec)', () => 
           { data: null, error: null },
           { error: null },
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: null, error: null }],
       },
     });
@@ -281,7 +285,7 @@ describe('POST /api/generar — errores del servicio de IA (F2)', () => {
           { data: null, error: null },
           { error: null },
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -309,7 +313,7 @@ describe('POST /api/generar — errores del servicio de IA (F2)', () => {
           { error: new Error('fallo de guardado') }, // el update final falla
           { error: null }, // marcarError en el catch
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -335,7 +339,7 @@ describe('POST /api/generar — Paso 14: guardrails', () => {
           { data: null, error: null },
           { error: null },
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -369,7 +373,7 @@ describe('POST /api/generar — Paso 14: guardrails', () => {
           { data: { id: 'g1' }, error: null }, // update para tomar turno (ya tenía fila): éxito
           { error: null }, // marcarError en el catch
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -406,7 +410,7 @@ describe('POST /api/generar — camino feliz', () => {
           { count: 2, error: null },
           { error: null },
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });
@@ -445,7 +449,7 @@ describe('POST /api/generar — camino feliz', () => {
           { data: null, error: null },
           { error: null },
         ],
-        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puesto: 'PM', empresas_cv: [], titulos_cv: [] }, error: null }],
+        perfiles: [{ data: { cv_texto: CV_ORIGINAL, puestos: ['PM'], empresas_cv: [], titulos_cv: [] }, error: null }],
         ofertas: [{ data: { titulo: 'PM', empresa: 'Acme', descripcion: 'desc' }, error: null }],
       },
     });

@@ -5,15 +5,36 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import TarjetaOferta, { type EstadoGeneracion } from '@/components/TarjetaOferta';
 import GuiaPasos from '@/components/GuiaPasos';
+import { diaEnMadrid, etiquetaDiaEnMadrid } from '@/lib/fechas';
 
 type Oferta = {
   id: string;
   titulo: string;
   empresa: string;
   enlace: string;
+  ingerida_en: string;
   interesada: boolean;
   generacion: EstadoGeneracion | null;
 };
+
+// T85 · Las ofertas llegan ya ordenadas de más reciente a más antigua
+// (app/api/ofertas/route.ts), así que agrupar solo consiste en trocear la
+// lista cada vez que cambia el día de ingesta — sin volver a ordenar nada.
+function agruparPorDia(ofertas: Oferta[]): { clave: string; etiqueta: string; ofertas: Oferta[] }[] {
+  const grupos: { clave: string; etiqueta: string; ofertas: Oferta[] }[] = [];
+
+  for (const oferta of ofertas) {
+    const clave = diaEnMadrid(oferta.ingerida_en);
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo?.clave === clave) {
+      ultimo.ofertas.push(oferta);
+    } else {
+      grupos.push({ clave, etiqueta: etiquetaDiaEnMadrid(oferta.ingerida_en), ofertas: [oferta] });
+    }
+  }
+
+  return grupos;
+}
 
 type Estado =
   | { tipo: 'cargando' }
@@ -100,8 +121,8 @@ export default function Ofertas() {
 
         {estado.tipo === 'vacia' && (
           <p className="mt-8 text-zinc-600 dark:text-zinc-400">
-            No hay ninguna oferta que coincida con tu perfil ahora mismo. Prueba a ampliar tus
-            palabras clave en tu perfil.
+            No hay ninguna oferta que coincida con tu perfil ahora mismo. Prueba a marcar más
+            puestos o a ampliar tus palabras clave en tu perfil.
           </p>
         )}
 
@@ -116,13 +137,22 @@ export default function Ofertas() {
           </p>
         )}
 
-        {estado.tipo === 'lista' && (
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {estado.ofertas.map((oferta) => (
-              <TarjetaOferta key={oferta.id} oferta={oferta} />
-            ))}
-          </div>
-        )}
+        {estado.tipo === 'lista' &&
+          agruparPorDia(estado.ofertas).map((grupo) => (
+            <div key={grupo.clave} className="mt-8">
+              <div className="flex items-center gap-3">
+                <h2 className="whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                  {grupo.etiqueta}
+                </h2>
+                <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {grupo.ofertas.map((oferta) => (
+                  <TarjetaOferta key={oferta.id} oferta={oferta} />
+                ))}
+              </div>
+            </div>
+          ))}
       </main>
     </div>
   );
