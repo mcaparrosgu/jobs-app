@@ -96,6 +96,19 @@ function leerAserciones(rutaArchivo) {
     // knowledge/arreglo-puerta-casoreventado.md.
     const casoReventado = caso.failureReason === 2;
     const motivoDelCaso = caso.error ?? '';
+    // La llamada real a la IA (lib/ia.ts) devuelve su fallo como
+    // `{ error: true, mensaje }` dentro de `output`, no como una excepción de
+    // Promptfoo — así que ni `failureReason` ni `caso.error` lo ven. Una
+    // aserción JS/Python con forma `if (output.error) return false` (varias
+    // en helpers.cjs) pierde ese `mensaje` real y lo sustituye por un texto
+    // fijo genérico ("Sin salida que comprobar"), que no coincide con
+    // ninguna señal de `esDeInfraestructura`. Mirar aquí el error crudo de la
+    // respuesta, no solo el texto de cada aserción, es lo que de verdad
+    // distingue "ningún modelo respondió" de una invención real — verificado
+    // en vivo el 24/08/2026 cuando una tanda entera sin cuota (13/13) se
+    // contó como ROJO de fidelidad en vez de NO CONCLUYENTE
+    // (knowledge/paso-13-evals.md).
+    const motivoRespuesta = caso.response?.output?.mensaje ?? '';
 
     const componentes = caso.gradingResult?.componentResults ?? [];
 
@@ -119,13 +132,18 @@ function leerAserciones(rutaArchivo) {
       let desenlace;
       if (componente.pass) {
         desenlace = 'aprobada';
-      } else if (casoReventado || esDeInfraestructura(motivo) || esDeInfraestructura(motivoDelCaso)) {
+      } else if (
+        casoReventado ||
+        esDeInfraestructura(motivo) ||
+        esDeInfraestructura(motivoDelCaso) ||
+        esDeInfraestructura(motivoRespuesta)
+      ) {
         desenlace = 'no_concluyente';
       } else {
         desenlace = 'suspensa';
       }
 
-      aserciones.push({ metrica, caso: descripcion, desenlace, motivo });
+      aserciones.push({ metrica, caso: descripcion, desenlace, motivo: motivo || motivoRespuesta });
     }
   }
 

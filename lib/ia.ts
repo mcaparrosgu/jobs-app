@@ -1,11 +1,20 @@
 // Llamadas al modelo de IA, en un solo sitio (docs/04-plan-tecnico.md §3.3).
 //
-// Proveedor principal desde el 23/08/2026: **Cloudflare Workers AI**
-// (`@cf/mistralai/mistral-small-3.1-24b-instruct`), para las dos llamadas
-// (`extraerPerfil` y `generarCvYCarta`), con OpenRouter como único respaldo
-// detrás. Groq se ha retirado del todo del proyecto (decisión de Mar,
-// 23/08/2026) — ya no queda ninguna llamada a `api.groq.com` ni ninguna
-// lectura de `GROQ_API_KEY` en este fichero.
+// Proveedor principal desde el 23/08/2026: **Cloudflare Workers AI**, para
+// las dos llamadas, con OpenRouter como único respaldo detrás. Groq se ha
+// retirado del todo del proyecto (decisión de Mar, 23/08/2026) — ya no queda
+// ninguna llamada a `api.groq.com` ni ninguna lectura de `GROQ_API_KEY` en
+// este fichero.
+//
+// ⚠️ Cada llamada usa un modelo de Cloudflare DISTINTO — no es el mismo
+// modelo con dos nombres de variable. `extraerPerfil` usa
+// `MODELO_CLOUDFLARE` (`mistral-small-3.1-24b-instruct`); `generarCvYCarta`
+// usa `MODELO_CLOUDFLARE_GENERACION` (`@cf/google/gemma-4-26b-a4b-it`,
+// cambiado el 23/08/2026 tras el ROJO de mistral-small en esa llamada
+// concreta — ver la nota junto a `MODELO_CLOUDFLARE_GENERACION`, más abajo).
+// Si vas a tocar uno de los dos, confirma primero cuál — un comentario
+// antiguo de este fichero llegó a decir que los dos usaban
+// `mistral-small-3.1-24b-instruct`, y ya no es verdad desde T93.
 //
 // Historial: hasta el 20/08/2026 el principal era OpenRouter
 // (knowledge/decision-modelo-ia.md). Ese día pasó a ser Groq por privacidad
@@ -88,9 +97,20 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // probar los siguientes) a cambio de que el cupo cunda casi el doble.
 //
 // Orden verificado en vivo el 19/08/2026 con una petición de generación real.
+// 24/08/2026 · `nvidia/nemotron-3-super-120b-a12b:free` retirado de aquí:
+// lleva devolviendo 404 "No endpoints available matching your guardrail
+// restrictions and data policy" desde antes del 23/08/2026 (mismo motivo que
+// hizo falta apagar "Allow free endpoints that train on request data",
+// knowledge/decision-groq-principal-privacidad.md) y nunca se ha arreglado.
+// Cada vez que Cloudflare fallaba, una de las dos tiradas en paralelo de la
+// segunda ronda estaba garantizada a fallar por nada — verificado en vivo el
+// 24/08/2026 al investigar por qué los 13 casos de `generarCvYCarta` de una
+// tanda de evals cayeron todos por timeout (knowledge/arreglo-puerta-motivo-real.md).
+// La segunda ronda se queda con un solo modelo hasta encontrar un sustituto
+// verificado en vivo — no se adivina uno nuevo sin probarlo primero.
 const RONDAS_MODELOS: readonly (readonly string[])[] = [
   ['google/gemma-4-26b-a4b-it:free'],
-  ['nvidia/nemotron-3-super-120b-a12b:free', 'z-ai/glm-5.2:free'],
+  ['z-ai/glm-5.2:free'],
 ];
 
 // Cloudflare Workers AI, principal de las dos llamadas desde el 23/08/2026
@@ -127,11 +147,20 @@ const MODELO_CLOUDFLARE = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 // millón de tokens entrada/salida, frente a 31.876/50.488), así que cambiarlo
 // no aprieta el cupo diario compartido, más bien lo relaja.
 //
-// ⚠️ Sin verificar todavía en vivo el tiempo de respuesta de este modelo
-// concreto en Cloudflare (los 26 s de `TIMEOUT_CLOUDFLARE_GENERACION_MS`, más
-// abajo, se midieron con `mistral-small-3.1-24b-instruct` — decision-cloudflare-generarcv.md).
-// Si el eval de relanzamiento muestra caídas a OpenRouter por timeout con este
-// modelo, hay que remedir y ajustar ese valor antes de dar esto por cerrado.
+// ⚠️ 24/08/2026 · Ya se verificó, y salió mal: al relanzar los evals contra
+// este modelo, los 13 casos de `generarCvYCarta` fallaron por timeout de
+// Cloudflare — probado también con una llamada suelta fuera de Promptfoo,
+// mismo resultado en ~27,8 s (knowledge/arreglo-puerta-motivo-real.md). La
+// causa más probable NO es que este modelo sea más lento que
+// `mistral-small-3.1-24b-instruct` (Cloudflare lo cobra MÁS BARATO en
+// neuronas, ver arriba): es que la cuenta ya había gastado su cupo gratis del
+// día con las 12 llamadas de `extraerPerfil` de esa misma tanda — sin
+// confirmar todavía porque no hay acceso al panel de uso de Cloudflare desde
+// aquí. `TIMEOUT_CLOUDFLARE_GENERACION_MS` se sube de 26 a 34 s como cobertura
+// de bajo coste (sigue habiendo margen bajo los 60 s de Vercel) por si una
+// parte del problema es de verdad latencia y no solo cupo — pero **esto no
+// es el arreglo**: la prueba real es relanzar T95 con cuota fresca de
+// Cloudflare (`docs/06-tareas.md`) y ver si deja de fallar al 100%.
 const MODELO_CLOUDFLARE_GENERACION = '@cf/google/gemma-4-26b-a4b-it';
 
 // Tiempo máximo de espera por ronda. Todo el presupuesto (Cloudflare MÁS las
@@ -154,13 +183,18 @@ const MODELO_CLOUDFLARE_GENERACION = '@cf/google/gemma-4-26b-a4b-it';
 const TIMEOUT_CLOUDFLARE_MS = 26_000;
 const TIMEOUT_OPENROUTER_MS = 12_000;
 
-// Presupuesto de `generarCvYCarta`: 26 (Cloudflare) + 10 + 10 (las dos rondas
-// de OpenRouter) = 46 s en el peor caso, con 14 s de margen sobre los 60 s de
+// Presupuesto de `generarCvYCarta`: 34 (Cloudflare) + 10 + 10 (las dos rondas
+// de OpenRouter) = 54 s en el peor caso, con 6 s de margen sobre los 60 s de
 // Vercel. Los 10 s por ronda de OpenRouter son el valor de siempre (antes de
 // que Groq ocupara un hueco en esta cascada, del 20 al 23/08/2026); al
 // quitarlo del todo (23/08/2026) sobra presupuesto para devolverlos a su
 // valor original.
-const TIMEOUT_CLOUDFLARE_GENERACION_MS = 26_000;
+//
+// 26 -> 34 s el 24/08/2026: ver el aviso junto a `MODELO_CLOUDFLARE_GENERACION`
+// más arriba. El margen baja de 14 a 6 s — sigue habiendo hueco real, pero ya
+// no tanto como antes; si hace falta subirlo más, hay que quitarle margen a
+// las rondas de OpenRouter, no solo seguir subiendo este número.
+const TIMEOUT_CLOUDFLARE_GENERACION_MS = 34_000;
 const TIMEOUT_OPENROUTER_GENERACION_MS = 10_000;
 
 // Cloudflare no limita por tokens por minuto como limitaba Groq — el cuello

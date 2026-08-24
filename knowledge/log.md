@@ -1,5 +1,57 @@
 # Registro de cambios del bundle
 
+## 2026-08-24 (ter — P1/P2/P4: modelo roto fuera, timeout con más margen, presupuesto de cuota)
+* **Corrección al resumen de T94**: `generarCvYCarta` en Cloudflare usa un
+  modelo DISTINTO al de `extraerPerfil` desde el 23/08/2026
+  (`@cf/google/gemma-4-26b-a4b-it`, no `mistral-small-3.1-24b-instruct`) —
+  ya estaba en el código pero no se había documentado como tal. Corregido el
+  comentario de cabecera de `lib/ia.ts`, que seguía diciendo que las dos
+  llamadas usaban el mismo modelo.
+* **P1**: `nvidia/nemotron-3-super-120b-a12b:free` fuera de `RONDAS_MODELOS`
+  — llevaba devolviendo 404 "no endpoints available" desde antes del 23/08 y
+  nunca se arregló. La segunda ronda de respaldo se queda con
+  `z-ai/glm-5.2:free` solo.
+* **P2**: `TIMEOUT_CLOUDFLARE_GENERACION_MS` sube de 26 a 34 s (margen sobre
+  Vercel: 14 → 6 s). Cobertura de bajo coste, no un arreglo confirmado — el
+  patrón de 100% de timeouts de hoy apunta más a cupo agotado que a
+  latencia pura del modelo.
+* **P4**: calculado el presupuesto de neuronas de Cloudflare para un día
+  real con las 5 usuarias — típico ~3.650/10.000 (margen de sobra), peor
+  caso absoluto ~10.450/10.000 (rozaría el límite). Las cifras NO explican
+  por sí solas el 100% de fallos de hoy: la tanda gastó, según este cálculo,
+  muy por debajo del cupo restante. Detalle completo, con la tabla y la
+  lectura honesta de la incertidumbre, en
+  [arreglo-puerta-motivo-real.md](arreglo-puerta-motivo-real.md).
+* Tipos limpios y 275/275 pruebas en verde tras los tres cambios.
+* **T95 sigue pendiente**: recomendado relanzarlo con cuota fresca antes de
+  que entren las usuarias mañana, no a mitad del día de hoy.
+
+## 2026-08-24 (bis — T96-T99: fiabilidad de n8n, commits, secretos, evals lanzados)
+* **T96**: revisado `Docker n8n/docker-compose.yml` (solo lectura, fuera de
+  este repositorio) — `restart: unless-stopped` ya estaba bien puesto, pero
+  no basta si Docker Desktop en sí no arranca. Confirmado en
+  `settings-store.json`: `"AutoStart": false`. Mar activó el arranque
+  automático de Docker Desktop al iniciar sesión. Detalle y alternativa más
+  robusta (tarea programada de Windows) anotada en
+  [arreglo-ingesta-duplicado-bloqueaba-lote.md](arreglo-ingesta-duplicado-bloqueaba-lote.md).
+* **T97**: commiteado todo el trabajo suelto de T84-T93 en 4 commits
+  temáticos (rediseño de perfil/ofertas; Cloudflare principal + arreglo del
+  ROJO; botón Rehacer; documentación de pendientes). Solo local, nada
+  subido a GitHub — branch 6 commits por delante de `origin/master`.
+* **T98**: añadidos `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_API_TOKEN` como
+  secretos de GitHub Actions (`gh secret set`, con `GITHUB_TOKEN` vacío
+  porque el del entorno estaba caducado/inválido y tapaba la sesión buena
+  del keyring). Confirmado con `gh secret list`.
+* **T99**: instrucciones dadas a Mar para añadirlas también en Vercel a
+  mano — la CLI de Vercel no tiene sesión iniciada y, además, esas
+  variables son *Sensitive* (mismo motivo que las otras 5, `CLAUDE.md`
+  §3.8): no se pueden gestionar bien desde fuera del panel.
+* **T95 lanzado**: `npm run evals` completo en marcha (las dos llamadas
+  contra Cloudflare, con el arreglo de T94 ya aplicado). Recordado
+  explícitamente que el juez `llm-rubric` sigue llamando a
+  `groq:qwen/qwen3.6-27b` aunque la app ya no use Groq para nada — por eso
+  no se lanzó nada más que compitiera por esa cuota mientras corría.
+
 ## 2026-08-24 (T94 — arreglo del ROJO de generarCvYCarta, decidido con Mar)
 * Organizada la documentación de pendientes: los dos bloques sueltos de
   `docs/06-tareas.md` (23/08 bis y ter) y el aviso que cerraba T93 se

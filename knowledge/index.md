@@ -267,6 +267,14 @@ existe en produccion y no se toca desde aqui.
   hecho, sin commitear), más `LARGO_MINIMO_CV` flexible: ya no exige 400
   caracteres siempre, se ajusta al tamaño del CV original con un suelo de
   150. Pendiente T95: relanzar evals para confirmarlo.
+- [arreglo-puerta-motivo-real.md](arreglo-puerta-motivo-real.md) —
+  24/08/2026: al lanzar T95, `helpers.cjs` sustituía el motivo real de un
+  fallo por un texto fijo ("Sin salida que comprobar"), así que una tanda
+  entera sin cuota (13/13 timeouts de Cloudflare + OpenRouter roto) se contó
+  como ROJO de fidelidad en vez de NO CONCLUYENTE. Arreglado en dos capas
+  (`helpers.cjs` propaga `output.mensaje`; `puerta-calidad.mjs` también mira
+  el error crudo de la respuesta) — recalculado sin gastar cuota nueva,
+  veredicto correcto: NO CONCLUYENTE. T95 sigue sin confirmar de verdad.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

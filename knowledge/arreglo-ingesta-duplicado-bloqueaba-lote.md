@@ -71,6 +71,23 @@ es una limitación de cómo funciona un disparador programado. Lo que sí
 queda arreglado de forma permanente es que, **el día que sí corra**, una
 oferta repetida ya no le va a costar también las nuevas.
 
+# Adenda (24/08/2026): mitigado el motivo de que la instancia estuviera apagada
+
+`docker-compose.yml` (repositorio `Docker n8n`, fuera de este bundle) ya
+tenía `restart: unless-stopped` en los dos servicios — eso no bastaba,
+porque no arranca nada si **Docker Desktop** en sí no está corriendo (el
+contenedor no puede reiniciarse si el motor que lo aloja tampoco lo está).
+Revisado `%APPDATA%\Docker\settings-store.json`: `"AutoStart": false`. Mar
+activó "Start Docker Desktop when you sign in" en Docker Desktop →
+Settings → General (T96, `docs/06-tareas.md`).
+
+**Esto reduce el riesgo, no lo elimina del todo**: sigue haciendo falta
+haber iniciado sesión en Windows antes de las 13:00 ese día. Si el patrón
+de fallos se repite, la alternativa más robusta (no depende de que se haya
+iniciado sesión) es una tarea programada de Windows que ejecute
+`docker compose up -d` unos minutos antes de las 13:00 — se le planteó a
+Mar el 24/08/2026 y de momento prefirió la opción más simple.
+
 # Adenda (23/08/2026, más tarde el mismo día): el bucle rompió el aviso por email
 
 Este mismo arreglo tuvo un efecto secundario no previsto: `Contar ofertas
