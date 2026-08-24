@@ -1,5 +1,27 @@
 # Registro de cambios del bundle
 
+## 2026-08-24 (quinquies — cierre del día: push a master, robot confirma NO CONCLUYENTE, nada publicado)
+* Mar decidió publicar de todas formas, aceptando explícitamente el riesgo
+  explicado (cuota probablemente seguía agotada, T94 sin confirmar de
+  contenido, T100 sin hacer). `git push origin master` — 9 commits
+  (`c1049ed..cc257e1`).
+* El robot de `.github/workflows/publicar.yml` relanzó los evals con la
+  misma cuenta de Cloudflare/OpenRouter (agotada por las pruebas de hoy) y
+  reprodujo el mismo patrón de timeouts. **Veredicto: NO CONCLUYENTE**
+  (exit code 2, no ROJO) — confirma que el arreglo de la puerta de esta
+  tarde funciona también en el robot real, no solo en local. El job
+  "Publicar en Vercel" se saltó: **nada se desplegó**. La URL pública
+  sigue en el estado del 22/08.
+* Dato suelto nuevo: el caso B08 sí obtuvo respuesta del modelo esta vez,
+  pero generó un CV de 110 caracteres (por debajo del suelo de 150). Un
+  solo caso, no concluyente por sí solo, pero primera señal de contenido
+  real de `generarCvYCarta` con Cloudflare desde T94 — vigilar mañana.
+* **Decisión de Mar: parar por hoy.** Los dos cupos (Cloudflare y
+  OpenRouter) están agotados sin margen para seguir probando. Retomar
+  mañana temprano con cuota fresca, antes de avisar a la clase. Detalle
+  completo en
+  [arreglo-puerta-motivo-real.md](arreglo-puerta-motivo-real.md).
+
 ## 2026-08-24 (quater — confirmado: hoy ya no es buen momento para T95)
 * Tras subir `TIMEOUT_CLOUDFLARE_GENERACION_MS` a 34s (T103), una llamada
   suelta repitió el mismo fallo, esta vez a los 34,7s — confirma que el

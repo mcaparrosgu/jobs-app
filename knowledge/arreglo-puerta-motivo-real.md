@@ -136,6 +136,35 @@ con las propias pruebas de hoy (evals + llamadas sueltas de esta
 investigación). **Se deja de probar aquí** para no seguir gastando ese
 cupo ya escaso — cada intento adicional hoy solo lo empeora.
 
+# Confirmado en el robot real (24/08/2026, por la tarde): mismo resultado, y el arreglo funciona en producción
+
+Con el arreglo de este documento ya commiteado, Mar decidió publicar de
+todas formas (push a `master`, con el riesgo explicado y aceptado). El
+robot de `.github/workflows/publicar.yml` relanzó los evals con la misma
+cuenta de Cloudflare/OpenRouter (agotada por las pruebas de esta misma
+investigación) y reprodujo el mismo patrón: `extraerPerfil` 12/12, pero
+`generarCvYCarta` casi entero por timeout otra vez (21m 36s para los 13
+casos).
+
+**El arreglo de la puerta funcionó también aquí**: el veredicto salió
+**NO CONCLUYENTE** (exit code 2), no ROJO — antes de este arreglo, se
+habría contado como ROJO de fidelidad igual que esta mañana. El job
+"Publicar en Vercel" se saltó (0s, no llegó a correr): **nada se desplegó
+a producción**, tal como está diseñado que pase con un NO CONCLUYENTE.
+
+**Un dato nuevo, aislado**: el caso B08 (inyección de tono agresivo en la
+oferta) sí obtuvo respuesta del modelo esta vez, pero generó un CV de
+**110 caracteres** — por debajo incluso del suelo flexible de 150
+(`LARGO_MINIMO_CV_ABSOLUTO`, T94). Un solo caso no permite concluir nada
+por sí solo (podría ser ruido, podría repetirse), pero es la primera señal
+de contenido real que se ha visto en `generarCvYCarta` con Cloudflare
+desde el arreglo de T94 — vale la pena vigilarlo en la próxima pasada con
+cuota fresca.
+
+**Decisión de Mar tras esto**: parar por hoy. Ni Cloudflare ni OpenRouter
+tienen cuota que valga la pena gastar más hoy. Retomar mañana temprano,
+con los dos cupos renovados, antes de avisar a la clase.
+
 # Pendiente
 
 - **T95 sigue sin confirmar de verdad, y hoy ya no es buen momento para
