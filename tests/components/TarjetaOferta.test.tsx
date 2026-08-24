@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TarjetaOferta from '@/components/TarjetaOferta';
+import { MAXIMO_REHECHOS } from '@/lib/generaciones';
 
 function ofertaBase(extra: Partial<React.ComponentProps<typeof TarjetaOferta>['oferta']> = {}) {
   return {
@@ -158,5 +159,107 @@ describe('TarjetaOferta — F2: errores y reintento', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Me interesa' }));
 
     expect(await screen.findByText(/Se perdió la conexión/)).toBeInTheDocument();
+  });
+});
+
+describe('TarjetaOferta — T93: botón "Rehacer"', () => {
+  it('abre un modal preguntando qué cambiar, y cancelar lo cierra sin llamar al servidor', async () => {
+    render(
+      <TarjetaOferta
+        oferta={ofertaBase({ generacion: { estado: 'listo', avisos: [], error: null, rehechos: 0 } })}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rehacer' }));
+    expect(screen.getByText('¿Qué te gustaría modificar?')).toBeInTheDocument();
+
+    const dialogo = screen.getByRole('dialog');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByText('¿Qué te gustaría modificar?')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('el botón de confirmar dentro del modal está deshabilitado sin texto escrito', async () => {
+    render(
+      <TarjetaOferta
+        oferta={ofertaBase({ generacion: { estado: 'listo', avisos: [], error: null, rehechos: 0 } })}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rehacer' }));
+    const dialogo = screen.getByRole('dialog');
+
+    expect(within(dialogo).getByRole('button', { name: 'Rehacer' })).toBeDisabled();
+  });
+
+  it('al confirmar, muestra "Rehaciendo…", llama a /api/rehacer y termina en Descargar otra vez', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url === '/api/rehacer') {
+        await new Promise((r) => setTimeout(r, 300));
+        return respuesta({ estado: 'listo', avisos: ['Aviso nuevo'], rehechos: 1 });
+      }
+      throw new Error(`URL no esperada: ${url}`);
+    });
+
+    render(
+      <TarjetaOferta
+        oferta={ofertaBase({ generacion: { estado: 'listo', avisos: [], error: null, rehechos: 0 } })}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rehacer' }));
+    const dialogo = screen.getByRole('dialog');
+    await userEvent.type(within(dialogo).getByRole('textbox'), 'usa un lenguaje más profesional');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Rehacer' }));
+
+    expect(await screen.findByText(/Rehaciendo tu CV y tu carta/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Descargar' })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/rehacer',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ oferta_id: 'oferta-1', instrucciones: 'usa un lenguaje más profesional' }),
+      }),
+    );
+
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Descargar' })).toBeInTheDocument());
+    expect(screen.getByText('Aviso nuevo')).toBeInTheDocument();
+  });
+
+  it('si el servidor rechaza el rehecho, muestra el error y conserva el documento anterior', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url === '/api/rehacer') {
+        return respuesta({ estado: 'error', error: 'El documento anterior sigue disponible.' });
+      }
+      throw new Error(`URL no esperada: ${url}`);
+    });
+
+    render(
+      <TarjetaOferta
+        oferta={ofertaBase({ generacion: { estado: 'listo', avisos: [], error: null, rehechos: 0 } })}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rehacer' }));
+    const dialogo = screen.getByRole('dialog');
+    await userEvent.type(within(dialogo).getByRole('textbox'), 'más conciso');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Rehacer' }));
+
+    expect(await screen.findByText('El documento anterior sigue disponible.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Descargar' })).toBeInTheDocument();
+  });
+
+  it('deshabilita "Rehacer" y explica por qué al alcanzar el máximo de rehechos', () => {
+    render(
+      <TarjetaOferta
+        oferta={ofertaBase({
+          generacion: { estado: 'listo', avisos: [], error: null, rehechos: MAXIMO_REHECHOS },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
+    expect(screen.getByText(new RegExp(`Ya has rehecho este documento ${MAXIMO_REHECHOS} veces`))).toBeInTheDocument();
   });
 });

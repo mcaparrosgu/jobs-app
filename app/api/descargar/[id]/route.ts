@@ -35,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       .eq('user_id', user.id)
       .eq('oferta_id', ofertaId)
       .maybeSingle(),
-    supabase.from('perfiles').select('nombre, puesto, telefono, enlace').eq('user_id', user.id).maybeSingle(),
+    supabase.from('perfiles').select('nombre, puestos').eq('user_id', user.id).maybeSingle(),
   ]);
 
   if (error) {
@@ -62,10 +62,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       // puesto_texto: el titular que la IA ya adaptó al idioma de este
       // documento. Solo cae al puesto (fijo en castellano) del perfil en
       // generaciones de antes de esta columna — knowledge/decision-idioma-puesto.md.
-      puesto: generacion.puesto_texto ?? perfil?.puesto ?? '',
+      puesto: generacion.puesto_texto ?? perfil?.puestos?.[0] ?? '',
       email: user.email ?? '',
-      telefono: perfil?.telefono ?? '',
-      enlace: perfil?.enlace ?? '',
       idioma,
     }),
   );

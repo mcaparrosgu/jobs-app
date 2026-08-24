@@ -88,7 +88,7 @@ Antes de tocar nada, mira **dónde** falla. Ahorra media hora.
 | :--- | :--- | :--- |
 | La web no carga, error 404 o 500 en todas las pantallas | El **código** publicado | Rollback (sección 1) |
 | La web carga pero al entrar dice error | **Supabase** (pausado o Auth mal) | Sección 4.1 y 4.3 |
-| Todo va bien pero "Preparar CV" falla siempre | **Groq** sin cuota | Sección 4.2 |
+| Todo va bien pero "Preparar CV" falla siempre | **Cloudflare** sin cuota | Sección 4.2 |
 | El enlace del email lleva a "no se puede acceder a este sitio" | **URL de Supabase Auth** | Sección 4.3 |
 | No llegan ofertas nuevas | **n8n** (`Jobs App · ingesta`) | Sección 4.4 |
 | Una sola usuaria tiene problemas, las demás no | Su navegador o su sesión | Que cierre sesión y vuelva a pedir enlace |
@@ -112,8 +112,8 @@ Ninguno de los motivos vistos hasta hoy era del prompt:
 
 | Lo que dice el detalle | Qué pasa de verdad | Solución |
 | :--- | :--- | :--- |
-| `401` · `Invalid API Key` | La clave que recibió el proceso no vale | Revisa el secreto `GROQ_API_KEY` en GitHub → *Settings → Secrets and variables → Actions* |
-| `429` · `rate limit` | Sin cuota | La de Groq se renueva cada día. Relanza mañana |
+| `401` · `Invalid API Key` | La clave que recibió el proceso no vale | Revisa `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` (evals de las dos llamadas) o `GROQ_API_KEY` (el juez de las aserciones) en GitHub → *Settings → Secrets and variables → Actions* |
+| `429` · `rate limit` | Sin cuota | El cupo de Cloudflare se renueva cada día; el de Groq (el juez) también. Relanza mañana |
 | `no endpoints available` | El modelo juez no está disponible | Mirar `evals/promptfoo/*.yaml`, sección `provider` |
 | `timeout` · `fetch failed` | Red o proveedor sin responder | Relanzar sin más |
 
@@ -152,22 +152,28 @@ En teoría no debería ocurrir: `Jobs App · ingesta` escribe ofertas todos los
 días a las 13:00. Si pasa, **comprueba también que ese workflow de n8n sigue
 activo** — probablemente la causa es esa.
 
-### 4.2 Groq sin cuota ("el servicio está saturado")
+### 4.2 Cloudflare sin cuota ("el servicio está saturado")
 
-Tu capa gratuita son **200.000 tokens al día** (unos 30 documentos) y **8.000
-tokens por minuto**. Hay dos fallos distintos y se parecen mucho:
+> ⚠️ Hasta el 23/08/2026 esta sección hablaba de Groq (**200.000 tokens al
+> día**, **8.000 por minuto**). Groq se retiró del todo del proyecto — el
+> principal ahora es Cloudflare, que limita distinto: **10.000 "neuronas" al
+> día**, renovables cada día, sin tope por minuto. La app ya reintenta con
+> OpenRouter (el respaldo) si Cloudflare falla o se agota; el error visible
+> a la usuaria solo aparece si los dos fallan a la vez.
 
-- **Por minuto**: dos personas generan a la vez. La app ya reintenta sola dos
-  veces (6 s y 15 s). **Se arregla solo esperando un minuto.**
-- **Por día**: se agotaron los 200.000. **No se arregla esperando un rato**:
-  hay que esperar a la renovación diaria.
+- **Cupo diario agotado**: se agotaron las 10.000 "neuronas" del día.
+  **No se arregla esperando un rato**: hay que esperar a la renovación
+  diaria, o confiar en que OpenRouter (el respaldo) absorba el resto.
+- Si ves el error también en los **evals** (no en la app en vivo), puede ser
+  el juez de las aserciones llm-rubric, que sigue usando Groq — su cupo
+  (200.000/día, 8.000/minuto) es aparte del de Cloudflare.
 
 Si estás enseñando la app a la clase y esto pasa, lo honesto es decirlo: es el
 techo del plan gratuito, no un fallo. La única salida técnica es pagar, y eso
 es una decisión tuya (presupuesto de 0 €).
 
 **Prevención**: no lances los evals el día que vayas a enseñar la app. Una
-pasada se lleva más o menos la mitad de la cuota del día.
+pasada se lleva más o menos la mitad de la cuota diaria de Groq (el juez).
 
 ### 4.3 El enlace del email no lleva a ningún sitio
 
@@ -199,7 +205,8 @@ vez, se queda.
 
 | Clave | Dónde se revoca y se genera otra |
 | :--- | :--- |
-| `GROQ_API_KEY` | console.groq.com → API Keys → borrar la vieja, crear una nueva |
+| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com → tu perfil → API Tokens → borrar el viejo, crear otro |
+| `GROQ_API_KEY` | console.groq.com → API Keys → borrar la vieja, crear una nueva (ya no la usa la app; solo el juez de los evals) |
 | `OPENROUTER_API_KEY` | openrouter.ai/keys |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → *Reset* |
 | `VERCEL_TOKEN` (el del robot) | vercel.com/account/tokens → borrar y crear otro |
@@ -260,7 +267,10 @@ lo miras tú **una sola vez** y ya te quedas tranquila:
       posible. (La gestión de límites de gasto de Vercel, *Spend Management*,
       es de los planes de pago — en Hobby el freno es que simplemente no puede
       cobrarte.)
-- [ ] **Groq** → *console.groq.com → Billing*: plan gratuito, sin tarjeta.
+- [ ] **Cloudflare** → *dash.cloudflare.com → Billing*: plan gratuito, sin
+      tarjeta.
+- [ ] **Groq** → *console.groq.com → Billing*: plan gratuito, sin tarjeta
+      (ya no lo usa la app, solo el juez de los evals).
 - [ ] **Supabase** → *Organization → Billing*: plan **Free**. En Free el tope
       de gasto viene puesto de fábrica y no se puede quitar.
 - [ ] **OpenRouter** → *openrouter.ai/credits*: sin créditos comprados y sin
@@ -273,7 +283,7 @@ lo miras tú **una sola vez** y ya te quedas tranquila:
 
 ### Las señales de alarma, en orden
 
-1. **Groq sin cuota diaria** — lo más probable. Sección 4.2.
+1. **Cloudflare sin cuota diaria** — lo más probable. Sección 4.2.
 2. **Supabase pausado** por inactividad. Sección 4.1.
 3. **Minutos de GitHub Actions agotados** — solo si haces muchísimos pushes con
    evals. Se ve en Settings → Billing.
@@ -430,7 +440,8 @@ Hazlo entero, desde el móvil, con una cuenta real:
 | Repositorio | https://github.com/mcaparrosgu/jobs-app (privado) |
 | El robot de la puerta | GitHub → pestaña **Actions** → *Publicar* |
 | Panel de Supabase | https://supabase.com/dashboard |
-| Cuota de Groq | https://console.groq.com |
+| Cuota de Cloudflare | https://dash.cloudflare.com |
+| Cuota de Groq (solo el juez de los evals) | https://console.groq.com |
 | n8n | El workflow es `Jobs App · ingesta`, **nunca** los `Jobs ·` |
 
 **Identificadores del proyecto en Vercel** (no son secretos, solo lo

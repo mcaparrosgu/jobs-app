@@ -2,11 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { encolar } from '@/lib/cola';
+import { MAXIMO_REHECHOS, MENSAJE_LIMITE_REHACER } from '@/lib/generaciones';
+import { MAXIMO_CARACTERES_INSTRUCCIONES } from '@/lib/ia';
 
 export type EstadoGeneracion = {
   estado: 'generando' | 'listo' | 'error';
   avisos: string[];
   error: string | null;
+  // T93 · Cuántas veces se ha pedido "Rehacer" con éxito para este documento
+  // (lib/generaciones.ts, MAXIMO_REHECHOS). Opcional y tratado como 0 cuando
+  // falta (generaciones de antes de esta columna, o construidas a mano en
+  // las pruebas).
+  rehechos?: number;
 };
 
 // Esperas entre intento e intento (docs/05-ia.md §6.7: "reintento con espera
@@ -49,6 +56,15 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
   // en el servidor; esto es solo para no gastar una petición de más.
   const lanzada = useRef(false);
 
+  // T93 · Estado del botón "Rehacer": el modal que pregunta qué cambiar, el
+  // texto que escribe la usuaria, si hay una petición en curso y su error (si
+  // lo hay). A diferencia de `generacion`, esto no viene del servidor al
+  // cargar la pantalla: solo existe mientras dura la interacción.
+  const [mostrarModalRehacer, setMostrarModalRehacer] = useState(false);
+  const [instruccionesRehacer, setInstruccionesRehacer] = useState('');
+  const [rehaciendo, setRehaciendo] = useState(false);
+  const [errorRehacer, setErrorRehacer] = useState<string | null>(null);
+
   // Pide al servidor que prepare el CV y la carta. Va por la cola: si hay
   // varias ofertas marcadas, se preparan de una en una (lib/cola.ts).
   async function prepararDocumentos() {
@@ -69,7 +85,7 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
             return;
           }
           if (datos.estado === 'listo') {
-            setGeneracion({ estado: 'listo', avisos: datos.avisos ?? [], error: null });
+            setGeneracion({ estado: 'listo', avisos: datos.avisos ?? [], error: null, rehechos: 0 });
             return;
           }
           // `enCurso`: otra pestaña se adelantó y lo está preparando. Se deja
@@ -93,6 +109,7 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
               estado: 'error',
               avisos: [],
               error: datos.error ?? 'No se pudo preparar el documento.',
+              rehechos: 0,
             });
             return;
           }
@@ -103,6 +120,7 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
             estado: 'error',
             avisos: [],
             error: 'Se perdió la conexión mientras se preparaba. Vuelve a intentarlo.',
+            rehechos: 0,
           });
           return;
         }
@@ -138,10 +156,10 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
       if (datos.limite) {
         setLimite(datos.limite);
       } else if (datos.generacion?.estado === 'generando') {
-        setGeneracion({ estado: 'generando', avisos: [], error: null });
+        setGeneracion({ estado: 'generando', avisos: [], error: null, rehechos: 0 });
         prepararDocumentos();
       } else if (datos.generacion) {
-        setGeneracion({ estado: datos.generacion.estado, avisos: [], error: null });
+        setGeneracion({ estado: datos.generacion.estado, avisos: [], error: null, rehechos: 0 });
       }
     } finally {
       setGuardando(false);
@@ -150,9 +168,57 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
 
   function prepararAhora() {
     setLimite(null);
-    setGeneracion({ estado: 'generando', avisos: [], error: null });
+    setGeneracion({ estado: 'generando', avisos: [], error: null, rehechos: 0 });
     prepararDocumentos();
   }
+
+  // T93 · Botón "Rehacer": abre el modal que pregunta qué cambiar.
+  function abrirModalRehacer() {
+    setErrorRehacer(null);
+    setInstruccionesRehacer('');
+    setMostrarModalRehacer(true);
+  }
+
+  function cerrarModalRehacer() {
+    if (rehaciendo) return; // no se cierra a media petición
+    setMostrarModalRehacer(false);
+  }
+
+  // Pide al servidor que redacte otra vez el CV y la carta con la
+  // instrucción de la usuaria. A diferencia de `prepararDocumentos`, no hay
+  // reintentos automáticos con espera creciente: si falla, el documento
+  // anterior sigue disponible tal cual y la usuaria decide si insiste.
+  async function confirmarRehacer() {
+    const instrucciones = instruccionesRehacer.trim();
+    if (instrucciones.length === 0) return;
+
+    setMostrarModalRehacer(false);
+    setRehaciendo(true);
+    setErrorRehacer(null);
+
+    try {
+      const respuesta = await fetch('/api/rehacer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oferta_id: oferta.id, instrucciones }),
+      });
+      const datos = await respuesta.json();
+
+      if (datos.estado === 'listo') {
+        setGeneracion((previo) =>
+          previo ? { ...previo, avisos: datos.avisos ?? [], rehechos: datos.rehechos ?? previo.rehechos } : previo,
+        );
+      } else {
+        setErrorRehacer(datos.error ?? 'No se pudo rehacer el documento.');
+      }
+    } catch {
+      setErrorRehacer('Se perdió la conexión mientras se rehacía. Vuelve a intentarlo.');
+    } finally {
+      setRehaciendo(false);
+    }
+  }
+
+  const yaAgotoRehechos = (generacion?.rehechos ?? 0) >= MAXIMO_REHECHOS;
 
   return (
     <article className="flex flex-col rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -179,7 +245,7 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
         disabled={interesada || guardando}
         className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
       >
-        {interesada ? 'Te interesa ✓' : guardando ? 'Guardando…' : 'Me interesa'}
+        {interesada ? 'Te interesa ✓' : guardando ? 'Creando…' : 'Me interesa'}
       </button>
 
       {generacion?.estado === 'generando' && (
@@ -192,38 +258,76 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
         </p>
       )}
 
-      {generacion?.estado === 'listo' && (
+      {rehaciendo && (
+        <p className="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <span
+            aria-hidden
+            className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent"
+          />
+          Rehaciendo tu CV y tu carta… puede tardar un minuto.
+        </p>
+      )}
+
+      {generacion?.estado === 'listo' && !rehaciendo && (
         <>
           <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             CV y carta preparados ✓
           </p>
           {/* Paso 14 · disparador de intervención humana "acción irreversible":
               enviar el documento a una empresa no se puede deshacer, así que
-              este recordatorio aparece siempre, no solo cuando hay avisos
-              concretos (docs/05-ia.md §6.2). */}
+              este recordatorio aparece SIEMPRE, no solo cuando hay avisos
+              concretos (docs/05-ia.md §6.2). Pedido explícito de Mar
+              (23/08/2026): aunque no haya nada que advertir, el mensaje se
+              mantiene igual — la revisión humana no es opcional nunca. */}
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Revisa el documento antes de enviarlo: la IA puede cometer errores.
+            Revisa siempre el documento antes de enviarlo: la IA puede cometer errores, aunque no te avisemos de nada en concreto.
           </p>
         </>
       )}
 
       {(generacion?.estado === 'generando' || generacion?.estado === 'listo') && (
-        generacion.estado === 'listo' ? (
-          <a
-            href={`/api/descargar/${oferta.id}`}
-            className="mt-3 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
-          >
-            Descargar
-          </a>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="mt-3 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-400 opacity-60 dark:border-zinc-700 dark:text-zinc-500"
-          >
-            Descargar
-          </button>
-        )
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {generacion.estado === 'listo' && !rehaciendo ? (
+            <a
+              href={`/api/descargar/${oferta.id}`}
+              className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
+            >
+              Descargar
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-400 opacity-60 dark:border-zinc-700 dark:text-zinc-500"
+            >
+              Descargar
+            </button>
+          )}
+
+          {/* T93 · "Rehacer" solo tiene sentido sobre un documento ya listo, y
+              no mientras ya hay una petición de rehacer en curso. */}
+          {generacion.estado === 'listo' && (
+            <button
+              type="button"
+              onClick={abrirModalRehacer}
+              disabled={rehaciendo || yaAgotoRehechos}
+              title={yaAgotoRehechos ? MENSAJE_LIMITE_REHACER : undefined}
+              className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200"
+            >
+              Rehacer
+            </button>
+          )}
+        </div>
+      )}
+
+      {generacion?.estado === 'listo' && yaAgotoRehechos && (
+        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{MENSAJE_LIMITE_REHACER}</p>
+      )}
+
+      {errorRehacer && (
+        <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+          <p>{errorRehacer}</p>
+        </div>
       )}
 
       {generacion?.estado === 'listo' && generacion.avisos.length > 0 && (
@@ -263,6 +367,58 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
         >
           Preparar mi CV y mi carta
         </button>
+      )}
+
+      {mostrarModalRehacer && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={cerrarModalRehacer}
+          onKeyDown={(evento) => evento.key === 'Escape' && cerrarModalRehacer()}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`rehacer-titulo-${oferta.id}`}
+            onClick={(evento) => evento.stopPropagation()}
+            className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg dark:bg-zinc-900"
+          >
+            <h4 id={`rehacer-titulo-${oferta.id}`} className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              ¿Qué te gustaría modificar?
+            </h4>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Por ejemplo: «usa un lenguaje más profesional» o «que sea más conciso».
+            </p>
+            <textarea
+              autoFocus
+              value={instruccionesRehacer}
+              onChange={(evento) => setInstruccionesRehacer(evento.target.value.slice(0, MAXIMO_CARACTERES_INSTRUCCIONES))}
+              maxLength={MAXIMO_CARACTERES_INSTRUCCIONES}
+              rows={3}
+              placeholder="Escribe aquí qué te gustaría cambiar…"
+              className="mt-3 w-full rounded-md border border-zinc-300 p-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+            />
+            <p className="mt-1 text-right text-xs text-zinc-400">
+              {instruccionesRehacer.length}/{MAXIMO_CARACTERES_INSTRUCCIONES}
+            </p>
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={cerrarModalRehacer}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarRehacer}
+                disabled={instruccionesRehacer.trim().length === 0}
+                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-50 dark:text-zinc-900"
+              >
+                Rehacer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </article>
   );

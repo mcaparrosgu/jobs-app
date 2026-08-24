@@ -15,6 +15,16 @@ export const MENSAJE_LIMITE =
   `Has llegado al máximo de ${LIMITE_DIARIO} documentos por hoy. Mañana podrás preparar más; ` +
   'los que ya tienes siguen disponibles.';
 
+// El botón "Rehacer" (T93, 23/08/2026): pedido explícito de Mar de que NO
+// gaste el cupo diario de arriba, sino que tenga su propio límite por oferta
+// — así una mala racha rehaciendo un documento no le come a la usuaria (ni al
+// resto de la clase) el cupo de las demás ofertas del día.
+export const MAXIMO_REHECHOS = 2;
+
+export const MENSAJE_LIMITE_REHACER =
+  `Ya has rehecho este documento ${MAXIMO_REHECHOS} veces, el máximo permitido. ` +
+  'El que tienes ahora sigue disponible para descargar.';
+
 // Cuenta lo que la usuaria lleva hoy. Las generaciones que fallaron no cuentan:
 // sería injusto gastarle cupo en un intento que no le dio ningún documento.
 // "Hoy" es el día natural español, no el del reloj del servidor (lib/fechas.ts).
