@@ -10,8 +10,8 @@ import {
 import { registrarEvento } from '@/lib/metricas';
 import { createClient } from '@/lib/supabase/server';
 
-// Dos rondas de OpenRouter más el respaldo en Groq (lib/ia.ts) pueden sumar
-// hasta ~40 s en el peor caso. Sin esto, la función se corta a los 10 s por
+// Cloudflare más dos rondas de OpenRouter (lib/ia.ts) pueden sumar hasta
+// ~50 s en el peor caso. Sin esto, la función se corta a los 10 s por
 // defecto del plan gratuito de Vercel antes de que le dé tiempo a intentarlo
 // todo — el mismo motivo por el que app/api/generar/route.ts ya lo tenía.
 export const maxDuration = 60;

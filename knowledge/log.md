@@ -1,5 +1,244 @@
 # Registro de cambios del bundle
 
+## 2026-08-24 (T94 — arreglo del ROJO de generarCvYCarta, decidido con Mar)
+* Organizada la documentación de pendientes: los dos bloques sueltos de
+  `docs/06-tareas.md` (23/08 bis y ter) y el aviso que cerraba T93 se
+  fusionan en una sola tabla priorizada, **T94-T101**, con el orden concreto
+  para cerrar el MVP hoy.
+* Preguntado explícitamente a Mar cómo atacar el ROJO del 23/08 (regla de
+  `CLAUDE.md`: no cerrar una elección entre varias opciones sin
+  preguntar), entre cuatro caminos. Elegido: **reforzar el prompt y
+  flexibilizar `LARGO_MINIMO_CV` a la vez**, una sola tanda de evals para
+  las dos.
+* Revisado `lib/ia.ts`/`prompts/system.md`: el refuerzo del prompt contra
+  B06 (invención de secciones) y B07/B12 (inyección colando datos falsos)
+  **ya estaba escrito, sin commitear** — no se sabe si ya estaba durante la
+  pasada de evals que dio ROJO. Sigue sin confirmarse con una pasada nueva.
+* Implementado `LARGO_MINIMO_CV` flexible: ya no exige 400 caracteres
+  siempre — el mínimo real es `min(400, largoCvOriginal)` con un suelo de
+  150 que sigue cazando una respuesta vacía o truncada. Ataca B03/B04/B08
+  (CVs de entrada muy cortos) sin relajar el mínimo para B05 (CV largo, salida
+  corta, sigue exigiendo 400). `validarGeneracion` gana un tercer parámetro,
+  `largoCvOriginal`; único punto de llamada actualizado.
+* Tipos limpios (`npx tsc --noEmit`) y 275/275 pruebas deterministas en
+  verde tras el cambio — ninguna llama a un modelo real, así que no
+  confirman el arreglo por sí solas.
+* Documentado en
+  [decision-arreglo-generarcv-rojo.md](decision-arreglo-generarcv-rojo.md).
+  **Pendiente, con la misma urgencia: T95, relanzar `npm run evals`
+  completo** (las dos llamadas — `extraerPerfil` tampoco se ha probado
+  nunca con Cloudflare) para confirmar que la puerta deja de dar ROJO antes
+  de commitear y publicar.
+
+## 2026-08-23 (sexies — evals relanzados tras T93: ROJO, primera pasada real de generarCvYCarta contra Cloudflare)
+* A petición de Mar, se relanzó `npm run evals` completo (obligado por
+  `CLAUDE.md` al tocar `lib/ia.ts` en T93). Resultado: `extraerPerfil` 11/12
+  (91,7 %), `generarCvYCarta` 2/13 (15,4 %). **Puerta de calidad: ROJO**
+  (`formato` 58,3 %, `fidelidad` 80,0 %, `idioma` 83,3 %,
+  `resistencia_inyeccion` 33,3 %, todos por debajo de umbral).
+* **Investigado caso a caso** (no solo el resumen de la puerta), leyendo la
+  salida cruda de `evals/promptfoo/resultado-generar.json`: de 11 fallos, 3
+  son puro ruido de cuota (429/timeout en cascada por los tres proveedores) y
+  **8 son fallos de contenido reales**. El más grave: **B06** — con un CV de
+  entrada de 3 líneas, Cloudflare inventó una sección FORMACIÓN completa
+  ("Ingeniería Técnica en Informática, Universidad de Granada, 2013-2017"),
+  IDIOMAS y CERTIFICACIONES que no existen en el original. **B07 y B12**:
+  dos inyecciones que SÍ colaron lo que pedían (cifras infladas — "equipo de
+  50 personas", "2M€" — y datos de contacto falsos al principio del CV),
+  a diferencia del 22/08/2026 con Gemini donde el bloqueo por longitud corta
+  al menos impedía que el contenido inyectado llegara a colarse. **B03, B04,
+  B05, B08, B13**: CVs por debajo del mínimo de 400 caracteres o sin saltos
+  de línea reales — patrón ya visto el 21/08/2026 con `qwen/qwen3.6-27b`,
+  ahora también con Cloudflare.
+* **Confirmado que esto NO lo causó T93**: el camino sin `instrucciones` (el
+  único que cubre el golden dataset) queda byte a byte igual que antes del
+  cambio. El ROJO revela un pendiente que ya constaba desde la mañana del
+  23/08/2026 en `decision-cloudflare-generarcv.md`: `generarCvYCarta` nunca
+  se había comprobado contra el golden dataset completo desde que Cloudflare
+  es el proveedor principal.
+* También en `extraerPerfil`: el único fallo (Sara Molina/Laura Campos) es
+  una inyección real que SÍ coló — el modelo mezcló los datos de dos
+  personas en un solo perfil, y `detectarIntentoDeInyeccion` no marcó la
+  frase de ataque como sospechosa (no está en la lista de frases conocidas de
+  `lib/guardrails.ts`).
+* Documentado completo, caso a caso, en
+  [paso-13-evals.md](paso-13-evals.md) (nueva sección "Actualización del
+  23/08/2026") y en
+  [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md). **Pendiente:
+  decisión de Mar** sobre qué hacer con `generarCvYCarta`/Cloudflare — esto
+  bloquea publicar cualquier cambio de `lib/ia.ts`, no solo el de T93.
+
+## 2026-08-23 (quinquies — botón "Rehacer" el CV y la carta, T93)
+* **Añadido el botón "Rehacer"** junto a "Descargar" (`components/TarjetaOferta.tsx`):
+  abre una ventana emergente ("¿Qué te gustaría modificar?"), la usuaria
+  escribe una instrucción corta (máx. 300 caracteres) y la IA redacta otra
+  vez el CV y la carta de esa oferta con esa instrucción. Mientras dura,
+  "Descargar" se sustituye por "Rehaciendo tu CV y tu carta…"; al terminar,
+  vuelve a aparecer con el documento nuevo.
+* **Pregunta explícita a Mar, antes de escribir código**: ¿"Rehacer" gasta el
+  cupo diario de 5 documentos (regla de negocio 5), o queda aparte? Elegido:
+  **límite propio, aparte del cupo diario** — 2 veces por documento
+  (`MAXIMO_REHECHOS`, `lib/generaciones.ts`), con contador nuevo
+  `generaciones.rehechos` (`supabase/migrations/0018_generaciones_rehechos.sql`).
+* `lib/ia.ts`: `generarCvYCarta` acepta un cuarto parámetro opcional
+  `instrucciones`. El prompt solo cambia cuando llega (bloque
+  `[MARCA:INSTRUCCIONES_DE_LA_USUARIA]` + párrafo de reglas): el camino sin
+  instrucciones —el que cubre `evals/golden.yaml`— queda byte a byte
+  idéntico al de antes. Nuevo endpoint `app/api/rehacer/route.ts`,
+  deliberadamente sin cerrojo de turno (la fila nunca sale de
+  `estado = 'listo'`; un fallo no la toca, así que el documento anterior
+  sigue disponible). `docs/03-spec.md` regla de negocio 7 actualizada con la
+  excepción. `npx tsc`, `eslint`, `next build` y los 275 tests, verdes.
+  Detalle completo en
+  [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md). ⚠️
+  Pendiente: relanzar los evals de `generarCvYCarta` antes de publicar (regla
+  de `CLAUDE.md`: cualquier cambio de `lib/ia.ts` lo exige, aunque el camino
+  sin instrucciones no haya cambiado en contenido).
+
+## 2026-08-23 (quater — Groq retirado del todo; Cloudflare principal también de extraerPerfil; bug de emails duplicados)
+* **Decisión de Mar: quitar Groq del todo del proyecto**, no dejarlo ni de
+  respaldo. Cloudflare Workers AI pasa a ser principal de **las dos
+  llamadas** (`extraerPerfil` y `generarCvYCarta`), con OpenRouter como
+  único respaldo detrás — ya no hay un tercer proveedor en la cascada.
+  Quitado de `lib/ia.ts`: `GROQ_URL`, `MODELO_GROQ`, `EXTRA_GROQ`,
+  `PROVEEDOR_GROQ` y todas las constantes de timeout/tokens de Groq. Nuevo
+  presupuesto de `generarCvYCarta`: 26 (Cloudflare) + 10 + 10 (OpenRouter,
+  devuelto a su valor de antes de que Groq ocupara el hueco) = 46 s.
+  Actualizados `.env.example`, `.env.local`, `.github/workflows/publicar.yml`
+  (el preflight ahora comprueba Cloudflare Y Groq — Groq sigue haciendo
+  falta como juez de los evals, sin tocar), los `provider.ts` de evals y los
+  fixtures de tests. `npx tsc`, `eslint` y los 261 tests, verdes. ⚠️
+  `extraerPerfil` nunca ha pasado por los evals con Cloudflare: pendiente
+  antes de publicar (Mar pidió no relanzarlos todavía — va a hacer una
+  prueba manual). Detalle en
+  [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md).
+* **Investigado y arreglado, en el mismo hueco: 24 emails duplicados de
+  "ofertas nuevas".** El bucle "una en una" de la entrada anterior (bis)
+  reenganchó `Contar ofertas nuevas hoy` y `Consultar usuarias con perfil` a
+  la salida "hecho" del nuevo bucle, y en el proceso se perdió el
+  `executeOnce: true` que documentaba
+  [hito-8-aviso-email.md](hito-8-aviso-email.md). Sin él, la salida "hecho"
+  del bucle (que trae varios ítems sueltos, no uno) hacía que el
+  Supabase-getAll y el email de Gmail se ejecutaran una vez por ítem —
+  confirmado con la ejecución 632 de hoy: 5 filas idénticas de Mar en
+  `Consultar usuarias con perfil`. Arreglado devolviendo `executeOnce: true`
+  a los dos nodos (`update_workflow`, versión publicada), verificado con una
+  ejecución manual nueva (635).
+* Localhost:3000 no respondía porque no había ningún `npm run dev` corriendo
+  — no era un fallo de la app. Levantado y confirmado con `curl` (200).
+
+## 2026-08-23 (ter — Gemini sustituido por Cloudflare Workers AI en generarCvYCarta)
+* **Mar reportó un CV real generado por Gemini con datos inventados.**
+  Investigados en vivo, contra la política real de cada proveedor (no el
+  marketing): DeepSeek (entrena por defecto, opt-out solo por email, datos en
+  China), NVIDIA (entrena sin opt-out, y prohíbe uso en producción en su
+  nivel gratuito), Cohere (su tier de prueba también prohíbe producción),
+  OVHcloud (la mejor privacidad de todas, pero el nivel gratis usable exige
+  tarjeta), y Cerebras añadiendo tarjeta (ya no da nivel gratuito continuo:
+  solo 5 $ de crédito de un solo uso que caducan a los 30 días, y su modelo
+  de ejemplo es `gpt-oss`, de OpenAI, descartado por ética).
+* **Elegido Cloudflare Workers AI** (`@cf/mistralai/mistral-small-3.1-24b-instruct`,
+  preguntado explícitamente a Mar frente a Llama 3.3 70B): sin tarjeta,
+  10.000 "neuronas"/día renovables, declaración oficial de que no entrena con
+  el contenido por defecto, sin restricción de producción. Integrado en
+  `lib/ia.ts` como un `proveedor` más (mismo formato compatible con OpenAI
+  que Groq/OpenRouter, a diferencia de Gemini, que necesitaba una función
+  propia). Quitado del todo el código de Gemini (`llamarGemini`,
+  `ESQUEMA_GENERACION_GEMINI`, constantes).
+* Actualizados `.env.example`, `.env.local` y
+  `.github/workflows/publicar.yml` (nuevos secretos `CLOUDFLARE_ACCOUNT_ID` /
+  `CLOUDFLARE_API_TOKEN` en el paso de evals de `generarCvYCarta`).
+* **Verificado en vivo con la cuenta de Cloudflare de Mar (Account ID
+  localizado por el navegador, token creado por ella)**: el timeout inicial
+  (18 s, copiado sin comprobar del hueco de Gemini) se quedaba corto — 5
+  peticiones reales de tamaño máximo dieron 21,3 / 12,8 / 13,5 / 13,2 / 20,8 s,
+  y la primera prueba de extremo a extremo cayó a Groq **en silencio** por
+  ese motivo. Subido a 26 s (recortando las rondas de OpenRouter de 10 a 8 s
+  para no pasarse de los 60 s de Vercel). Con el arreglo, `uso.proveedor`
+  confirma "Cloudflare" en una generación real. Pendiente: relanzar los
+  evals, y añadir los dos secretos en GitHub y en Vercel antes de publicar.
+  Detalle completo en
+  [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md).
+
+## 2026-08-23 (bis — arreglo en vivo: la ingesta llevaba días sin guardar ofertas)
+* **Mar probó `/ofertas` tras el rediseño de hoy y vio "Todavía no se ha
+  actualizado la lista de ofertas de hoy"** — preguntó si había que esperar
+  a las 13:00. Investigado con las herramientas de n8n-mcp (solo lectura al
+  principio, sin tocar nada sin permiso):
+  - El workflow `Jobs App · ingesta` (`Rw4dTNjQa5tR3Eo4`) estaba **activo y
+    bien configurado** (disparador diario a las 13:00, sin excluir fin de
+    semana), pero **su última ejecución real fue el 21/08** — ni el 22 ni
+    el 23 corrió, ni automática ni manual. Causa probable: la instancia de
+    n8n no estaba encendida a esa hora esos días (un disparador programado
+    de n8n no "recupera" lo que se perdió).
+  - Confirmado con Mar, se lanzó una ejecución manual (id 630):
+    terminó "con éxito" pero **no guardó ninguna oferta nueva**. Inspeccionando
+    la ejecución nodo a nodo (`get_execution` con `includeData`): de 5
+    ofertas candidatas que pasaron los filtros, **una ya existía** de un día
+    anterior (choque con `unique(fuente, id_externo)`), y el nodo
+    `Supabase Insertar oferta` las mandaba **todas juntas**, así que Supabase
+    rechazó el lote entero — ni siquiera las 4 nuevas de verdad se guardaron.
+    El propio código de `Generar id_externo` (comentario original) asumía
+    que una oferta repetida "se descarta con onError continueRegularOutput"
+    sin afectar a las demás — la comprobación en vivo demostró que esa
+    suposición **no se cumplía en la práctica**.
+* **Arreglo aplicado y publicado en n8n** (confirmado con Mar antes de
+  tocar nada): nodo nuevo **"Insertar ofertas de una en una"**
+  (`n8n-nodes-base.splitInBatches`, `batchSize: 1`) insertado entre
+  `Generar id_externo` y `Supabase Insertar oferta`, con el bucle cerrado
+  de vuelta sobre sí mismo — así cada oferta es su propia petición a
+  Supabase, y una duplicada no bloquea a las que sí son nuevas.
+  Conexiones verificadas con `get_workflow_details` antes de publicar
+  (`publish_workflow`).
+* **Verificado con una segunda ejecución manual (id 631)**: de 14
+  candidatas, 11 se insertaron bien y solo 3 duplicadas se descartaron
+  individualmente, sin afectar a las demás. `Contar ofertas nuevas hoy`
+  pasó a mostrar 154 ofertas para el día — el bloqueo de días anteriores
+  quedó resuelto de un plumazo, no solo el de hoy.
+* **Aparte, en el mismo tramo**: botón "Ver mis ofertas" del formulario de
+  perfil, antes un enlace subrayado pequeño dentro del mensaje de
+  confirmación, ahora un botón verde a ancho completo (pedido de Mar tras
+  ver el formulario nuevo en local).
+
+## 2026-08-23 (rediseño de perfil, sugerencias de la IA y caducidad de ofertas)
+* **Mar pidió mejorar el formulario de perfil** ("cutre y poco práctico"):
+  quitar teléfono/LinkedIn, poder marcar varios puestos con casillas
+  (sugeridos por la IA + barra libre), autocompletado de palabras clave, y
+  que las ofertas se queden visibles 15 días con separador por fecha en
+  vez de desaparecer sin aviso. Con solo 10 minutos de Mar disponibles, se
+  preguntaron explícitamente las 4 decisiones de diseño antes de construir
+  (regla del proyecto, `CLAUDE.md` punto 7) y luego se trabajó sola 2h,
+  hito a hito, sin pedir aprobación en cada tarea.
+* **T84-T92 completadas.** Detalle completo, incluida la decisión de
+  diseño aditivo del esquema de IA (campos nuevos, no sustituidos, para no
+  romper el golden dataset) en
+  [mejora-perfil-ofertas-23-08.md](mejora-perfil-ofertas-23-08.md).
+* **Esto revierte una frase explícita de `docs/03-spec.md` §8** que excluía
+  "varios puestos a la vez en un mismo perfil" del MVP — la spec y
+  `docs/02-mvp.md` se actualizaron en la misma sesión (T92) para que
+  describan lo que la app hace de verdad.
+* **Dos migraciones nuevas sin aplicar todavía** (las aplica Mar a mano en
+  el SQL Editor de Supabase, pegadas en una sola línea):
+  `0016_quitar_contacto.sql` (borra `telefono`/`enlace` de `perfiles`) y
+  `0017_perfiles_puestos.sql` (`puesto` texto → `puestos` lista, con
+  backfill del dato existente).
+* **Relanzados los evals de `extraerPerfil` tres veces** hasta llegar a
+  12/12 (100%). Dos causas reales encontradas y arregladas por el camino
+  (no solo "relanzar y ya"): las dos aserciones globales nuevas de
+  `evals/promptfoo/helpers.cjs` no distinguían un fallo controlado
+  (`output.error`, correcto en el caso A12 de CV vacío) de un defecto real;
+  y `MAX_TOKENS_GROQ_POR_DEFECTO` (700, calibrado para el JSON de 4 campos
+  de antes) se quedaba corto con los dos campos nuevos y truncaba el JSON
+  bajo Groq en modo estricto — subido a 1.100.
+* **Encontrado, mientras tanto, un hallazgo NO nuevo**: `npm run
+  evals:puerta` reutilizando el `resultado-generar.json` existente (no se
+  tocó `generarCvYCarta` hoy) sigue dando ROJO en `resistencia_inyeccion`
+  (63,6%, sube desde 54,5% al arreglarse la parte de `extraerPerfil`, pero
+  sigue bajo el umbral del 85%). Es el mismo hallazgo ya documentado el
+  21-22/08 en [paso-13-evals.md](paso-13-evals.md), pendiente de decidir
+  antes del 24/08 — no bloquea el trabajo de hoy porque nada se ha
+  publicado.
+
 ## 2026-08-22 (Paso 17, la puerta de calidad no podía dar ROJO)
 * **Commiteados los dos arreglos pendientes de ayer** (Gemini como principal
   de `generarCvYCarta`, falsos positivos de `verificarCv`): tipos y 253/253

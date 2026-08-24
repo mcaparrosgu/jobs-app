@@ -225,6 +225,49 @@ existe en produccion y no se toca desde aqui.
   ROJO (`fidelidad` 88 %, `resistencia_inyeccion` 63,6 %), no NO
   CONCLUYENTE.
 
+- [arreglo-ingesta-duplicado-bloqueaba-lote.md](arreglo-ingesta-duplicado-bloqueaba-lote.md)
+  — 23/08/2026: la ingesta diaria llevaba 3 días sin correr (n8n apagado a
+  las 13:00) y, al lanzarla a mano, una oferta duplicada bloqueaba el lote
+  entero de 5 y no se guardaba ninguna. Arreglado con un nodo "Loop Over
+  Items" (batchSize 1) en `Jobs App · ingesta` para que cada oferta sea su
+  propia petición.
+- [mejora-perfil-ofertas-23-08.md](mejora-perfil-ofertas-23-08.md) —
+  23/08/2026, T84-T92: teléfono/LinkedIn fuera del perfil, la IA sugiere
+  3-5 puestos seleccionables con casillas, autocompletado de palabras
+  clave sobre una lista ampliada, y las ofertas caducan de verdad a los 15
+  días. Revierte una exclusión explícita de `docs/03-spec.md` §8. Diseño
+  aditivo en el esquema de `lib/ia.ts` (campos nuevos, no sustituidos) para
+  no romper el golden dataset existente.
+- [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md) —
+  23/08/2026: Gemini se sustituye por Cloudflare Workers AI
+  (`@cf/mistralai/mistral-small-3.1-24b-instruct`) en `generarCvYCarta`,
+  tras un CV real con datos inventados. Investigados en vivo DeepSeek,
+  Mistral, NVIDIA, Cohere, OVHcloud y Cerebras con tarjeta: todos
+  descartados por privacidad, restricción de producción o exigir pago real.
+  Verificado en vivo: el timeout inicial (18 s) se quedaba corto y caía a
+  Groq en silencio; corregido a 26 s con datos reales de latencia,
+  `uso.proveedor` confirma "Cloudflare". Esa misma noche, decisión de Mar:
+  Groq se retira del TODO el proyecto — Cloudflare pasa a ser principal
+  también de `extraerPerfil` (nunca pasado por evals), OpenRouter queda
+  como único respaldo. Pendiente: relanzar evals y añadir los secretos en
+  GitHub/Vercel antes de publicar.
+- [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
+  T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
+  ("más profesional", "más conciso") y la IA redacta otra vez el CV y la
+  carta de esa oferta. Excepción explícita a la regla de negocio 7 (documento
+  definitivo), con su propio límite (2 por documento) **aparte** del cupo
+  diario de 5 — decidido explícitamente con Mar entre tres opciones.
+  `lib/ia.ts` cambia solo cuando hay instrucciones, para no invalidar el
+  golden dataset existente. Evals relanzados: **ROJO**, no causado por este
+  cambio — ver `paso-13-evals.md`.
+- [decision-arreglo-generarcv-rojo.md](decision-arreglo-generarcv-rojo.md) —
+  24/08/2026, T94: arreglo del ROJO, decidido explícitamente con Mar entre
+  cuatro opciones ("las dos cosas a la vez"). Refuerzo del prompt contra la
+  invención de secciones y la inyección colando datos falsos (ya estaba
+  hecho, sin commitear), más `LARGO_MINIMO_CV` flexible: ya no exige 400
+  caracteres siempre, se ajusta al tamaño del CV original con un suelo de
+  150. Pendiente T95: relanzar evals para confirmarlo.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

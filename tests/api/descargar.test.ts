@@ -43,7 +43,7 @@ describe('GET /api/descargar/[id] — sesión y permisos', () => {
       user: USUARIA,
       tablas: {
         generaciones: [{ data: GENERACION_LISTA, error: null }],
-        perfiles: [{ data: { nombre: 'Ana', puesto: 'PM', telefono: '', enlace: '' }, error: null }],
+        perfiles: [{ data: { nombre: 'Ana', puestos: ['PM'] }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -142,7 +142,7 @@ describe('GET /api/descargar/[id] — descarga (C4)', () => {
       user: USUARIA,
       tablas: {
         generaciones: [{ data: GENERACION_LISTA, error: null }],
-        perfiles: [{ data: { nombre: 'Ana García', puesto: 'PM', telefono: '', enlace: '' }, error: null }],
+        perfiles: [{ data: { nombre: 'Ana García', puestos: ['PM'] }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -162,7 +162,7 @@ describe('GET /api/descargar/[id] — descarga (C4)', () => {
         generaciones: [
           { data: { ...GENERACION_LISTA, ofertas: { titulo: 'PM: Backend/Frontend "Senior"?', descripcion: '' } }, error: null },
         ],
-        perfiles: [{ data: { nombre: 'Ana', puesto: 'PM', telefono: '', enlace: '' }, error: null }],
+        perfiles: [{ data: { nombre: 'Ana', puestos: ['PM'] }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);
@@ -180,7 +180,7 @@ describe('GET /api/descargar/[id] — descarga (C4)', () => {
       user: USUARIA,
       tablas: {
         generaciones: [{ data: { ...GENERACION_LISTA, ofertas: null }, error: null }],
-        perfiles: [{ data: { nombre: 'Ana', puesto: 'PM', telefono: '', enlace: '' }, error: null }],
+        perfiles: [{ data: { nombre: 'Ana', puestos: ['PM'] }, error: null }],
       },
     });
     vi.mocked(createClient).mockResolvedValue(cliente as never);

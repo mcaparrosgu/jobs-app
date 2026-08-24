@@ -279,6 +279,98 @@ verdad, ya no solo `localhost`.
 | T82 | Añadir el nombre completo al perfil | `supabase/migrations/0009_perfiles_nombre.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `app/perfil/page.tsx` | En `/perfil` escribes tu nombre completo, guardas, recargas la página y sigue ahí | T31 | [x] |
 | T83 | Rediseño elegante del PDF, a prueba de ATS | `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts`, `public/fonts/` | Descargas un CV: tu nombre arriba en una tipografía elegante, el puesto y tu email debajo, secciones en mayúsculas espaciadas con una línea fina, viñetas finas — todo en una sola columna de lectura (nada de texto girado ni columnas paralelas, para que un lector automático no lo desordene) | T82, T60 | [x] |
 
+## Añadido el 23/08/2026 · Rediseño de perfil, sugerencias y caducidad de ofertas
+
+> A petición de Mar tras usar la app: el formulario de perfil pedía datos que
+> ya suelen venir en el CV pegado (teléfono, LinkedIn), solo dejaba elegir un
+> puesto y las palabras clave no tenían autocompletado; las ofertas, además,
+> no tenían ningún límite de tiempo visible. **Esto revierte una frase de
+> `docs/03-spec.md` §8 ("Fuera de alcance")**, que excluía explícitamente
+> "varios puestos a la vez en un mismo perfil" — T92 actualiza la spec para
+> que dependa de la construcción, no al revés. Decisiones preguntadas y
+> confirmadas por Mar el 23/08/2026 (mantener el nombre a mano, no la IA;
+> sugerir 3-5 puestos con la IA; autocompletado de palabras clave con lista
+> ampliada por la IA; las ofertas caducan a los 15 días de verdad). Se
+> numeran a continuación de T83 para no renumerar nada de lo ya hecho.
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T84 | Quitar teléfono y LinkedIn del perfil (se mantiene el nombre, a mano) | `supabase/migrations/0016_quitar_contacto.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `lib/pdf.tsx` | En `/perfil` ya no ves esos dos campos; el PDF descargado ya no los muestra, solo nombre y email | T82 | [x] |
+| T85 | Las ofertas caducan a los 15 días y se agrupan por fecha con separador visual | `app/api/ofertas/route.ts`, `app/ofertas/page.tsx`, `lib/fechas.ts` | En `/ofertas` ves las más recientes arriba, un separador con la fecha cada vez que cambia el día de ingesta, y una oferta encontrada hace más de 15 días ya no aparece aunque siga coincidiendo con tu perfil | T44 | [x] |
+| T86 | La IA amplía la lista de palabras clave sugeridas (para el autocompletado) | `lib/ia.ts`, `evals/golden.yaml`, `prompts/system.md` | Al analizar un CV, la respuesta trae, además de las palabras clave de siempre, una lista más amplia de sugerencias relacionadas | T31 | [x] |
+| T87 | Autocompletado real en el campo "Añadir palabra clave" | `components/FormularioPerfil.tsx` | Mientras escribes ahí ves una lista desplegable con sugerencias de T86 que puedes pulsar en vez de escribir la palabra entera | T86 | [x] |
+| T88 | La IA sugiere varios puestos posibles, no solo uno | `lib/ia.ts`, `evals/golden.yaml`, `prompts/system.md` | El análisis del CV devuelve entre 3 y 5 puestos posibles, además de mantener el puesto principal de siempre | T31 | [x] |
+| T89 | Migrar el perfil a varios puestos seleccionados a la vez | `supabase/migrations/0017_perfiles_puestos.sql`, `app/api/perfil/route.ts`, `app/api/ofertas/route.ts`, `app/api/generar/route.ts` | Guardas el perfil con más de un puesto marcado; las ofertas que aparecen coinciden con cualquiera de ellos | T88 | [x] |
+| T90 | Casillas + barra libre para elegir puestos en el formulario | `components/FormularioPerfil.tsx` | Tras analizar el CV ves varias casillas con los puestos sugeridos (el principal ya marcado) y una barra para escribir puestos propios y añadirlos | T89 | [x] |
+| T91 | Relanzar los evals tras los cambios de prompt/esquema de T86 y T88 | — | `npm run evals` sigue por encima de los umbrales de `evals/umbrales.json` | T86, T88 | [x] |
+| T92 | Actualizar `docs/03-spec.md` y `docs/02-mvp.md` con el nuevo alcance | `docs/03-spec.md`, `docs/02-mvp.md` | §8 de la spec ya no excluye varios puestos a la vez; §4 y §5 describen el perfil y las ofertas tal como quedan | T84-T90 | [x] |
+
+## Añadido el 23/08/2026 (quinquies) · Botón "Rehacer" el CV y la carta
+
+> A petición de Mar: tras descargar el CV y la carta de una oferta, poder
+> pedir que la IA los redacte otra vez con una instrucción propia ("más
+> profesional", "más conciso"). Excepción explícita a la regla de negocio 7
+> (documento definitivo). Pregunta explícita antes de construir: ¿"Rehacer"
+> gasta el cupo diario de 5 documentos, o queda aparte? Elegido con Mar:
+> límite propio (2 por documento), sin tocar el cupo diario. Detalle en
+> [`knowledge/decision-rehacer-cv-carta.md`](../knowledge/decision-rehacer-cv-carta.md).
+
+| # | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :---- | :---- | :---- | :-- | :-: |
+| T93 | Botón "Rehacer" junto a "Descargar", con ventana emergente para pedir un cambio | `supabase/migrations/0018_generaciones_rehechos.sql`, `lib/generaciones.ts`, `lib/ia.ts`, `app/api/rehacer/route.ts`, `app/api/ofertas/route.ts`, `components/TarjetaOferta.tsx` | Con un documento listo, pulsas "Rehacer", escribes qué cambiar y el documento se redacta otra vez sin tocar el contador de los 5 al día; al llegar a 2 rehechos, el botón se deshabilita y lo explica | T57 | [x] |
+
+> ⚠️ **Evals relanzados el 23/08/2026: veredicto ROJO — no publicable.** No lo
+> causó este cambio (el camino sin instrucciones de la usuaria queda byte a
+> byte igual que antes); revela que `generarCvYCarta` con Cloudflare nunca se
+> había comprobado contra el golden dataset completo. 8 fallos de contenido
+> reales, el más grave una invención total de una sección de formación sin
+> ningún respaldo en el CV original, y dos inyecciones que colaron cifras
+> infladas y datos de contacto falsos. Detalle caso a caso en
+> [`knowledge/paso-13-evals.md`](../knowledge/paso-13-evals.md). Bloquea
+> publicar cualquier cambio de `lib/ia.ts`, no solo T93 — ver **T94**, primera
+> tarea del bloque de prioridades de más abajo.
+
+## Pendientes para cerrar el MVP — orden de prioridad (24/08/2026)
+
+> La clase vuelve el lunes 24/08/2026 y con ella las cinco usuarias reales.
+> Este bloque junta, en un solo sitio y en el orden en que hay que
+> atacarlos, todo lo que antes vivía disperso en dos bloques de "pendientes
+> sueltos" (23/08 bis y ter) más el aviso que cerraba T93. Se numeran ya
+> como tareas porque ahora sí hay un plan concreto que ejecutar — la razón
+> por la que antes se dejaron sin número.
+
+| # | Prioridad | Tarea | Archivos | Cómo compruebo que está bien | Depende de | |
+| :-- | :-- | :---- | :---- | :---- | :-- | :-: |
+| T94 | 1 · Crítica | Arreglar la causa del ROJO de `generarCvYCarta` en Cloudflare — decidido con Mar: reforzar el prompt (invención de secciones, inyección colando datos falsos) **y** flexibilizar `LARGO_MINIMO_CV` (CVs de entrada muy cortos) a la vez | `lib/ia.ts`, `prompts/system.md` | Interno — el refuerzo del prompt ya estaba escrito; `LARGO_MINIMO_CV_ABSOLUTO`/`largoMinimoCv` implementados, tipos limpios, 275/275 pruebas en verde. Se confirma de verdad en T95 | T93 | [x] |
+| T95 | 2 · Crítica | Relanzar `npm run evals` completo (las dos llamadas — `extraerPerfil` tampoco se ha probado con Cloudflare) y confirmar que la puerta ya no da ROJO | `evals/` | `npm run evals:puerta` sobre el resultado nuevo da VERDE (o al menos ya no las mismas 8 señales) | T94 | [ ] |
+| T96 | 3 · Alta | Comprobar que la instancia de n8n está encendida y fiable para el disparador de las 13:00 de mañana (lleva 3 días sin correr — 21, 22 y 23/08 — ver `knowledge/arreglo-ingesta-duplicado-bloqueaba-lote.md`) | — (infraestructura, decisión de Mar) | El disparador corre solo mañana a las 13:00 sin intervención manual | — | [ ] |
+| T97 | 4 · Alta | Commitear el trabajo de T84-T93, todavía sin commitear en local | todos los pendientes de `git status` | `git log` muestra los commits nuevos | T95 | [ ] |
+| T98 | 5 · Media | Añadir `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_API_TOKEN` como secretos en GitHub (Settings → Secrets and variables → Actions) | — | El preflight de `.github/workflows/publicar.yml` no falla al tocar `lib/ia.ts` | T97 | [ ] |
+| T99 | 6 · Media | Añadir las mismas 2 variables en Vercel (Settings → Environment Variables) | — | Producción usa Cloudflare como principal, no cae a OpenRouter en silencio | T97 | [ ] |
+| T100 | 7 · Media | Probar en una rama y su vista previa antes de publicar a `master` (regla de `CLAUDE.md`) | — | La vista previa protegida funciona igual que se espera en producción | T98, T99 | [ ] |
+| T101 | 8 · Media | Publicar a `master`, con tu permiso explícito | — | La URL pública sirve la versión nueva | T100 | [ ] |
+| — | 9 · Espera (mañana) | **T68**, ya numerada en el Hito 8: confirmar que el email de aviso llega de verdad tras la ejecución real de las 13:00 | — | Ver Hito 8 más arriba | T96 | [ ] |
+| — | 10 · Opcional | Corregir el `comment on column` de `supabase/migrations/0015_metricas_ia.sql`, que sigue mencionando a Groq (no urgente, no bloquea nada; exige una migración nueva, no tocar la 0015) | migración nueva | El comentario en Supabase ya no menciona a Groq | — | [ ] |
+
+> ⚠️ **T94 necesita tu decisión antes de tocar código** (regla de
+> `CLAUDE.md`: no cerrar una elección entre varias opciones sin habértela
+> preguntado explícitamente). Las 8 señales del ROJO agrupan en problemas
+> distintos que probablemente piden arreglos distintos — detalle caso a caso
+> en [`knowledge/paso-13-evals.md`](../knowledge/paso-13-evals.md):
+> - **Invención de secciones enteras y datos falsos colados por inyección**
+>   (B06, B07, B12) → reforzar el prompt.
+> - **CVs de entrada genuinamente cortos que no pueden llegar a los 400
+>   caracteres sin inventar** (B03, B04, B08) → flexibilizar
+>   `LARGO_MINIMO_CV`, no el prompt.
+> - **Fallos de formato transversales** (B05, B13: cortes a media frase, sin
+>   saltos de línea reales) → puede que ni sea el prompt ni el modelo, es el
+>   mismo patrón ya visto con `qwen3.6-27b` antes de Cloudflare.
+>
+> También sigue pendiente, de la misma tanda: `extraerPerfil` nunca se ha
+> probado en el golden dataset con `mistral-small-3.1-24b-instruct` (sigue
+> ahí con Groq) — T95 debe cubrir las dos llamadas, no solo
+> `generarCvYCarta`.
+
 ## Relacionado
 
 - [`docs/03-spec.md`](03-spec.md) — qué hace el producto; cada regla de
