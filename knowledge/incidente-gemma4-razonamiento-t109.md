@@ -244,16 +244,22 @@ en el mismo minuto y con la misma llamada real:
 Quitar la regla de los saltos de línea no cambió nada: la culpable era la de
 "conserva todo".
 
-## Por qué importa más de lo que parece
+## Una conclusión precipitada, y su correccion
 
-Este mismo cuelgue es lo que llenó de "sin evaluar" la tanda de evals que el
-robot de publicación lanzó esa tarde, y lo que le hizo dictar **NO
-CONCLUYENTE**. El propio veredicto sugiere entonces "falta de cuota o el
-modelo juez sin responder; relanzar, no arreglar" — y esta vez ese consejo
-llevaba al sitio equivocado: no faltaba cuota, el prompt estaba roto.
-**Un veredicto NO CONCLUYENTE puede ser el síntoma de un cambio propio, no
-solo del entorno.** Antes de relanzar, mirar si los timeouts los provoca el
-código que se acaba de tocar.
+Al encontrarlo se dio por hecho que este cuelgue era **también** lo que había
+llenado de "sin evaluar" la tanda de evals del robot esa tarde, y lo que le
+hizo dictar NO CONCLUYENTE. **Los números lo desmienten**: la tanda con el
+prompt desbocado tuvo **17** casos sin evaluar y la siguiente, ya con el
+prompt acotado, tuvo **18**. Si el desbocamiento fuera la causa, habrían
+bajado.
+
+El cuelgue era real —A/B, tres repeticiones— pero rompía la generación **en
+producción y en local**, no los evals del robot. Los timeouts del robot tienen
+otra causa, todavía sin identificar (ver T114).
+
+La lección que sí queda: **una explicación que encaja no es una explicación
+comprobada**. Bastaba comparar los dos recuentos de "sin evaluar" para verlo,
+y ese recuento estaba delante desde el primer momento.
 
 ## El arreglo
 

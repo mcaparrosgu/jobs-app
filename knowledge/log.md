@@ -14,11 +14,12 @@
   `max_tokens: 12.000` en sí (15,1 s). Ninguna reproducía el cuelgue.
 * **Lo reprodujo el A/B del prompt**, misma llamada y mismo minuto: prompt
   anterior 13,0 s / prompt ajustado 408 a los 182 s, tres veces.
-* **De paso, explica el NO CONCLUYENTE** de la puerta de calidad de esa tarde:
-  los casos "sin evaluar" no eran falta de cuota ni el juez sin responder,
-  eran este cuelgue. Lección para el futuro: **un NO CONCLUYENTE puede ser
-  síntoma de un cambio propio**, y el consejo del propio veredicto
-  ("relanzar, no arreglar") lleva entonces al sitio equivocado.
+* **Se dio por hecho que esto explicaba el NO CONCLUYENTE** de la puerta de
+  esa tarde, y **era falso**: la tanda con el prompt desbocado tuvo 17 casos
+  "sin evaluar" y la siguiente, ya arreglado, tuvo 18. El cuelgue rompía la
+  generación en producción y en local, no los evals del robot. Los timeouts
+  del robot siguen sin explicar (T114). Lección: una explicación que encaja no
+  es una explicación comprobada.
 * **Arreglo**: la regla se reescribe acotada y con final explícito ("cuando
   hayas recorrido el CV original una vez, PARA... ocupa aproximadamente lo
   mismo que el original"). Medido: **13,5 s**, 471 tokens, CV de 545

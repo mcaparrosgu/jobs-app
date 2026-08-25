@@ -49,8 +49,8 @@ existe en produccion y no se toca desde aqui.
   OpenRouter devuelve 429 inmediato y no respalda nada (T112), y una **segunda
   vuelta**: el ajuste de prompt contra los CVs cortos volvió a dejar la
   generación al 0 % porque le decía al modelo que conservara todo sin decirle
-  dónde parar (408 a los 180 s). Explica también por qué la puerta de calidad
-  dictó NO CONCLUYENTE esa tarde.
+  dónde parar (408 a los 180 s). Incluye una conclusión precipitada y su
+  corrección: ese cuelgue **no** era lo que hacía fallar los evals del robot.
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.
