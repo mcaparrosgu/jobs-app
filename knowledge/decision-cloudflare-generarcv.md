@@ -6,6 +6,17 @@ tags: [jobs-app, ia, cloudflare, decision, okf]
 timestamp: 2026-08-23T23:30:00Z
 ---
 
+> ⚠️ **Parcialmente superada el 25/08/2026 (T109).** La elección de Cloudflare
+> como proveedor sigue siendo válida y no se toca. Lo que se revierte es el
+> modelo concreto de `generarCvYCarta`: `@cf/google/gemma-4-26b-a4b-it` resultó
+> ser un modelo **de razonamiento** que tarda 58,5 s con el prompt real, así
+> que esa llamada falló al 100% desde que se puso hasta que se retiró. Vuelve
+> a `@cf/mistralai/mistral-small-3.1-24b-instruct`, el mismo de `extraerPerfil`.
+> Ver [incidente-gemma4-razonamiento-t109.md](incidente-gemma4-razonamiento-t109.md).
+>
+> Lo que este documento no midió al elegir gemma-4 fue **la latencia**: se
+> comparó precio en neuronas y confianza previa, no cuánto tardaba.
+
 # El hallazgo que lo motiva
 
 Mar probó `generarCvYCarta` ya en uso real y reportó que el CV que le generó

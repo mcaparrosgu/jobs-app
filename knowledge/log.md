@@ -1,5 +1,83 @@
 # Registro de cambios del bundle
 
+## 2026-08-25 (quater — T109: el arreglo del prompt rompió la generación)
+
+* **El ajuste de prompt contra los CVs cortos (`7e41a11`) dejó la generación
+  otra vez al 0 %**, y con un fallo distinto: la regla añadida ("RECOGE TODA
+  la experiencia", "ante la duda, conserva") no decía **dónde parar**. Con
+  `max_tokens: 12.000` el modelo escribía sin fin y Cloudflare cortaba con
+  **HTTP 408 · Request timeout** a los 180 s.
+* **Descartado antes de tocar el prompt**, con una sonda en vivo por
+  hipótesis: cupo (petición mínima, 200 en 0,9 s), esquema JSON forzado
+  (10,2 s), tamaño del prompt (12.202 caracteres → 15,0 s), endpoint
+  compatible contra nativo (15,8 / 13,6 s), salida larga (16,8 s) y
+  `max_tokens: 12.000` en sí (15,1 s). Ninguna reproducía el cuelgue.
+* **Lo reprodujo el A/B del prompt**, misma llamada y mismo minuto: prompt
+  anterior 13,0 s / prompt ajustado 408 a los 182 s, tres veces.
+* **De paso, explica el NO CONCLUYENTE** de la puerta de calidad de esa tarde:
+  los casos "sin evaluar" no eran falta de cuota ni el juez sin responder,
+  eran este cuelgue. Lección para el futuro: **un NO CONCLUYENTE puede ser
+  síntoma de un cambio propio**, y el consejo del propio veredicto
+  ("relanzar, no arreglar") lleva entonces al sitio equivocado.
+* **Arreglo**: la regla se reescribe acotada y con final explícito ("cuando
+  hayas recorrido el CV original una vez, PARA... ocupa aproximadamente lo
+  mismo que el original"). Medido: **13,5 s**, 471 tokens, CV de 545
+  caracteres. Lint limpio y 275 pruebas en verde. Actualizados `lib/ia.ts`,
+  `prompts/system.md` e `incidente-gemma4-razonamiento-t109.md`.
+* **Datos de producción**: se ponen a cero los `intentos_fallidos` de las
+  cuatro ofertas en error (una llevaba 9). Los acumuló el modelo roto, no la
+  oferta, y el contador solo se reinicia solo cuando una generación sale bien.
+
+## 2026-08-25 (ter — T109: arreglada la generación de CV)
+* **Diagnóstico**: la generación de CV y carta fallaba al **100%** desde el
+  23/08 porque `@cf/google/gemma-4-26b-a4b-it` es un modelo **de
+  razonamiento**: medido en vivo con el prompt real y sin el corte de espera,
+  tarda **58,5 s** (7.042 tokens de salida, ~4.800 de borrador interno
+  invisible). El corte estaba en 34 s y el máximo de Vercel es 60 s, así que
+  **esa llamada no podía funcionar nunca**. `reasoning_effort: "low"` lo
+  empeora (83 s) y Cloudflare no expone forma de apagarle el razonamiento.
+* **La teoría del 24/08 era falsa**: no era cupo de Cloudflare agotado. Se
+  desmiente midiendo en la misma cuenta y el mismo minuto — gemma-4 tardaba
+  58 s mientras `mistral-small` tardaba 16.
+* **La pista estaba en `metricas_ia`** (Paso 17), sin gastar cuota: los 6
+  fallos de Mar del 25/08 tenían `duracion_ms` entre 36.205 y 36.776 —
+  siempre 34 s de corte + ~2 s del respaldo. Un patrón tan estrecho es un
+  reloj, no un proveedor saturado.
+* **Arreglo**, elegido por Mar entre alternativas medidas (`lib/ia.ts`):
+  `MODELO_CLOUDFLARE_GENERACION` vuelve a
+  `@cf/mistralai/mistral-small-3.1-24b-instruct` (16,7 s);
+  `TIMEOUT_CLOUDFLARE_GENERACION_MS` 34 → 26 s;
+  `TIMEOUT_OPENROUTER_GENERACION_MS` 10 → 14 s por ronda (54 s en total, 6 s
+  de margen). Verificado de extremo a extremo: 13,2 s, CV de 509 y carta de
+  1.357 caracteres. Lint limpio y 275 pruebas en verde.
+* **Aviso que sigue abierto**: `mistral-small` es el modelo que dio el ROJO
+  del 23/08 en esta llamada, pero con el prompt de ANTES de T94. El refuerzo
+  de T94 nunca se ha podido probar (todas las tandas morían por el timeout de
+  gemma-4). La tanda de evals lanzada tras este cambio es la primera que puede
+  decir algo real sobre T94. Siguiente candidato ya medido si sale ROJO:
+  `@cf/meta/llama-4-scout-17b-16e-instruct` (6,7 s).
+* **Hallazgo colateral (T112)**: el respaldo de OpenRouter no respalda nada —
+  sus dos modelos devuelven 429 en menos de medio segundo
+  (`temporarily rate-limited upstream`), y la ronda 1 usaba el mismo modelo
+  lento de razonamiento con solo 10 s de espera. No se toca a ciegas: solo 4
+  de los 17 modelos `:free` declaran `structured_outputs`.
+* **Creación**: `incidente-gemma4-razonamiento-t109.md`. **Actualización**:
+  `docs/06-tareas.md` (T109 cerrada, T112 nueva), `lib/ia.ts`.
+* **La tanda de evals de este cambio sale ROJO, pero por el motivo contrario
+  al de agosto**: 6 de 13 CVs demasiado cortos (125-348 caracteres) y 2 sin
+  saltos de línea reales — y **ni un solo fallo de invención**. Primera
+  confirmación real de que el refuerzo de T94 funciona; el problema ahora es
+  que el modelo se pasó de cauto. Ajustado el prompt (`lib/ia.ts` y
+  `prompts/system.md`): qué significa OMITIR (solo secciones ausentes del
+  original, nunca recortar lo que sí está) y saltos de línea obligatorios
+  dentro de `cv_texto`. En los 8 casos que fallaban: 2 pasan (B01 sube de 348
+  a 468 car.), 1 sigue corto, 5 se pierden por picos de latencia de Cloudflare
+  (no por cupo: comprobado en el momento, la cuenta responde en 0,8 s y tres
+  generaciones con CV de 11.274 caracteres tardaron 8,8/9,6/11,1 s). Falta una
+  tanda completa con cuota fresca — anotado como **T113**.
+* **T108 sigue pendiente** y solo puede ejecutarla Mar: sin la columna
+  `generaciones.rehechos`, los CVs ya generados siguen siendo invisibles.
+
 ## 2026-08-25 (bis — publicado a producción, y dos problemas nuevos anotados para mañana)
 * Fusionada `arregla-ofertas-tapadas-25-08` a `master` con permiso de Mar y
   **desplegada a producción** (`0ddd243`, robot en verde: lint + 275 pruebas,
