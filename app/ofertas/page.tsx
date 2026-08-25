@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import TarjetaOferta, { type EstadoGeneracion } from '@/components/TarjetaOferta';
-import GuiaPasos from '@/components/GuiaPasos';
 import { diaEnMadrid, etiquetaDiaEnMadrid } from '@/lib/fechas';
 
 type Oferta = {
@@ -36,9 +34,10 @@ function agruparPorDia(ofertas: Oferta[]): { clave: string; etiqueta: string; of
   return grupos;
 }
 
+// No hay estado "sin perfil": quien no lo tiene se va a /perfil antes de
+// pintar nada (ver cargar()).
 type Estado =
   | { tipo: 'cargando' }
-  | { tipo: 'sin-perfil' }
   | { tipo: 'sin-ingesta' }
   | { tipo: 'vacia' }
   | { tipo: 'lista'; ofertas: Oferta[] }
@@ -69,13 +68,25 @@ export default function Ofertas() {
         setLimiteAlcanzado(Boolean(datos.limiteAlcanzado));
 
         if (datos.sinPerfil) {
-          setEstado({ tipo: 'sin-perfil' });
+          // Quien todavía no ha contado su perfil va a contarlo, no a una
+          // pantalla de ofertas vacía que se lo pida por escrito
+          // (docs/03-spec.md §3.2 — "aterriza donde le toca según su
+          // situación"). El callback de login ya lo hacía, pero el enlace del
+          // email de aviso (T68) entra directo aquí sin pasar por él.
+          router.replace('/perfil');
+          return;
+        }
+
+        if (datos.ofertas.length > 0) {
+          // Ofertas de días anteriores (dentro de los 15 de caducidad, T85) se
+          // muestran aunque la ingesta de hoy todavía no haya corrido: antes de
+          // este orden, huboIngestaHoy=false las tapaba con "sin-ingesta" sin
+          // necesidad, cada mañana hasta las 13:00.
+          setEstado({ tipo: 'lista', ofertas: datos.ofertas });
         } else if (!datos.huboIngestaHoy) {
           setEstado({ tipo: 'sin-ingesta' });
-        } else if (datos.ofertas.length === 0) {
-          setEstado({ tipo: 'vacia' });
         } else {
-          setEstado({ tipo: 'lista', ofertas: datos.ofertas });
+          setEstado({ tipo: 'vacia' });
         }
       } catch {
         if (!cancelado) {
@@ -93,23 +104,12 @@ export default function Ofertas() {
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-10 font-sans dark:bg-black">
       <main className="w-full max-w-3xl">
-        {estado.tipo === 'sin-perfil' && <GuiaPasos pasoActual={2} />}
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Ofertas para ti
         </h1>
 
         {estado.tipo === 'cargando' && (
           <p className="mt-8 text-zinc-600 dark:text-zinc-400">Buscando ofertas…</p>
-        )}
-
-        {estado.tipo === 'sin-perfil' && (
-          <p className="mt-8 text-zinc-600 dark:text-zinc-400">
-            Todavía no has guardado tu perfil.{' '}
-            <Link href="/perfil" className="underline">
-              Cuéntanoslo primero
-            </Link>{' '}
-            para poder buscarte ofertas.
-          </p>
         )}
 
         {estado.tipo === 'sin-ingesta' && (
