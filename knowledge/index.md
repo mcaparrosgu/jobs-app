@@ -35,6 +35,9 @@ existe en produccion y no se toca desde aqui.
   que usa IA, que no, y como se contienen los fallos del modelo.
 - [decision-tareas-mvp.md](decision-tareas-mvp.md) — decision tomada en el
   Paso 7: como se trocea el MVP en 76 tareas verificables.
+- [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md)
+  — 🔴 **lo primero de la próxima sesión**: generar el CV falla en producción
+  (T109) y la migración 0018 nunca se aplicó (T108).
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.

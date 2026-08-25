@@ -1,5 +1,26 @@
 # Registro de cambios del bundle
 
+## 2026-08-25 (bis — publicado a producción, y dos problemas nuevos anotados para mañana)
+* Fusionada `arregla-ofertas-tapadas-25-08` a `master` con permiso de Mar y
+  **desplegada a producción** (`0ddd243`, robot en verde: lint + 275 pruebas,
+  evals saltados por no tocar la IA). Mar confirma que ya ve sus ofertas.
+* **Problema 1 (T108)**: la migración `0018_generaciones_rehechos.sql` está
+  en el repositorio pero **nunca se aplicó en Supabase**. Sin la columna
+  `rehechos`, la consulta de `generaciones` en `app/api/ofertas/route.ts`
+  falla entera y el código la degrada en silencio → **los 6 CVs que Mar ya
+  tenía generados eran invisibles**. Segundo desajuste migraciones/esquema en
+  dos días (el del 24/08 fue `perfiles.puesto`). Se comprobó el resto del
+  esquema: solo falta esa columna.
+* **Problema 2 (T109)**: generar el CV **falla de verdad en producción** con
+  una usuaria real, cuota fresca y T99 hecha. El mensaje del umbral de fallos
+  ("Ha fallado varias veces seguidas para esta oferta") se emite desde el
+  `catch`, así que hubo intento real. Es la señal que T95 llevaba dos días
+  sin poder confirmar: ya **no es explicable por cupo agotado**.
+* Decisión de Mar: **no arreglar nada hoy**, anotarlo y empezar por ahí en la
+  próxima conversación. Diagnóstico ya hecho, datos recogidos y por dónde
+  seguir en
+  [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md).
+
 ## 2026-08-25 (bug de regresión: `/ofertas` tapaba ofertas de días anteriores)
 * Mar entró en `/ofertas` antes de las 13:00 y no vio nada, ni ofertas de
   días anteriores que debían seguir visibles por la caducidad de 15 días
