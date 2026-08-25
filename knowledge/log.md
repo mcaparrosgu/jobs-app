@@ -1,5 +1,33 @@
 # Registro de cambios del bundle
 
+## 2026-08-25 (quater — T109: el arreglo del prompt rompió la generación)
+
+* **El ajuste de prompt contra los CVs cortos (`7e41a11`) dejó la generación
+  otra vez al 0 %**, y con un fallo distinto: la regla añadida ("RECOGE TODA
+  la experiencia", "ante la duda, conserva") no decía **dónde parar**. Con
+  `max_tokens: 12.000` el modelo escribía sin fin y Cloudflare cortaba con
+  **HTTP 408 · Request timeout** a los 180 s.
+* **Descartado antes de tocar el prompt**, con una sonda en vivo por
+  hipótesis: cupo (petición mínima, 200 en 0,9 s), esquema JSON forzado
+  (10,2 s), tamaño del prompt (12.202 caracteres → 15,0 s), endpoint
+  compatible contra nativo (15,8 / 13,6 s), salida larga (16,8 s) y
+  `max_tokens: 12.000` en sí (15,1 s). Ninguna reproducía el cuelgue.
+* **Lo reprodujo el A/B del prompt**, misma llamada y mismo minuto: prompt
+  anterior 13,0 s / prompt ajustado 408 a los 182 s, tres veces.
+* **De paso, explica el NO CONCLUYENTE** de la puerta de calidad de esa tarde:
+  los casos "sin evaluar" no eran falta de cuota ni el juez sin responder,
+  eran este cuelgue. Lección para el futuro: **un NO CONCLUYENTE puede ser
+  síntoma de un cambio propio**, y el consejo del propio veredicto
+  ("relanzar, no arreglar") lleva entonces al sitio equivocado.
+* **Arreglo**: la regla se reescribe acotada y con final explícito ("cuando
+  hayas recorrido el CV original una vez, PARA... ocupa aproximadamente lo
+  mismo que el original"). Medido: **13,5 s**, 471 tokens, CV de 545
+  caracteres. Lint limpio y 275 pruebas en verde. Actualizados `lib/ia.ts`,
+  `prompts/system.md` e `incidente-gemma4-razonamiento-t109.md`.
+* **Datos de producción**: se ponen a cero los `intentos_fallidos` de las
+  cuatro ofertas en error (una llevaba 9). Los acumuló el modelo roto, no la
+  oferta, y el contador solo se reinicia solo cuando una generación sale bien.
+
 ## 2026-08-25 (ter — T109: arreglada la generación de CV)
 * **Diagnóstico**: la generación de CV y carta fallaba al **100%** desde el
   23/08 porque `@cf/google/gemma-4-26b-a4b-it` es un modelo **de

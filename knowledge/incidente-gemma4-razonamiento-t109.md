@@ -205,6 +205,69 @@ Comprobado en vivo el mismo día:
 No se ha tocado: la regla del propio fichero es no poner un modelo de respaldo
 sin medirlo antes en vivo. Queda como **T112**.
 
+# Segunda vuelta: el arreglo del prompt rompió la generación otra vez
+
+La misma tarde del 25/08, ya con el modelo arreglado, el ajuste de prompt
+contra los CVs cortos (commit `7e41a11`) **volvió a dejar la generación al
+0 %** — y por una causa distinta y más instructiva que la primera.
+
+La regla añadida decía, en mayúsculas, que el CV generado "RECOGE TODA la
+experiencia" del original y que "ante la duda entre acortar o conservar, se
+conserva". Lo que no decía en ninguna parte era **dónde parar**. Con
+`MAX_TOKENS_CLOUDFLARE_GENERACION = 12.000`, el modelo se puso a escribir y no
+paró: a los 180 segundos Cloudflare cortaba con
+
+    HTTP 408 · AiError: Request timeout (código 3046)
+
+## Cómo se aisló
+
+Todas las hipótesis baratas se descartaron **antes** de tocar el prompt, con
+sondas en vivo de una llamada cada una:
+
+| Sospecha | Prueba | Resultado |
+|---|---|---|
+| Cupo de Cloudflare agotado | petición mínima | HTTP 200 en **0,9 s** |
+| El esquema JSON forzado | mismo prompt con y sin `response_format` | 10,2 s / 13,0 s |
+| El tamaño del prompt | relleno de 2.102, 6.142 y 12.202 caracteres | 21,6 / 13,1 / 15,0 s |
+| El endpoint compatible con OpenAI | `/ai/v1/chat/completions` contra `/ai/run/` | 15,8 s / 13,6 s |
+| Una salida larga | pidiendo CV de 3.000 y carta de 1.500 caracteres | 16,8 s / 14,3 s |
+| `max_tokens: 12.000` | contra 7.000, mismo prompt | 15,1 s / 19,9 s |
+
+Ninguna reproducía el cuelgue. El que lo reprodujo fue el **A/B del prompt**,
+en el mismo minuto y con la misma llamada real:
+
+| Prompt | Resultado |
+|---|---|
+| Anterior (`4d7b87f`) | HTTP 200 en **13,0 s**, 510 tokens de salida |
+| Ajustado (`7e41a11`) | **408 a los 182 s**, tres veces seguidas |
+
+Quitar la regla de los saltos de línea no cambió nada: la culpable era la de
+"conserva todo".
+
+## Por qué importa más de lo que parece
+
+Este mismo cuelgue es lo que llenó de "sin evaluar" la tanda de evals que el
+robot de publicación lanzó esa tarde, y lo que le hizo dictar **NO
+CONCLUYENTE**. El propio veredicto sugiere entonces "falta de cuota o el
+modelo juez sin responder; relanzar, no arreglar" — y esta vez ese consejo
+llevaba al sitio equivocado: no faltaba cuota, el prompt estaba roto.
+**Un veredicto NO CONCLUYENTE puede ser el síntoma de un cambio propio, no
+solo del entorno.** Antes de relanzar, mirar si los timeouts los provoca el
+código que se acaba de tocar.
+
+## El arreglo
+
+La regla se reescribió acotada, y con un final explícito:
+
+> Cuando hayas recorrido el CV original una vez, PARA. No repitas secciones,
+> no vuelvas sobre un puesto ya escrito y no rellenes para alargar: el CV
+> generado ocupa aproximadamente lo mismo que el original, nunca varias veces
+> más.
+
+Medido: **13,5 s**, 471 tokens de salida, CV de 545 caracteres (con el prompt
+anterior salían 509). La instrucción que faltaba no era más énfasis, era un
+límite.
+
 # Relacionado
 
 - [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md) —

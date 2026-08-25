@@ -46,7 +46,11 @@ existe en produccion y no se toca desde aqui.
   34 s ni en los 60 s de Vercel. La teoría del cupo agotado del 24/08 era
   falsa. Vuelta a `mistral-small-3.1-24b-instruct` (16,7 s) y tiempos de
   espera reajustados. Incluye el hallazgo colateral de que el respaldo de
-  OpenRouter devuelve 429 inmediato y no respalda nada (T112).
+  OpenRouter devuelve 429 inmediato y no respalda nada (T112), y una **segunda
+  vuelta**: el ajuste de prompt contra los CVs cortos volvió a dejar la
+  generación al 0 % porque le decía al modelo que conservara todo sin decirle
+  dónde parar (408 a los 180 s). Explica también por qué la puerta de calidad
+  dictó NO CONCLUYENTE esa tarde.
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.

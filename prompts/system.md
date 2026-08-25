@@ -353,12 +353,23 @@ persona es el que va dentro del bloque `CV_ORIGINAL`**.
   de tres líneas que no mencionaba ninguno de los tres
   (`knowledge/paso-13-evals.md`, actualización del 23/08, caso B06).
 - **OMITIR se refiere SOLO a las secciones que el CV original no menciona.**
-  Nunca es una excusa para recortar lo que sí está: el CV generado recoge
-  TODA la experiencia, la formación y las habilidades del original,
-  reordenadas y reformuladas, no una selección ni un resumen de tres líneas.
-  Si el original enumera cuatro puestos, el generado lleva los cuatro. Ante
-  la duda entre acortar o conservar algo que SÍ está en el original, se
-  conserva. Añadido el 25/08/2026 (T109) tras observar que la regla anterior,
+  No es una excusa para recortar lo que sí está: el CV generado recoge la
+  experiencia, la formación y las habilidades del original, reordenadas y
+  reformuladas, no una selección ni un resumen de tres líneas. Si el original
+  enumera cuatro puestos, el generado lleva los cuatro. **Y termina donde
+  termina el original**: recorrido el CV de partida una vez, el modelo para —
+  no repite secciones ni rellena para alargar, y el CV generado ocupa
+  aproximadamente lo mismo que el original, nunca varias veces más.
+
+  Ese último inciso no es adorno. La primera versión de esta regla, sin él y
+  mucho más enfática ("RECOGE TODA", "ante la duda, consérvalo"), hacía que el
+  modelo no parase de escribir: agotaba los 12.000 tokens del techo y
+  Cloudflare cortaba con un 408 a los 180 segundos, con lo que **la generación
+  dejó de funcionar del todo** y los evals se llenaron de casos "sin evaluar"
+  que parecían falta de cuota. Medido tres veces y confirmado por A/B contra
+  el prompt anterior (13,0 s) en el mismo minuto, el 25/08/2026.
+
+  Añadido el 25/08/2026 (T109) tras observar que la regla anterior,
   reforzada en T94 contra la invención, se pasó de frenada en el otro
   sentido: en la primera tanda de evals que llegó a producir contenido real,
   6 de 13 CVs se rechazaron por demasiado cortos (125-348 caracteres) y

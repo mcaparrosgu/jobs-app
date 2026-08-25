@@ -1052,15 +1052,25 @@ function mensajesDeGeneracion(
         'un CV sin esa sección es un CV correcto; uno con datos inventados en ella no ' +
         'lo es, aunque parezca más completo.\n' +
         '- Si la oferta pide algo que el CV no menciona, NO lo añadas: no lo tiene.\n' +
-        '- OMITIR se refiere SOLO a las secciones que el CV original no menciona. ' +
-        'NUNCA es una excusa para recortar lo que sí está: el CV que devuelves ' +
-        'RECOGE TODA la experiencia, la formación y las habilidades del original, ' +
-        'reordenadas y reformuladas, no una selección ni un resumen de tres líneas. ' +
-        'Si el original enumera cuatro puestos, el tuyo lleva los cuatro; si describe ' +
-        'un puesto con tres logros, no te quedes con uno. Un CV de dos líneas es un ' +
-        'documento inservible para quien va a mandarlo a una empresa, igual de ' +
-        'inservible que uno con datos inventados. Ante la duda entre acortar o ' +
-        'conservar algo que SÍ está en el original, consérvalo.\n' +
+        // ⚠️ T109 · Esta regla tuvo una primera versión mucho más enfática ("RECOGE
+        // TODA la experiencia", "ante la duda, consérvalo") y SIN un final
+        // explícito. Con ella el modelo no paraba de escribir: agotaba los 12.000
+        // tokens de `MAX_TOKENS_CLOUDFLARE_GENERACION` y Cloudflare cortaba con un
+        // 408 a los 180 s — medido tres veces, y confirmado por A/B contra el
+        // prompt anterior (13,0 s) en el mismo minuto. Reventó la generación
+        // entera y llenó los evals de "sin evaluar" que parecían falta de cuota.
+        // Si alguna vez hay que reforzarla más, la frase que NO puede faltar es la
+        // última: decirle dónde termina.
+        '- OMITIR se refiere SOLO a las secciones que el CV original no menciona: ' +
+        'no es una excusa para recortar lo que sí está. Recoge la experiencia, la ' +
+        'formación y las habilidades del original, reordenadas y reformuladas — no ' +
+        'una selección ni un resumen de tres líneas. Si el original enumera cuatro ' +
+        'puestos, el tuyo lleva los cuatro. Un CV de dos líneas es un documento ' +
+        'inservible para quien va a mandarlo a una empresa.\n' +
+        '- Cuando hayas recorrido el CV original una vez, PARA. No repitas ' +
+        'secciones, no vuelvas sobre un puesto ya escrito y no rellenes para ' +
+        'alargar: el CV generado ocupa aproximadamente lo mismo que el original, ' +
+        'nunca varias veces más.\n' +
         '- Puedes reordenar la experiencia, resumirla, cambiar el énfasis y ' +
         'reformular las frases con el vocabulario de la oferta, siempre que lo que ' +
         'digas siga estando respaldado por el CV original.\n' +
