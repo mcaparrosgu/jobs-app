@@ -35,6 +35,18 @@
   de los 17 modelos `:free` declaran `structured_outputs`.
 * **Creación**: `incidente-gemma4-razonamiento-t109.md`. **Actualización**:
   `docs/06-tareas.md` (T109 cerrada, T112 nueva), `lib/ia.ts`.
+* **La tanda de evals de este cambio sale ROJO, pero por el motivo contrario
+  al de agosto**: 6 de 13 CVs demasiado cortos (125-348 caracteres) y 2 sin
+  saltos de línea reales — y **ni un solo fallo de invención**. Primera
+  confirmación real de que el refuerzo de T94 funciona; el problema ahora es
+  que el modelo se pasó de cauto. Ajustado el prompt (`lib/ia.ts` y
+  `prompts/system.md`): qué significa OMITIR (solo secciones ausentes del
+  original, nunca recortar lo que sí está) y saltos de línea obligatorios
+  dentro de `cv_texto`. En los 8 casos que fallaban: 2 pasan (B01 sube de 348
+  a 468 car.), 1 sigue corto, 5 se pierden por picos de latencia de Cloudflare
+  (no por cupo: comprobado en el momento, la cuenta responde en 0,8 s y tres
+  generaciones con CV de 11.274 caracteres tardaron 8,8/9,6/11,1 s). Falta una
+  tanda completa con cuota fresca — anotado como **T113**.
 * **T108 sigue pendiente** y solo puede ejecutarla Mar: sin la columna
   `generaciones.rehechos`, los CVs ya generados siguen siendo invisibles.
 

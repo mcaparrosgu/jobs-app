@@ -122,6 +122,70 @@ La tanda de evals lanzada tras este cambio es la primera que puede decir algo
 real sobre T94. Si vuelve a salir ROJO, el siguiente candidato ya está medido:
 `@cf/meta/llama-4-scout-17b-16e-instruct` (6,7 s).
 
+# Lo que dijo la tanda de evals de este cambio (25/08, tarde)
+
+**ROJO, pero por el motivo contrario al de agosto.** El detalle importa más
+que el veredicto:
+
+| Casos | CV generado | Resultado |
+|---|---|---|
+| B02, B04, B08, B12, B13 | 380-760 car. | ✅ |
+| B01, B03, B05, B07, B09, B10 | 125-348 car. | ❌ demasiado corto |
+| B06, B11 | — | ❌ sin saltos de línea reales |
+
+**Ni un solo fallo de invención.** Ninguno. Ésa es la primera confirmación real
+de que el refuerzo de T94
+([decision-arreglo-generarcv-rojo.md](decision-arreglo-generarcv-rojo.md))
+**funciona**: el modelo que en agosto se inventaba una carrera universitaria
+entera ya no se inventa nada.
+
+El problema es el opuesto: se ha vuelto tan cauto que escribe CVs de tres
+líneas. La regla de T94 ("si el CV original no lo dice, omite la sección
+entera") se pasó de frenada y el modelo la extendió a "recorta todo lo que
+puedas". En agosto el péndulo estaba en *inventa*; ahora está en *no escribe*.
+
+La mayoría de los fallos de `resistencia_inyeccion` del informe son efecto
+secundario de lo mismo, no inyecciones que colaran: cuando el CV sale corto la
+salida es un mensaje de error, y varias aserciones empiezan por
+`if (output.error) return false`.
+
+## El ajuste del prompt (25/08, decidido con Mar)
+
+En `lib/ia.ts` (`mensajesDeGeneracion`) y en `prompts/system.md`, coherentes:
+
+1. **Qué significa OMITIR**: solo secciones que el CV original no menciona;
+   nunca una excusa para recortar lo que sí está. El CV generado recoge TODA
+   la experiencia del original, reordenada — si el original tiene cuatro
+   puestos, el generado lleva los cuatro. Ante la duda entre acortar y
+   conservar algo que sí está, se conserva.
+2. **Saltos de línea reales** dentro de `cv_texto` (el `
+` del JSON): un CV
+   en una sola línea corrida se rechaza por bueno que sea su contenido.
+
+## Estado al cerrar el 25/08: mejora medida, pero SIN confirmar
+
+Se relanzaron **solo los 8 casos que fallaban** (`--filter-pattern`), para no
+gastar otra tanda entera. Resultado no concluyente:
+
+- **2 pasan** (B01 subió de 348 a 468 caracteres — el ajuste hace efecto).
+- **1 sigue corto** (212 caracteres).
+- **5 se perdieron por timeout de Cloudflare**, no por calidad.
+
+Los 5 timeouts no son falta de cupo: comprobado inmediatamente después, la
+cuenta responde en 0,8 s a una llamada suelta, y tres generaciones completas
+con el prompt nuevo y un CV de 11.274 caracteres tardaron **8,8 / 9,6 /
+11,1 s**. Son picos de latencia de Cloudflare durante la tanda (la varianza ya
+documentada el 23/08: 12,8-21,3 s en cinco peticiones iguales).
+
+**A vigilar en la próxima tanda**: si vuelven a aparecer timeouts con
+`TIMEOUT_CLOUDFLARE_GENERACION_MS` en 26 s, habrá que subirlo — pero
+midiéndolo, no por corazonada, y quitándole entonces margen a las rondas de
+OpenRouter, no a los 60 s de Vercel.
+
+**Queda pendiente**: una tanda completa de `evals:generar` con cuota fresca
+para saber si el ajuste del prompt basta. Si no basta, el siguiente candidato
+ya está medido: `@cf/meta/llama-4-scout-17b-16e-instruct` (6,7 s).
+
 # Hallazgo colateral: el respaldo de OpenRouter no respalda nada
 
 Comprobado en vivo el mismo día:

@@ -1052,6 +1052,15 @@ function mensajesDeGeneracion(
         'un CV sin esa sección es un CV correcto; uno con datos inventados en ella no ' +
         'lo es, aunque parezca más completo.\n' +
         '- Si la oferta pide algo que el CV no menciona, NO lo añadas: no lo tiene.\n' +
+        '- OMITIR se refiere SOLO a las secciones que el CV original no menciona. ' +
+        'NUNCA es una excusa para recortar lo que sí está: el CV que devuelves ' +
+        'RECOGE TODA la experiencia, la formación y las habilidades del original, ' +
+        'reordenadas y reformuladas, no una selección ni un resumen de tres líneas. ' +
+        'Si el original enumera cuatro puestos, el tuyo lleva los cuatro; si describe ' +
+        'un puesto con tres logros, no te quedes con uno. Un CV de dos líneas es un ' +
+        'documento inservible para quien va a mandarlo a una empresa, igual de ' +
+        'inservible que uno con datos inventados. Ante la duda entre acortar o ' +
+        'conservar algo que SÍ está en el original, consérvalo.\n' +
         '- Puedes reordenar la experiencia, resumirla, cambiar el énfasis y ' +
         'reformular las frases con el vocabulario de la oferta, siempre que lo que ' +
         'digas siga estando respaldado por el CV original.\n' +
@@ -1068,7 +1077,11 @@ function mensajesDeGeneracion(
         'lista empieza por "- " y va TAMBIÉN en su propia línea — nunca dos puntos, ' +
         'ni un punto y un título, pegados en la misma línea o separados solo por un ' +
         'guion. Cada elemento nuevo (título, punto, párrafo) empieza tras un salto de ' +
-        'línea real, no tras un espacio. Nada de markdown, tablas ni asteriscos.\n' +
+        'línea real, no tras un espacio. Nada de markdown, tablas ni asteriscos. ' +
+        'El valor de "cv_texto" TIENE que llevar saltos de línea reales dentro (el ' +
+        'carácter de nueva línea, escrito como \\n dentro del JSON): un CV entero en ' +
+        'una sola línea corrida está mal hecho y se rechaza, por bueno que sea su ' +
+        'contenido.\n' +
         '- EL CV NO EMPIEZA POR EL NOMBRE NI LOS DATOS DE CONTACTO: esta información ' +
         'ya se muestra aparte, encima del documento. Empieza directamente por la ' +
         'primera sección de contenido (perfil profesional, experiencia, etc.). No ' +
