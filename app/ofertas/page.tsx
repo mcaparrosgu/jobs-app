@@ -70,12 +70,16 @@ export default function Ofertas() {
 
         if (datos.sinPerfil) {
           setEstado({ tipo: 'sin-perfil' });
+        } else if (datos.ofertas.length > 0) {
+          // Ofertas de días anteriores (dentro de los 15 de caducidad, T85) se
+          // muestran aunque la ingesta de hoy todavía no haya corrido: antes de
+          // este orden, huboIngestaHoy=false las tapaba con "sin-ingesta" sin
+          // necesidad, cada mañana hasta las 13:00.
+          setEstado({ tipo: 'lista', ofertas: datos.ofertas });
         } else if (!datos.huboIngestaHoy) {
           setEstado({ tipo: 'sin-ingesta' });
-        } else if (datos.ofertas.length === 0) {
-          setEstado({ tipo: 'vacia' });
         } else {
-          setEstado({ tipo: 'lista', ofertas: datos.ofertas });
+          setEstado({ tipo: 'vacia' });
         }
       } catch {
         if (!cancelado) {

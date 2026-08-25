@@ -1,5 +1,16 @@
 # Registro de cambios del bundle
 
+## 2026-08-25 (bug de regresión: `/ofertas` tapaba ofertas de días anteriores)
+* Mar entró en `/ofertas` antes de las 13:00 y no vio nada, ni ofertas de
+  días anteriores que debían seguir visibles por la caducidad de 15 días
+  (T85, 23/08). `app/api/ofertas/route.ts` sí las traía bien; el bug
+  estaba en `app/ofertas/page.tsx`, que comprobaba `huboIngestaHoy` antes
+  que si había ofertas — una comprobación del Hito 5 (19/08), anterior a
+  T85, que nadie reordenó al añadir la persistencia de varios días.
+* Arreglado: ahora se muestra la lista si hay ofertas, sin mirar primero
+  si la ingesta de hoy ya corrió. 275/275 pruebas en verde. Detalle en
+  [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md).
+
 ## 2026-08-24 (sexies — incidente en producción: perfil ilegible, se publica con [sin evals])
 * Primer día real de clase: al pinchar el enlace del email de aviso de la
   ingesta de las 13:00, Mar ve "No se pudo leer tu perfil." en `/ofertas`,
