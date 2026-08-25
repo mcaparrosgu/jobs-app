@@ -21,7 +21,14 @@
   `/perfil`. El callback de login ya cumplía `docs/03-spec.md` §3.2, pero
   el enlace del email de aviso (T68) entra directo a `/ofertas` sin pasar
   por él. Ahora `/ofertas` redirige a `/perfil` si no hay perfil.
-* Detalle de los dos en
+* Tercer hueco, este de configuración (T107): **las vistas previas no podían
+  iniciar sesión**. Supabase Auth solo permitía redirigir a producción y a
+  `localhost`, y cada vista previa de Vercel estrena URL — al no coincidir,
+  Supabase caía en silencio a la Site URL (producción). Añadida la Redirect
+  URL con comodín `https://jobs-*-mcaparrosgu-4812s-projects.vercel.app/**`
+  desde el panel. Explica por qué la regla de probar en vista previa se
+  saltó tres veces: para pantallas con sesión, era **imposible de cumplir**.
+* Detalle de los tres en
   [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md).
 
 ## 2026-08-24 (sexies — incidente en producción: perfil ilegible, se publica con [sin evals])

@@ -63,6 +63,40 @@ redirige a `/perfil` antes de pintar nada. Desaparece el estado
 `sin-perfil` (y con él su `GuiaPasos pasoActual={2}`, que ya no puede
 darse: `/perfil` muestra el suyo con el paso 1).
 
+# Tercer hueco: las vistas previas no podían iniciar sesión
+
+Al intentar verificar la vista previa (T100), el enlace del email devolvía
+siempre a **producción**, no a la vista previa. No era el código:
+`app/page.tsx` construye `emailRedirectTo` con `window.location.origin`,
+que era correcto.
+
+La causa estaba en **Supabase Auth → URL Configuration**. La lista de
+*Redirect URLs* tenía solo dos entradas (puestas en el Hito 9, ver
+[hito-9-publicar.md](hito-9-publicar.md)):
+
+- `https://jobs-app-mcaparrosgu-4812s-projects.vercel.app/**`
+- `http://localhost:3000/**`
+
+Cada despliegue de vista previa de Vercel estrena URL
+(`jobs-<hash>-mcaparrosgu-4812s-projects.vercel.app`), así que **ninguna
+coincidía**. Cuando el `redirect_to` no está en la lista permitida, Supabase
+no falla: **cae en silencio a la Site URL**, que es producción. De ahí que
+Mar pidiera el enlace desde la vista previa y aterrizara en producción, con
+el bug todavía presente — pareciendo que el arreglo no funcionaba.
+
+Corregido el 25/08 desde el panel (cambio de configuración, no un secreto):
+añadida una tercera Redirect URL con comodín,
+`https://jobs-*-mcaparrosgu-4812s-projects.vercel.app/**`. Cubre cualquier
+vista previa futura del proyecto sin tener que tocar el panel en cada
+despliegue. Verificado en vivo: el `redirect_to` del enlace nuevo ya apunta
+a la vista previa, la sesión se abre ahí y `/ofertas` muestra las 8 ofertas.
+
+**Lección para el método**: la regla de `CLAUDE.md` de probar en una rama y
+su vista previa antes de publicar era, hasta hoy, **imposible de cumplir para
+cualquier pantalla que requiera sesión** — y eso explica en parte por qué se
+saltó tres veces seguidas (24/08 dos veces, y el intento de hoy). No era solo
+prisa: la vista previa no dejaba entrar.
+
 # Relacionado
 
 - `docs/06-tareas.md` — Hito 5 (T41-T47), T85, T105, T106.
