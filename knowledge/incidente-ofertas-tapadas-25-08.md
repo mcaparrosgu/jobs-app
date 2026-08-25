@@ -44,9 +44,31 @@ hoy ni de los 14 días anteriores) y la ingesta de hoy tampoco ha corrido
 todavía. 275/275 pruebas unitarias en verde (no hacía falta tocar la API
 ni sus pruebas, el bug era solo de orden en el frontend).
 
+# Segundo hueco, encontrado al arreglar el primero (T106)
+
+Al revisar los estados de `/ofertas` apareció otro desajuste con la spec,
+del mismo tipo: **quien todavía no ha contado su perfil aterrizaba en una
+pantalla de ofertas vacía** que se lo pedía por escrito, con un enlace a
+`/perfil`.
+
+`docs/03-spec.md` §3.2 dice que la usuaria "aterriza donde le toca según su
+situación": sin perfil, en la pantalla de perfil; con perfil guardado,
+directamente en sus ofertas. El callback de login
+(`app/auth/callback/route.ts`) ya lo cumplía — pero **el enlace del email de
+aviso (T68) apunta directo a `/ofertas`**, sin pasar por ese callback, así
+que para quien llega por ahí la regla no se aplicaba nunca.
+
+Arreglado en `app/ofertas/page.tsx`: si la respuesta trae `sinPerfil`, se
+redirige a `/perfil` antes de pintar nada. Desaparece el estado
+`sin-perfil` (y con él su `GuiaPasos pasoActual={2}`, que ya no puede
+darse: `/perfil` muestra el suyo con el paso 1).
+
 # Relacionado
 
-- `docs/06-tareas.md` — Hito 5 (T41-T47) y T85.
+- `docs/06-tareas.md` — Hito 5 (T41-T47), T85, T105, T106.
+- `docs/03-spec.md` §3.2 — "aterriza donde le toca según su situación".
 - [hito-5-ver-ofertas.md](hito-5-ver-ofertas.md) — diseño original de los
   cinco estados de `/ofertas`, de donde viene el orden que quedó
   desactualizado.
+- [hito-8-aviso-email.md](hito-8-aviso-email.md) — el enlace del email que
+  entra directo a `/ofertas`, saltándose el callback de login.

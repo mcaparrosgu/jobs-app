@@ -7,8 +7,21 @@
   estaba en `app/ofertas/page.tsx`, que comprobaba `huboIngestaHoy` antes
   que si había ofertas — una comprobación del Hito 5 (19/08), anterior a
   T85, que nadie reordenó al añadir la persistencia de varios días.
-* Arreglado: ahora se muestra la lista si hay ofertas, sin mirar primero
-  si la ingesta de hoy ya corrió. 275/275 pruebas en verde. Detalle en
+* Arreglado (T105): ahora se muestra la lista si hay ofertas, sin mirar
+  primero si la ingesta de hoy ya corrió. 275/275 pruebas en verde.
+  Verificado en vista previa con datos reales: 8 ofertas que encajan con el
+  perfil de Mar estaban siendo tapadas.
+* **Primera vez que se usa rama + vista previa antes de publicar** (T100,
+  regla de `CLAUDE.md` que llevaba dos veces seguidas saltándose): rama
+  `arregla-ofertas-tapadas-25-08`, robot en verde (evals saltados
+  correctamente, el cambio no toca la IA), Mar confirma la vista previa
+  antes de fusionar.
+* Segundo hueco encontrado al hilo y arreglado (T106): quien no tiene
+  perfil aterrizaba en una pantalla de ofertas vacía en vez de en
+  `/perfil`. El callback de login ya cumplía `docs/03-spec.md` §3.2, pero
+  el enlace del email de aviso (T68) entra directo a `/ofertas` sin pasar
+  por él. Ahora `/ofertas` redirige a `/perfil` si no hay perfil.
+* Detalle de los dos en
   [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md).
 
 ## 2026-08-24 (sexies — incidente en producción: perfil ilegible, se publica con [sin evals])
