@@ -36,8 +36,17 @@ existe en produccion y no se toca desde aqui.
 - [decision-tareas-mvp.md](decision-tareas-mvp.md) — decision tomada en el
   Paso 7: como se trocea el MVP en 76 tareas verificables.
 - [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md)
-  — 🔴 **lo primero de la próxima sesión**: generar el CV falla en producción
-  (T109) y la migración 0018 nunca se aplicó (T108).
+  — el planteamiento de los dos problemas del 25/08: generar el CV falla en
+  producción (T109, ya resuelto) y la migración 0018 nunca se aplicó (T108,
+  🔴 **sigue pendiente**, solo puede ejecutarla Mar en Supabase).
+- [incidente-gemma4-razonamiento-t109.md](incidente-gemma4-razonamiento-t109.md)
+  — 25/08/2026, T109: por qué la generación de CV fallaba al 100% desde el
+  23/08. `@cf/google/gemma-4-26b-a4b-it` es un modelo **de razonamiento** que
+  tarda **58,5 s** con el prompt real — no cabía ni en el corte de espera de
+  34 s ni en los 60 s de Vercel. La teoría del cupo agotado del 24/08 era
+  falsa. Vuelta a `mistral-small-3.1-24b-instruct` (16,7 s) y tiempos de
+  espera reajustados. Incluye el hallazgo colateral de que el respaldo de
+  OpenRouter devuelve 429 inmediato y no respalda nada (T112).
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.

@@ -6,15 +6,15 @@
 // ninguna llamada a `api.groq.com` ni ninguna lectura de `GROQ_API_KEY` en
 // este fichero.
 //
-// ⚠️ Cada llamada usa un modelo de Cloudflare DISTINTO — no es el mismo
-// modelo con dos nombres de variable. `extraerPerfil` usa
-// `MODELO_CLOUDFLARE` (`mistral-small-3.1-24b-instruct`); `generarCvYCarta`
-// usa `MODELO_CLOUDFLARE_GENERACION` (`@cf/google/gemma-4-26b-a4b-it`,
-// cambiado el 23/08/2026 tras el ROJO de mistral-small en esa llamada
-// concreta — ver la nota junto a `MODELO_CLOUDFLARE_GENERACION`, más abajo).
-// Si vas a tocar uno de los dos, confirma primero cuál — un comentario
-// antiguo de este fichero llegó a decir que los dos usaban
-// `mistral-small-3.1-24b-instruct`, y ya no es verdad desde T93.
+// ⚠️ Las dos llamadas vuelven a usar el MISMO modelo de Cloudflare
+// (`mistral-small-3.1-24b-instruct`) desde T109 (25/08/2026), pero siguen
+// teniendo cada una su constante — `MODELO_CLOUDFLARE` para `extraerPerfil`,
+// `MODELO_CLOUDFLARE_GENERACION` para `generarCvYCarta` — precisamente
+// porque han divergido antes y pueden volver a divergir. Si vas a tocar uno
+// de los dos, confirma primero cuál: entre el 23 y el 25/08/2026
+// `generarCvYCarta` usó `@cf/google/gemma-4-26b-a4b-it`, y ese modelo hizo
+// que la generación fallara SIEMPRE en producción (ver la nota junto a
+// `MODELO_CLOUDFLARE_GENERACION`, más abajo).
 //
 // Historial: hasta el 20/08/2026 el principal era OpenRouter
 // (knowledge/decision-modelo-ia.md). Ese día pasó a ser Groq por privacidad
@@ -108,6 +108,20 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // tanda de evals cayeron todos por timeout (knowledge/arreglo-puerta-motivo-real.md).
 // La segunda ronda se queda con un solo modelo hasta encontrar un sustituto
 // verificado en vivo — no se adivina uno nuevo sin probarlo primero.
+//
+// ⚠️ 25/08/2026 (T109) · Comprobado en vivo: **este respaldo no está
+// respaldando nada ahora mismo**. Los dos modelos devuelven 429 en menos de
+// medio segundo ("temporarily rate-limited upstream", del pool compartido del
+// proveedor, no de nuestra cuenta) — eso son los ~2 s que se sumaban a los
+// 34 s del timeout de Cloudflare en las 6 generaciones fallidas de Mar. Y en
+// el catálogo de OpenRouter, `google/gemma-4-26b-a4b-it:free` ni siquiera
+// declara `structured_outputs`, que es el `response_format: json_schema` que
+// esta cascada le pide siempre (no se ha podido confirmar en vivo: el 429
+// llega antes). De los 17 modelos `:free` del catálogo, solo cuatro declaran
+// `structured_outputs`, y de esos el único que respondió a una prueba real es
+// `dots-studio/dots-3-note-preview:free` — que también razona, así que
+// tampoco se pone aquí sin medir su latencia primero, por la misma regla del
+// párrafo anterior. Queda anotado como tarea (T112), no arreglado a ciegas.
 const RONDAS_MODELOS: readonly (readonly string[])[] = [
   ['google/gemma-4-26b-a4b-it:free'],
   ['z-ai/glm-5.2:free'],
@@ -147,21 +161,43 @@ const MODELO_CLOUDFLARE = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 // millón de tokens entrada/salida, frente a 31.876/50.488), así que cambiarlo
 // no aprieta el cupo diario compartido, más bien lo relaja.
 //
-// ⚠️ 24/08/2026 · Ya se verificó, y salió mal: al relanzar los evals contra
-// este modelo, los 13 casos de `generarCvYCarta` fallaron por timeout de
-// Cloudflare — probado también con una llamada suelta fuera de Promptfoo,
-// mismo resultado en ~27,8 s (knowledge/arreglo-puerta-motivo-real.md). La
-// causa más probable NO es que este modelo sea más lento que
-// `mistral-small-3.1-24b-instruct` (Cloudflare lo cobra MÁS BARATO en
-// neuronas, ver arriba): es que la cuenta ya había gastado su cupo gratis del
-// día con las 12 llamadas de `extraerPerfil` de esa misma tanda — sin
-// confirmar todavía porque no hay acceso al panel de uso de Cloudflare desde
-// aquí. `TIMEOUT_CLOUDFLARE_GENERACION_MS` se sube de 26 a 34 s como cobertura
-// de bajo coste (sigue habiendo margen bajo los 60 s de Vercel) por si una
-// parte del problema es de verdad latencia y no solo cupo — pero **esto no
-// es el arreglo**: la prueba real es relanzar T95 con cuota fresca de
-// Cloudflare (`docs/06-tareas.md`) y ver si deja de fallar al 100%.
-const MODELO_CLOUDFLARE_GENERACION = '@cf/google/gemma-4-26b-a4b-it';
+// ⚠️ 25/08/2026 · T109 · REVERTIDO: `@cf/google/gemma-4-26b-a4b-it` NO SIRVE
+// para esta llamada, y la teoría del 24/08 (que los timeouts eran por cupo
+// agotado) era FALSA. Lo que pasa de verdad, medido en vivo con el prompt
+// real y sin el corte de espera:
+//
+//   gemma-4-26b-a4b-it .................. 58,5 s (7.042 tokens de salida)
+//   gemma-4 con reasoning_effort "low" .. 83,0 s (9.093 tokens de salida)
+//   mistral-small-3.1-24b-instruct ...... 16,7 s (  570 tokens de salida)
+//
+// El motivo es que gemma-4 es un modelo **de razonamiento** (la propia API de
+// Cloudflare lo declara: `reasoning: true`, y devuelve `reasoning_content`):
+// antes de escribir el JSON se escribe a sí mismo un borrador larguísimo que
+// nadie ve pero que sí cuesta tiempo — de sus 7.042 tokens de salida, unos
+// 4.800 son ese borrador. Con 58 s de latencia mínima no cabe ni en el corte
+// de espera de esta cascada ni en los 60 s que aguanta una función de Vercel:
+// **esa llamada no podía funcionar nunca**, ni en producción ni en los evals.
+// Eso es lo que veían las 6 generaciones fallidas de Mar del 25/08 (todas
+// `error_proveedor`, todas con `duracion_ms` entre 36.205 y 36.776 en
+// `metricas_ia`) y los 13 casos de T95. `reasoning_effort: "low"` no lo
+// arregla: lo empeora. La API de Cloudflare tampoco expone ningún parámetro
+// para apagarle el razonamiento a este modelo.
+//
+// Se vuelve a `mistral-small-3.1-24b-instruct`, el mismo de `extraerPerfil`,
+// elegido por Mar el 25/08 entre las alternativas medidas (la otra era
+// `@cf/meta/llama-4-scout-17b-16e-instruct`, 6,7 s, sin historial en este
+// proyecto; `@cf/meta/llama-3.3-70b-instruct-fp8-fast` quedó descartado
+// porque su CV de 377 caracteres ni pasó `validarGeneracion`).
+//
+// ⚠️ Este modelo es el que dio el ROJO del 23/08/2026 en esta llamada
+// (8 fallos de contenido; el más grave, inventarse una carrera universitaria
+// entera para un CV de 3 líneas — knowledge/paso-13-evals.md, caso B06) y por
+// eso se cambió entonces. Pero ese ROJO fue con el prompt de ANTES de T94, y
+// el refuerzo de T94 contra la invención de secciones **nunca ha llegado a
+// probarse**: todas las tandas posteriores murieron por el timeout de gemma-4
+// antes de producir una sola señal de contenido. Relanzar los evals de
+// `generarCvYCarta` es obligatorio antes de dar esto por bueno (CLAUDE.md).
+const MODELO_CLOUDFLARE_GENERACION = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
 // Tiempo máximo de espera por ronda. Todo el presupuesto (Cloudflare MÁS las
 // dos rondas de OpenRouter) tiene que caber holgadamente en los 60 s que
@@ -183,19 +219,24 @@ const MODELO_CLOUDFLARE_GENERACION = '@cf/google/gemma-4-26b-a4b-it';
 const TIMEOUT_CLOUDFLARE_MS = 26_000;
 const TIMEOUT_OPENROUTER_MS = 12_000;
 
-// Presupuesto de `generarCvYCarta`: 34 (Cloudflare) + 10 + 10 (las dos rondas
+// Presupuesto de `generarCvYCarta`: 26 (Cloudflare) + 14 + 14 (las dos rondas
 // de OpenRouter) = 54 s en el peor caso, con 6 s de margen sobre los 60 s de
-// Vercel. Los 10 s por ronda de OpenRouter son el valor de siempre (antes de
-// que Groq ocupara un hueco en esta cascada, del 20 al 23/08/2026); al
-// quitarlo del todo (23/08/2026) sobra presupuesto para devolverlos a su
-// valor original.
+// Vercel.
 //
-// 26 -> 34 s el 24/08/2026: ver el aviso junto a `MODELO_CLOUDFLARE_GENERACION`
-// más arriba. El margen baja de 14 a 6 s — sigue habiendo hueco real, pero ya
-// no tanto como antes; si hace falta subirlo más, hay que quitarle margen a
-// las rondas de OpenRouter, no solo seguir subiendo este número.
-const TIMEOUT_CLOUDFLARE_GENERACION_MS = 34_000;
-const TIMEOUT_OPENROUTER_GENERACION_MS = 10_000;
+// 34 -> 26 s el 25/08/2026 (T109): los 34 s eran una tirita puesta el 24/08
+// para intentar que cupiera `@cf/google/gemma-4-26b-a4b-it`, que necesitaba
+// 58 s y por tanto no cabía de ninguna manera (ver la nota junto a
+// `MODELO_CLOUDFLARE_GENERACION`). Con `mistral-small-3.1-24b-instruct`
+// medido en 16,7 s, 26 s vuelve a ser el margen holgado de siempre — el mismo
+// que `TIMEOUT_CLOUDFLARE_MS`, y por el mismo motivo: la varianza de
+// Cloudflare no es despreciable (21,3 / 12,8 / 13,5 / 13,2 / 20,8 s en las
+// cinco peticiones reales del 23/08).
+//
+// Los 8 s que se liberan van a las rondas de OpenRouter, 10 -> 14 s cada una:
+// con 10 s, cualquier modelo de respaldo que tarde lo normal caía por timeout
+// en vez de por un fallo real, y el respaldo dejaba de serlo.
+const TIMEOUT_CLOUDFLARE_GENERACION_MS = 26_000;
+const TIMEOUT_OPENROUTER_GENERACION_MS = 14_000;
 
 // Cloudflare no limita por tokens por minuto como limitaba Groq — el cuello
 // de botella aquí es el cupo diario de neuronas, no el minuto — así que no

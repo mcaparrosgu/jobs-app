@@ -1,5 +1,43 @@
 # Registro de cambios del bundle
 
+## 2026-08-25 (ter — T109: arreglada la generación de CV)
+* **Diagnóstico**: la generación de CV y carta fallaba al **100%** desde el
+  23/08 porque `@cf/google/gemma-4-26b-a4b-it` es un modelo **de
+  razonamiento**: medido en vivo con el prompt real y sin el corte de espera,
+  tarda **58,5 s** (7.042 tokens de salida, ~4.800 de borrador interno
+  invisible). El corte estaba en 34 s y el máximo de Vercel es 60 s, así que
+  **esa llamada no podía funcionar nunca**. `reasoning_effort: "low"` lo
+  empeora (83 s) y Cloudflare no expone forma de apagarle el razonamiento.
+* **La teoría del 24/08 era falsa**: no era cupo de Cloudflare agotado. Se
+  desmiente midiendo en la misma cuenta y el mismo minuto — gemma-4 tardaba
+  58 s mientras `mistral-small` tardaba 16.
+* **La pista estaba en `metricas_ia`** (Paso 17), sin gastar cuota: los 6
+  fallos de Mar del 25/08 tenían `duracion_ms` entre 36.205 y 36.776 —
+  siempre 34 s de corte + ~2 s del respaldo. Un patrón tan estrecho es un
+  reloj, no un proveedor saturado.
+* **Arreglo**, elegido por Mar entre alternativas medidas (`lib/ia.ts`):
+  `MODELO_CLOUDFLARE_GENERACION` vuelve a
+  `@cf/mistralai/mistral-small-3.1-24b-instruct` (16,7 s);
+  `TIMEOUT_CLOUDFLARE_GENERACION_MS` 34 → 26 s;
+  `TIMEOUT_OPENROUTER_GENERACION_MS` 10 → 14 s por ronda (54 s en total, 6 s
+  de margen). Verificado de extremo a extremo: 13,2 s, CV de 509 y carta de
+  1.357 caracteres. Lint limpio y 275 pruebas en verde.
+* **Aviso que sigue abierto**: `mistral-small` es el modelo que dio el ROJO
+  del 23/08 en esta llamada, pero con el prompt de ANTES de T94. El refuerzo
+  de T94 nunca se ha podido probar (todas las tandas morían por el timeout de
+  gemma-4). La tanda de evals lanzada tras este cambio es la primera que puede
+  decir algo real sobre T94. Siguiente candidato ya medido si sale ROJO:
+  `@cf/meta/llama-4-scout-17b-16e-instruct` (6,7 s).
+* **Hallazgo colateral (T112)**: el respaldo de OpenRouter no respalda nada —
+  sus dos modelos devuelven 429 en menos de medio segundo
+  (`temporarily rate-limited upstream`), y la ronda 1 usaba el mismo modelo
+  lento de razonamiento con solo 10 s de espera. No se toca a ciegas: solo 4
+  de los 17 modelos `:free` declaran `structured_outputs`.
+* **Creación**: `incidente-gemma4-razonamiento-t109.md`. **Actualización**:
+  `docs/06-tareas.md` (T109 cerrada, T112 nueva), `lib/ia.ts`.
+* **T108 sigue pendiente** y solo puede ejecutarla Mar: sin la columna
+  `generaciones.rehechos`, los CVs ya generados siguen siendo invisibles.
+
 ## 2026-08-25 (bis — publicado a producción, y dos problemas nuevos anotados para mañana)
 * Fusionada `arregla-ofertas-tapadas-25-08` a `master` con permiso de Mar y
   **desplegada a producción** (`0ddd243`, robot en verde: lint + 275 pruebas,
