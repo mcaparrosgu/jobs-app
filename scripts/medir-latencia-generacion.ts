@@ -37,6 +37,11 @@
 //               normalmente muere en el timeout. Ver `envolverFetch`.
 //   MAX_TOKENS  fuerza otro techo de tokens de salida (en producción, 12.000)
 //               para ver hasta dónde llega un caso desbocado. Ver `envolverFetch`.
+//   STOP        secuencias de parada que se le pasan a Cloudflare, separadas
+//               por `|`, con `\n` para el salto de línea. Sirve para medir
+//               (T119) si cortar el bucle de espacio en blanco evita que el
+//               modelo agote el techo de tokens escribiendo basura.
+//               Ejemplo: STOP='\n\n\n|]\n  \n'. Ver `envolverFetch`.
 //
 // Nota: lee los casos del YAML de los evals para no duplicar el dataset. El
 // parser (js-yaml) entra de rebote con promptfoo; si algún día promptfoo deja
@@ -123,10 +128,12 @@ function envolverFetch({
   sinCorte,
   maxTokens,
   modelo,
+  paradas,
 }: {
   sinCorte: boolean;
   maxTokens?: number;
   modelo?: string;
+  paradas?: string[];
 }): void {
   const fetchOriginal = globalThis.fetch;
   globalThis.fetch = ((entrada: RequestInfo | URL, init?: RequestInit) => {
@@ -138,10 +145,11 @@ function envolverFetch({
       siguiente = { ...siguiente };
       delete siguiente.signal;
     }
-    if ((maxTokens || modelo) && typeof siguiente.body === 'string') {
+    if ((maxTokens || modelo || paradas) && typeof siguiente.body === 'string') {
       const cuerpo = JSON.parse(siguiente.body);
       if (maxTokens) cuerpo.max_tokens = maxTokens;
       if (modelo) cuerpo.model = modelo;
+      if (paradas) cuerpo.stop = paradas;
       siguiente = { ...siguiente, body: JSON.stringify(cuerpo) };
     }
     return fetchOriginal(entrada, siguiente);
@@ -182,9 +190,18 @@ async function main(): Promise<void> {
   const maxTokens = process.env.MAX_TOKENS ? Number(process.env.MAX_TOKENS) : undefined;
   const modelo = process.env.MODELO || undefined;
 
+  // Las secuencias vienen separadas por `|` porque la coma y el espacio son
+  // parte de lo que se quiere cortar. `\n` se escribe así en la línea de
+  // comandos y aquí se convierte en el salto de línea de verdad.
+  const paradas = process.env.STOP
+    ? process.env.STOP.split('|')
+        .map((secuencia) => secuencia.replace(/\\n/g, '\n'))
+        .filter(Boolean)
+    : undefined;
+
   // Antes del import de lib/ia.ts: hay que envolver el fetch global antes de
   // que el módulo lo capture en ningún sitio.
-  if (sinCorte || maxTokens || modelo) envolverFetch({ sinCorte, maxTokens, modelo });
+  if (sinCorte || maxTokens || modelo || paradas) envolverFetch({ sinCorte, maxTokens, modelo, paradas });
 
   const { generarCvYCarta } = await import('../lib/ia');
 
@@ -202,6 +219,7 @@ async function main(): Promise<void> {
   if (sinCorte) console.log('SIN CORTE: a Cloudflare no se le aplica el timeout de 26 s.');
   if (maxTokens) console.log(`MAX_TOKENS forzado a ${maxTokens} (en producción son 12.000).`);
   if (modelo) console.log(`MODELO forzado a ${modelo}.`);
+  if (paradas) console.log(`STOP: ${JSON.stringify(paradas)} (en producción no se manda ninguna).`);
   console.log('');
 
   const mediciones: Medicion[] = [];
