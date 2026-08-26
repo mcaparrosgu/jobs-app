@@ -1,5 +1,55 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (quinto — T118, el cierre que el modelo no escribe)
+
+* **Decisión de Mar**, entre cuatro opciones medidas: **reparar el JSON en el
+  código**. Es la única que no depende de que Cloudflare cambie de
+  comportamiento — su `strict: true` no lo aplica nadie.
+* **`repararJsonCortado`** sustituye al `JSON.parse` de `generarCvYCarta`:
+  parseo normal primero, y solo si falla, recorta el espacio en blanco de cola
+  y cierra lo que quedó abierto, retrocediendo al elemento anterior si el punto
+  de corte no cuela. Una **cadena a medias no se cierra con una comilla**:
+  colaría media frase en el CV de una persona, así que se descarta entera.
+* **El `puesto` que falta se toma del perfil**, como ya hacía `titularSeguro`
+  cuando el titular del modelo no pasaba los guardrails del Paso 15.
+* **Timeouts rehechos**: de `[24_000, 14_000, 14_000]` a `[48_000]`. Los tres
+  intentos se calcularon cuando una generación buena tardaba 13 s; hoy tarda
+  32-41 s, así que **fallaban por definición**. Un solo intento porque la ruta
+  declara `maxDuration = 60`.
+* **Lo que no arregla**: los CVs cortos (T113, solo 2 de 5 pasan los 400
+  caracteres) ni el gasto de cuota — el modelo sigue escribiendo basura hasta
+  el techo. La idea de cortarlo con una secuencia `stop` queda sin medir.
+* **Verificación**: 295 pruebas en verde (7 nuevas en
+  `tests/lib/ia-json-cortado.test.ts`), tipos y lint limpios. **Sin verificar
+  en vivo**: la cuota diaria de Cloudflare se agotó a las 14:10 midiendo T117.
+* Documento: `arreglo-json-sin-cerrar.md`.
+
+## 2026-08-26 (cuarto — T117, medir si T116 arregla la generación)
+
+* **Resultado**: no la arregla. Por la vía normal, **0 de 5**. El bucle de
+  saltos de línea de T116 no murió: se mudó al **espacio en blanco entre
+  claves del JSON**, donde el esquema de listas no llega. El modelo escribe la
+  carta y el CV bien, cierra `cv_lineas`, y a partir de ahí emite `
+␣␣` hasta
+  agotar el techo de tokens — 2.022 caracteres de basura de 3.854 con el techo
+  a 2.500. Nunca escribe el campo `puesto` ni la llave de cierre, así que el
+  parseo descarta un documento que estaba entero.
+* **No era una mala racha del proveedor**: B01 medido sin corte de espera
+  responde en 38,1 s, no se cuelga. La atribución del 26/08 por la tarde a
+  Cloudflare era, al menos en parte, este fallo — y con ella **cae el descarte
+  de `llama-4-scout`**, medido sobre datos contaminados.
+* **`strict: true` no lo aplica nadie**: el modelo devuelve las claves en orden
+  inverso al esquema y omite una obligatoria. El `response_format: json_schema`
+  de Cloudflare se está comportando como una sugerencia.
+* **Descartado por medición**: subir el techo de tokens. Con 2.500 el modelo
+  solo gasta más espacio en blanco, a ~220 neuronas por llamada de las 10.000
+  diarias.
+* **Dato para los timeouts**: una generación buena tarda de **32 a 41 s**, muy
+  por encima del primer corte de 24 s.
+* **Cuota**: las ~22 llamadas de la medición agotaron la asignación diaria de
+  Cloudflare a las 14:10. El arreglo **está sin elegir**, a la espera de Mar.
+* Documento: `medicion-t117-cierre-json.md`.
+
 ## 2026-08-26 (ter — T111, el comprobador de invenciones)
 
 * **Medición antes que teoría**: se recalcularon los avisos de

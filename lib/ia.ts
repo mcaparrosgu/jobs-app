@@ -244,7 +244,23 @@ const TIMEOUT_OPENROUTER_MS = 12_000;
 // `temporarily rate-limited upstream` en 0,4 s, T112 confirmada en vivo el
 // 26/08), así que tenerlas reservados 28 s era regalar la mitad del minuto.
 // Se dejan porque cuestan menos de un segundo y algún día pueden volver.
-const TIMEOUTS_CLOUDFLARE_GENERACION_MS = [24_000, 14_000, 14_000] as const;
+// T117 · Rehechos con lo medido el 26/08 por la tarde. Los tres intentos de
+// arriba (24+14+14 s) se calcularon cuando una generación buena tardaba 13 s.
+// Ya no: el modelo **nunca emite el token de fin**, así que toda llamada llega
+// al techo de tokens y una generación buena tarda de **32 a 41 s** (5 casos
+// medidos). Con cortes de 24 y 14 s no se completaba ninguna: los tres
+// intentos fallaban por definición, no por mala suerte.
+//
+// Ahora es **un solo intento largo**, y la razón es el presupuesto de la ruta:
+// `app/api/generar/route.ts` declara `maxDuration = 60`. Con el caso más lento
+// en 41,4 s, 48 s dejan margen para ese caso y para lo que la ruta hace
+// después, pero no dan para un segundo intento. Un reintento corto no serviría
+// de nada: no le da tiempo a terminar.
+//
+// Si algún día el modelo deja de escribir basura hasta el techo (ver
+// `repararJsonCortado`), la llamada volverá a durar ~20 s y entonces sí
+// caben dos intentos. Medir antes de volver a ponerlos.
+const TIMEOUTS_CLOUDFLARE_GENERACION_MS = [48_000] as const;
 const TIMEOUT_OPENROUTER_GENERACION_MS = 2_000;
 
 // Cloudflare no limita por tokens por minuto como limitaba Groq — el cuello
@@ -971,6 +987,111 @@ export function titularSeguro(puesto: string, contexto: ContextoDelTitular): str
   return propias.some((palabra) => legitimas.has(palabra)) ? puesto : descartar();
 }
 
+// T117 · El modelo deja el JSON sin cerrar, y el documento entero se perdía.
+//
+// Medido el 26/08/2026 sobre la respuesta cruda de Cloudflare: el modelo
+// escribe la carta y el CV **bien y completos**, cierra `cv_lineas` con su
+// corchete... y a partir de ahí se queda emitiendo un salto de línea y dos
+// espacios, una y otra vez, hasta agotar el techo de tokens. Nunca escribe el
+// campo `puesto` ni la llave de cierre. Con el techo a 2.500 tokens se ve el
+// desperdicio entero: de 3.854 caracteres generados, 1.832 son el documento y
+// 2.022 son espacio en blanco.
+//
+// Es el bucle de T116 mudado de sitio: allí ocurría dentro del texto del CV y
+// el esquema de listas lo hizo imposible; aquí ocurre en el espacio en blanco
+// **entre las claves del JSON**, donde el esquema no dice nada. El
+// `response_format: json_schema` no lo impide: Cloudflare lo trata como una
+// sugerencia, hasta el punto de devolver las claves en orden inverso al del
+// esquema y omitir una obligatoria.
+//
+// Por eso esto no es un apaño sino la puerta de entrada normal: `JSON.parse`
+// a secas daba **0 de 5**; recortando el espacio en blanco de cola y cerrando
+// lo que quedó abierto, **5 de 5**. Detalle en
+// `knowledge/medicion-t117-cierre-json.md`.
+//
+// Lo que NO hace esta función es dar por bueno un documento a medias: se
+// limita a recuperar el objeto, y `validarGeneracion` sigue exigiéndole
+// después su largo mínimo y su número mínimo de líneas y de párrafos. Un
+// corte que pille el CV por la mitad se queda corto y se rechaza igual que
+// antes.
+export function repararJsonCortado(contenido: string): unknown {
+  try {
+    return JSON.parse(contenido);
+  } catch {
+    // Sigue abajo: puede ser el corte conocido y no basura de verdad.
+  }
+
+  // El bucle deja una cola de líneas en blanco. Fuera, y con ella cualquier
+  // resto de una clave que el modelo empezó y no llegó a escribir.
+  let texto = contenido.replace(/\s+$/, '');
+
+  // Recorta hasta el último trozo que puede cerrarse bien —una cadena
+  // terminada o un corchete cerrado— y prueba a cerrar lo que quede abierto.
+  // Si no cuela, recorta un trozo más. El límite de vueltas evita que una
+  // respuesta genuinamente rota tenga a nadie dando vueltas.
+  for (let intento = 0; intento < MAXIMOS_RECORTES_AL_REPARAR; intento++) {
+    const candidato = cerrarLoAbierto(texto);
+    if (candidato !== null) {
+      try {
+        return JSON.parse(candidato);
+      } catch {
+        // Ese punto de corte no valía; se prueba con el anterior.
+      }
+    }
+    const anterior = Math.max(
+      texto.lastIndexOf('"', texto.length - 2),
+      texto.lastIndexOf(']', texto.length - 2),
+    );
+    if (anterior <= 0) break;
+    texto = texto.slice(0, anterior + 1);
+  }
+
+  throw new ErrorDeContenido('La IA devolvió una respuesta que no es un JSON recuperable');
+}
+
+const MAXIMOS_RECORTES_AL_REPARAR = 40;
+
+// Cierra los corchetes y llaves que quedaron abiertos en un JSON cortado.
+// Recorre el texto contando comillas para no confundir un corchete que está
+// dentro de una cadena ("[tu nombre]") con uno de la estructura. Si el corte
+// pilló una cadena a medias, no vale: devuelve null y quien llama recorta.
+function cerrarLoAbierto(texto: string): string | null {
+  const abiertos: string[] = [];
+  let enCadena = false;
+  let escapado = false;
+
+  for (const caracter of texto) {
+    if (escapado) {
+      escapado = false;
+      continue;
+    }
+    if (caracter === '\\') {
+      escapado = true;
+      continue;
+    }
+    if (caracter === '"') {
+      enCadena = !enCadena;
+      continue;
+    }
+    if (enCadena) continue;
+    if (caracter === '{' || caracter === '[') abiertos.push(caracter);
+    else if (caracter === '}' || caracter === ']') abiertos.pop();
+  }
+
+  // Una cadena a medias NO se cierra poniéndole una comilla: eso colaría media
+  // frase ("- Nubelo (2021-2024): coordinación de equi") en el CV de alguien.
+  // Se devuelve null para que quien llama recorte hasta el elemento anterior,
+  // que sí estaba entero.
+  if (enCadena) return null;
+  if (abiertos.length === 0) return null;
+
+  const cierre = abiertos
+    .reverse()
+    .map((abierto) => (abierto === '{' ? '}' : ']'))
+    .join('');
+  return texto + cierre;
+}
+
 function validarGeneracion(
   datos: unknown,
   contexto: ContextoDelTitular,
@@ -982,7 +1103,16 @@ function validarGeneracion(
 
   const { puesto, cv_lineas, carta_parrafos } = datos as Record<string, unknown>;
 
-  if (typeof puesto !== 'string' || puesto.trim().length === 0) {
+  // T117 · `puesto` es la clave que el modelo deja para el final, así que es
+  // justo la que se pierde cuando la respuesta llega cortada: faltaba en los
+  // 5 casos de 5 medidos. No es motivo para tirar el documento — el titular
+  // del perfil lo escribió la propia usuaria, y `titularSeguro` ya lo usa de
+  // respaldo cuando el que devuelve el modelo no vale (Paso 15). Aquí se hace
+  // lo mismo con el que no llegó a venir.
+  const titularDevuelto =
+    typeof puesto === 'string' && puesto.trim().length > 0 ? puesto.trim() : contexto.puestoPerfil.trim();
+
+  if (titularDevuelto.length === 0) {
     throw new ErrorDeContenido('La IA no devolvió un titular de puesto válido');
   }
 
@@ -1008,7 +1138,7 @@ function validarGeneracion(
   // manipulada consiguió fijarlo a "CONTROLADO-POR-LA-OFERTA"
   // (seguridad/red-team-opus.md, ficha 2.3). Un titular de puesto de verdad
   // es corto, de una línea y sin puntuación de frase.
-  const puestoLimpio = titularSeguro(puesto.trim(), contexto);
+  const puestoLimpio = titularSeguro(titularDevuelto, contexto);
 
   const cv = normalizarPuntos(cv_texto.trim());
   const carta = normalizarPuntos(carta_texto.trim());
@@ -1321,7 +1451,9 @@ export async function generarCvYCarta(
   });
 
   const validado = validarGeneracion(
-    JSON.parse(resultado.contenido),
+    // T117 · No es `JSON.parse` a secas: el modelo deja el JSON sin cerrar y
+    // así se perdía el documento entero. Ver `repararJsonCortado`.
+    repararJsonCortado(resultado.contenido),
     {
       puestoPerfil,
       // Recortado igual que al mandarlo al modelo: si el título trae una

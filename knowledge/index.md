@@ -66,6 +66,23 @@ existe en produccion y no se toca desde aqui.
   `carta_parrafos`) y el código las une, así que el modelo ya no escribe
   saltos de línea y no puede atascarse generándolos. Verificado (la línea del
   error baja de 3.089 a 19); la mejora en tasa de éxito, pendiente de medir.
+- [arreglo-json-sin-cerrar.md](arreglo-json-sin-cerrar.md) —
+  26/08/2026, T118: si el modelo no cierra el JSON, lo cierra el código.
+  `repararJsonCortado` recorta el espacio en blanco de cola y cierra lo que
+  quedó abierto; una cadena a medias **no** se cierra con una comilla (colaría
+  media frase en el CV), se descarta y se retrocede. El `puesto` que falta se
+  toma del perfil de la usuaria, como ya hacía `titularSeguro`. Los timeouts
+  pasan de 24+14+14 s a **un solo intento de 48 s**, porque una generación
+  buena tarda 32-41 s y la ruta declara `maxDuration = 60`. 295 pruebas en
+  verde; **sin verificar en vivo**, la cuota se agotó midiendo.
+- [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md) —
+  26/08/2026, T117: **el bucle no murió, se mudó**. Tras T116 el documento sale
+  correcto y completo, pero al terminar `cv_lineas` el modelo se queda
+  escribiendo espacios en blanco hasta agotar el techo, nunca escribe el cierre
+  del JSON ni el campo `puesto`, y el parseo lo tira entero. **5 de 5 casos son
+  recuperables ignorando ese cierre; 0 de 5 llegan por la vía normal.** Subir el
+  techo de tokens no arregla nada. Anula el descarte de `llama-4-scout`, medido
+  sobre datos contaminados por este fallo.
 - [agujero-robot-cambio-ia-arrastrado.md](agujero-robot-cambio-ia-arrastrado.md)
   — 26/08/2026: el detector de `publicar.yml` compara con el push anterior, no
   con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo

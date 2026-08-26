@@ -266,9 +266,11 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    '\n  Lectura: desde T114, `generarCvYCarta` hace TRES intentos contra Cloudflare\n' +
-      '  (24 + 14 + 14 s, TIMEOUTS_CLOUDFLARE_GENERACION_MS). Un caso correcto que tarda\n' +
-      '  ~30 s es uno al que le falló el primer intento y lo salvó el segundo.\n',
+    '\n  Lectura: desde T118, `generarCvYCarta` hace UN solo intento contra\n' +
+      '  Cloudflare (48 s, TIMEOUTS_CLOUDFLARE_GENERACION_MS). Los tres intentos\n' +
+      '  cortos de T114 (24 + 14 + 14 s) se calcularon cuando una generación\n' +
+      '  tardaba 13 s; hoy tarda de 32 a 41 s, así que fallaban por definición.\n' +
+      '  Una correcta en ese rango es lo normal, no un reintento afortunado.\n',
   );
 
   // JSON al final, en una línea, para poder guardarlo y comparar tandas.
