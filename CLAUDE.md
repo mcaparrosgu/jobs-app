@@ -111,6 +111,36 @@ Cloudflare/OpenRouter, igual que la app en producción, más la cuota de Groq
 del modelo juez). Los umbrales de aprobado y cómo leer el resultado están
 documentados en `knowledge/paso-13-evals.md`.
 
+### Antes de creerte una tanda, mira si el proveedor está estable
+
+Lección del 26/08/2026, que costó una tarde entera. Cloudflare tiene rachas
+malas: **el mismo caso, el mismo código y el mismo modelo** salieron en 12,9 s
+por la mañana y se colgaron 181 s una hora después. Durante esa racha, todas
+las combinaciones probadas —modelo viejo, modelo nuevo, `mistral`, `scout`—
+daban entre 1 y 2 aciertos de 5, así que **ninguna medición distinguía nada**.
+
+Antes de concluir que un cambio mejora o empeora, comprueba que el proveedor
+responde con normalidad. Para eso está la sonda, que llama a la función real
+de `lib/ia.ts` sobre casos reales del golden dataset y cuesta una fracción de
+una tanda de evals:
+
+```
+npm run medir:generacion            # 5 casos repartidos por el dataset
+npm run medir:generacion 3          # 3 casos
+FILTRO=B01 npm run medir:generacion # solo ese caso
+```
+
+Además acepta `SIN_CORTE=1` (quita el tiempo de espera, para ver cuánto tarda
+de verdad algo que muere en el timeout), `MAX_TOKENS=600` y
+`MODELO=@cf/...` — los tres envolviendo el `fetch`, **sin tocar `lib/ia.ts`**,
+que es código de producción y cuyo cambio dispara los evals al publicar.
+
+Con 5 casos y una tasa de acierto del 20-40 %, la diferencia entre 1/5 y 2/5
+es ruido, no señal.
+
+Y ojo con el coste de medir: una sola llamada desbocada gasta en cuota lo que
+decenas de generaciones normales.
+
 ## Publicación (Paso 16)
 
 **Vercel ya no publica solo — y desde el 21/08/2026, ni puede.** El repositorio

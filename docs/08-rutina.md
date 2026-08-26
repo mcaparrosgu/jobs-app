@@ -63,6 +63,20 @@ distinta (sección 6):
 | `error_proveedor` | Ni Cloudflare ni el respaldo de OpenRouter respondieron a tiempo o con éxito. | Depende del volumen — ver sección 6. |
 | `sin_perfil_o_oferta` | Faltaba el CV de la usuaria o la oferta ya no existía. | Casi siempre un caso límite legítimo (oferta borrada, perfil incompleto), no una avería. |
 
+> **`duracion_ms` dice de qué tipo es un `error_proveedor`**, y es el atajo de
+> diagnóstico más rápido que hay. Aprendido el 26/08/2026 mirando esta misma
+> tabla:
+>
+> | Duración de un fallo | Qué está pasando |
+> | :--- | :--- |
+> | **2-3 s** | Cloudflare rechaza la petición al instante: clave inválida, cupo agotado o modelo inexistente. No es lentitud — no toques los tiempos de espera. |
+> | **~36 s** (antes de T116) | Se agotó el corte de espera y después el respaldo. El modelo estaba tardando de más o se había desbocado. |
+> | **~53 s** (desde T116) | Los **tres** intentos contra Cloudflare fallaron. Si además hay éxitos rondando los 30-47 s, son generaciones rescatadas por el segundo o el tercer intento: el mecanismo está funcionando. |
+>
+> Consulta rápida sin abrir el panel: leer `metricas_ia` por la API REST con
+> `SUPABASE_SERVICE_ROLE_KEY` ordenando por `creado_en desc` (la tabla no
+> tiene política de lectura a propósito).
+
 ## 2. Alertas
 
 No hay presupuesto para un servicio de alertas de pago, y añadir uno nuevo

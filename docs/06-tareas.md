@@ -404,6 +404,13 @@ verdad, ya no solo `localhost`.
 >   saltos de línea reales) → puede que ni sea el prompt ni el modelo, es el
 >   mismo patrón ya visto con `qwen3.6-27b` antes de Cloudflare.
 >
+> **Cerrado el 26/08/2026 (T116)**: sí era el prompt, y en concreto esta
+> tercera señal. El refuerzo que se le puso encima el 25/08 ("un CV en una sola
+> línea se rechaza") metió al modelo en un bucle de saltos de línea que se
+> llevó por delante los tres días siguientes. Ya no se pide un texto con
+> saltos dentro, sino una lista de líneas. Ver
+> `knowledge/arreglo-bucle-saltos-de-linea.md`.
+>
 > También sigue pendiente, de la misma tanda: `extraerPerfil` nunca se ha
 > probado en el golden dataset con `mistral-small-3.1-24b-instruct` (sigue
 > ahí con Groq) — T95 debe cubrir las dos llamadas, no solo

@@ -145,7 +145,12 @@ del flujo original.
   del documento). Le mandas texto por internet y te devuelve texto. Es la
   pieza que lee el CV pegado y propone puesto y palabras clave, y la que
   redacta el CV y la carta adaptados. **OpenRouter** se queda como
-  respaldo, por si Cloudflare falla o agota su cupo diario.
+  respaldo, por si Cloudflare falla o agota su cupo diario — aunque medido en
+  vivo el 26/08/2026 no respalda casi nada: sus modelos gratuitos contestan
+  `429` en menos de medio segundo (T112). Por eso, desde T116, la generación
+  **reintenta tres veces contra Cloudflare** (24 + 14 + 14 s) antes de pasarle
+  el turno: el fallo suele ser intermitente, y volver a intentarlo funciona
+  mejor que cambiar de proveedor.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
   el sitio con dirección pública al que entran tus compañeras.
 - **n8n** — un workflow **nuevo e independiente**, `Jobs App · ingesta`,
