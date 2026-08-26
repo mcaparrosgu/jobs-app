@@ -245,6 +245,15 @@ existe en produccion y no se toca desde aqui.
   antes de añadirlo: el nivel gratuito entrena en general, pero una
   excepción de los términos de Google para el Espacio Económico Europeo
   hace que no entrene con los datos de Mar ni de sus compañeras.
+- [arreglo-verificarcv-traduccion.md](arreglo-verificarcv-traduccion.md)
+  — 26/08/2026, T111: medido sobre las **seis generaciones reales** de
+  Supabase, `lib/verificarCv.ts` marcó **59 palabras y ninguna era una
+  invención**. No es una lista de palabras incompleta: el documento se genera
+  en el idioma de la oferta, y comparar palabra a palabra un CV en inglés
+  contra un CV original en castellano no puede funcionar (en inglés la
+  mayúscula inicial no señala un nombre propio). Desde ahora esa comparación
+  se calla cuando el documento va traducido; cifras, contacto y "¿es este mi
+  CV?" —que sí aguantan la traducción— siguen en pie. De 59 avisos a 2.
 - [arreglo-verificarcv-falsos-positivos.md](arreglo-verificarcv-falsos-positivos.md)
   — 21/08/2026: la primera pasada de evals contra Gemini salió 30,77 %, pero
   3 de 9 fallos eran falsos positivos del propio comprobador de invenciones

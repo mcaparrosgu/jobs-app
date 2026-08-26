@@ -84,7 +84,11 @@ function palabrasPropiasDe(texto) {
       .split(/\s+/)
       .forEach((sucia, indice) => {
         if (indice === 0) return;
-        const palabra = sucia.replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '');
+        // Genitivo sajón fuera antes de comparar (“GitLab’s” → “GitLab”),
+        // mismo criterio que lib/verificarCv.ts (T111).
+        const palabra = sucia
+          .replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '')
+          .replace(/['’]s$/u, '');
         if (palabra.length < 4) return;
         if (palabra === palabra.toUpperCase()) return;
         if (!/^\p{Lu}/u.test(palabra)) return;
@@ -107,6 +111,15 @@ const MAYUSCULAS_INOCENTES = new Set(
     'referencias', 'objetivo', 'competencias', 'aptitudes', 'logros',
     'responsabilidades', 'funciones', 'tareas', 'herramientas',
     'tecnologias', 'certificados', 'cursos',
+    // Añadidas el 26/08/2026 (T111), mismo criterio que lib/verificarCv.ts:
+    // el documento sale en el idioma de la oferta, así que estas mismas
+    // etiquetas aparecen en inglés cuando la oferta está en inglés.
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+    'september', 'october', 'november', 'december',
+    'english', 'spanish', 'catalan', 'basque', 'galician', 'french', 'german',
+    'italian', 'portuguese', 'native', 'bilingual', 'fluent',
+    'advanced', 'intermediate', 'beginner', 'proficient',
+    'hiring', 'team', 'manager', 'sincerely', 'regards', 'dear',
   ].map(quitarAcentos),
 );
 
@@ -255,6 +268,15 @@ function soloEntidadesConocidas(output, context) {
   const oferta = vars.oferta ?? {};
   const permitido = [vars.cv_texto, oferta.titulo, oferta.empresa, oferta.descripcion].filter(Boolean).join('\n');
   const generado = `${output.cv_texto ?? ''}\n${output.carta_texto ?? ''}`;
+
+  // T111, mismo criterio que lib/verificarCv.ts: comparar palabra a palabra un
+  // documento traducido solo produce ruido (medido sobre las 6 generaciones de
+  // producción: 59 palabras marcadas, 0 invenciones reales). Los otros
+  // detectores —cifras, contacto, empresas— sí aguantan la traducción.
+  if (idiomaDe(generado) !== idiomaDe(vars.cv_texto ?? '')) {
+    return { pass: true, score: 1, reason: 'Documento traducido: los nombres no se comparan palabra a palabra (T111)' };
+  }
+
   const sospechosas = entidadesSospechosas(generado, permitido);
   return {
     pass: sospechosas.length === 0,

@@ -1,5 +1,36 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (ter — T111, el comprobador de invenciones)
+
+* **Medición antes que teoría**: se recalcularon los avisos de
+  `lib/verificarCv.ts` sobre las **seis generaciones reales** de Mar en
+  Supabase, no sobre ejemplos. Resultado: **59 palabras marcadas, 0
+  invenciones**. Las tres generaciones en inglés aportaban 13, 21 y 23; las
+  tres en castellano, 1, 1 y 3.
+* **Causa**: el documento se genera en el idioma de la oferta (T49), así que
+  un CV original en castellano produce un CV en inglés. Ninguna palabra
+  traducida coincide con el original, y en inglés los títulos van en *Title
+  Case* (`Process Mapping & Optimization`, `English (C1 Advanced)`,
+  `March 2019`), con lo que cada palabra parece un nombre propio inventado.
+  La heurística de T55 es correcta en castellano y falsa en inglés.
+* **Decisión de Mar**: cuando el documento va traducido, **solo** la
+  comparación palabra a palabra se calla. Las otras tres comprobaciones sí
+  aguantan la traducción y siguen: cifras, email/teléfono y el aviso crítico
+  de "este CV no menciona ninguna de tus empresas". Se descartaron por
+  medición dos alternativas (ampliar la lista de palabras inocentes;
+  heurísticas de minúsculas y terminaciones): dejaban 19 avisos de 59 y
+  perdonarían `Consulting`, `Solutions` o `Technologies`.
+* **Tres falsos positivos más, arreglados de paso**: el genitivo sajón
+  (`GitLab’s` marcado estando `GitLab` permitido), el `once` inglés leído
+  como el número 11 castellano (diccionarios de números ahora separados por
+  idioma), y el teléfono del CV escrito con espacios (`+34 670 293 436`)
+  troceado en tres cifras "inventadas".
+* **Resultado y verificación**: sobre las mismas seis generaciones, **de 59
+  avisos a 2**, y ninguno de los dos es ruido de traducción. 288 pruebas en
+  verde (11 nuevas), tipos y lint limpios. `evals/promptfoo/helpers.cjs`
+  sincronizado con el mismo criterio. Detalle en
+  `arreglo-verificarcv-traduccion.md`.
+
 ## 2026-08-26 (bis — encontrada y arreglada la causa de raíz)
 
 * **La causa de los tres días de fallos era el propio prompt**: exigía saltos

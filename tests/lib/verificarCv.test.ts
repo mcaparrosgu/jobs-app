@@ -366,3 +366,131 @@ describe('verificarCv — el tope de avisos ya no esconde el importante (Paso 15
     expect(avisos[avisos.length - 1]).toMatch(/avisos más parecidos/i);
   });
 });
+
+// --- T111 · El detector no puede comparar palabra a palabra un documento
+// --- traducido. Medido sobre las 6 generaciones reales: 59 palabras
+// --- marcadas, 0 invenciones. Ver knowledge/arreglo-verificarcv-traduccion.md.
+
+const CV_ORIGINAL_ES = [
+  'Especialista en operaciones con 7 años de experiencia en la coordinación de',
+  'agendas y la mejora de procesos para los equipos de la empresa.',
+  'EXPERIENCIA',
+  '- Operations Officer en Althaia Healthcare Institution, desde marzo de 2019.',
+  '  Gestión de agendas de 300 profesionales y auditoría de la base de datos.',
+  'IDIOMAS: Español (nativo), Inglés (C1 avanzado).',
+  'CONTACTO: mar@ejemplo.com · +34 670293436',
+].join('\n');
+
+const CV_GENERADO_EN = [
+  'PROFESSIONAL SUMMARY',
+  'Operations specialist with 7 years of experience coordinating schedules and',
+  'improving processes for the teams of the company.',
+  'EXPERIENCE',
+  '- Operations Officer at Althaia Healthcare Institution, since March 2019.',
+  '  Managed the schedules of 300 professionals and audited the database.',
+  'CORE COMPETENCIES',
+  '- Process Mapping & Optimization',
+  '- Change Management & Training',
+  'LANGUAGES: Spanish (Native), English (C1 Advanced).',
+].join('\n');
+
+describe('verificarCv — documentos traducidos (T111)', () => {
+  it('no avisa del vocabulario traducido de un CV en inglés hecho desde un CV en castellano', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: CV_GENERADO_EN,
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos).toEqual([]);
+  });
+
+  it('sigue avisando de una cifra inventada aunque el documento vaya traducido', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: `${CV_GENERADO_EN}\n- Increased sales by 42% in a single quarter.`,
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos.some((aviso) => aviso.includes('42'))).toBe(true);
+  });
+
+  it('sigue avisando de un email ajeno aunque el documento vaya traducido', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: CV_GENERADO_EN,
+      cartaGenerada: 'Please contact me at otra.persona@ejemplo.com',
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos.some((aviso) => aviso.includes('otra.persona@ejemplo.com'))).toBe(true);
+  });
+
+  it('sigue cazando el CV suplantado aunque el documento vaya traducido: los nombres de empresa no se traducen', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: CV_GENERADO_EN.replace('Althaia Healthcare Institution', 'Globex Corporation'),
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos[0]).toMatch(/no menciona ninguna de las empresas/i);
+  });
+
+  it('sí compara palabra a palabra cuando el documento va en el idioma del CV original', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: `${CV_ORIGINAL_ES}\n- Coordinación del despliegue con Zumbatrónica Ibérica durante todo el año.`,
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos.some((aviso) => aviso.includes('Zumbatrónica'))).toBe(true);
+  });
+});
+
+describe('verificarCv — tres falsos positivos más, medidos en producción (T111)', () => {
+  it('no marca el genitivo sajón de una empresa permitida', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: 'PERFIL\n- Participé en la integración de la API de GitLab’s Duo con el equipo.',
+      cvOriginal: 'Trabajé en la integración de la API de GitLab con el equipo.',
+    });
+
+    expect(avisos.join(' ')).not.toMatch(/GitLab/);
+  });
+
+  it('no lee el "once" inglés ("una vez") como el número 11 del castellano', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: `${CV_GENERADO_EN}\n- Every candidate is contacted more than once during the process.`,
+      cvOriginal: CV_ORIGINAL_ES,
+      empresasCv: ['Althaia Healthcare Institution'],
+    });
+
+    expect(avisos.some((aviso) => aviso.includes('"11"'))).toBe(false);
+  });
+
+  it('no trocea en tres cifras inventadas el teléfono del CV escrito con espacios', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: 'PERFIL\n- Especialista en operaciones. Teléfono: +34 670 293 436.',
+      cvOriginal: CV_ORIGINAL_ES,
+    });
+
+    expect(avisos).toEqual([]);
+  });
+
+  it('pero sigue avisando de un teléfono que no es el de la usuaria', () => {
+    const avisos = verificarCv({
+      ...BASE,
+      cvGenerado: 'PERFIL\n- Especialista en operaciones. Teléfono: +34 600 111 222.',
+      cvOriginal: CV_ORIGINAL_ES,
+    });
+
+    expect(avisos.some((aviso) => aviso.includes('600 111 222'))).toBe(true);
+  });
+});
