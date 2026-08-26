@@ -147,10 +147,14 @@ del flujo original.
   redacta el CV y la carta adaptados. **OpenRouter** se queda como
   respaldo, por si Cloudflare falla o agota su cupo diario — aunque medido en
   vivo el 26/08/2026 no respalda casi nada: sus modelos gratuitos contestan
-  `429` en menos de medio segundo (T112). Por eso, desde T116, la generación
-  **reintenta tres veces contra Cloudflare** (24 + 14 + 14 s) antes de pasarle
-  el turno: el fallo suele ser intermitente, y volver a intentarlo funciona
-  mejor que cambiar de proveedor.
+  `429` en menos de medio segundo (T112). Por eso la generación insiste con
+  Cloudflare antes de pasarle el turno: el fallo suele ser intermitente, y
+  volver a intentarlo funciona mejor que cambiar de proveedor. Desde T118 es
+  **un solo intento largo, de 48 s**: los tres cortos de T116 (24 + 14 + 14 s)
+  se calcularon cuando una generación buena tardaba 13 s, y al medir el
+  26/08/2026 resultó que hoy tarda de **32 a 41 s** — con aquellos cortes no
+  se completaba ninguna, así que los tres intentos fallaban por definición.
+  No caben dos porque la ruta declara `maxDuration = 60`.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
   el sitio con dirección pública al que entran tus compañeras.
 - **n8n** — un workflow **nuevo e independiente**, `Jobs App · ingesta`,

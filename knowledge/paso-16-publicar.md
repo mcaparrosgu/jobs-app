@@ -293,8 +293,15 @@ salta los evals en cuanto le haces encima un commit de documentación**, y ese
 prompt llega a la vista previa sin haberse medido nunca.
 
 Corregido: en una rama se compara siempre contra `master` (la rama entera); en
-`master` se compara con el empujón anterior, que ahí es justo lo que se
-publica.
+`master` se comparó con el empujón anterior.
+
+> **Esa segunda mitad estaba mal, y se vio el 26/08/2026.** "En `master`, el
+> empujón anterior es justo lo que se publica" da por supuesto que ese empujón
+> **se publicó**, y no siempre: si la puerta lo bloqueó, el código se quedó en
+> `master` sin desplegar y el siguiente commit inocuo lo arrastraba a
+> producción sin evals. Desde T115, en `master` la base es **lo que Vercel dice
+> tener servido en producción**. Ver
+> [arreglo-agujero-robot-t115.md](arreglo-agujero-robot-t115.md).
 
 ## Lo que queda sin confirmar
 

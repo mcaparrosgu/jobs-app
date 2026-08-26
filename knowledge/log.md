@@ -1,5 +1,27 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (séptimo — poner al día la documentación del día)
+
+Repaso de todo lo que las cuatro tareas de hoy (T115, T117, T118, T119)
+dejaron desfasado fuera de sus propios documentos:
+
+* **`CLAUDE.md`**: la sonda acepta `STOP`; el robot compara con lo publicado
+  y hay que pasar `npm run probar:decidir` antes de tocar el paso `decidir`.
+  Las "tres trampas" pasan a ser **cuatro**: la nueva es que *una prueba que
+  no se ha visto fallar no se sabe si prueba algo*.
+* **`docs/04-plan-tecnico.md`**: decía que la generación reintenta tres veces
+  (24+14+14 s). Desde T118 es **un solo intento de 48 s**, con el porqué.
+* **`docs/07-emergencia.md`**: qué cambia el rollback ahora que el robot
+  pregunta qué hay servido en producción — lo que el rollback deja fuera
+  vuelve a contar como pendiente y, si toca la IA, vuelve a pasar la puerta.
+  No sustituye al `git revert`.
+* **`knowledge/paso-16-publicar.md`**: la frase "en `master` se compara con el
+  empujón anterior, que ahí es justo lo que se publica" era **falsa**, y ahí
+  estaba el agujero de T115. Corregida en su sitio, sin borrar el rastro.
+* **`README.md`**: 253 → **295 pruebas**, los dos comandos nuevos
+  (`medir:generacion`, `probar:decidir`), cómo decide el robot, y `evals/` y
+  `scripts/` en la tabla de carpetas.
+
 ## 2026-08-26 (sexto — T115, el robot mira lo publicado)
 
 * **La base del `git diff` en `master` ya no es el push anterior**, sino el

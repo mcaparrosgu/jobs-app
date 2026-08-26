@@ -73,6 +73,16 @@ git revert HEAD        # crea un commit nuevo que deshace el último
 git push
 ```
 
+> **Lo que sí hace el robot por ti desde el 26/08/2026 (T115).** Al publicar,
+> le pregunta a Vercel qué commit está **servido** en producción, y después de
+> un rollback ese es el viejo. Así que el siguiente push ve como pendiente
+> **todo lo que el rollback dejó fuera** y, si algo de eso toca la IA, vuelve a
+> pasar por la puerta de calidad. Antes no: la comparación era con el push
+> anterior, y un rollback quedaba invisible para el robot. No te ahorra el
+> `git revert` — el código malo sigue en `master` —, pero sí evita que se
+> vuelva a publicar sin medirlo. Ver
+> `knowledge/arreglo-agujero-robot-t115.md`.
+
 `git revert` no borra historia: **añade** un commit que hace lo contrario del
 anterior. Como un asiento de rectificación en contabilidad — el error sigue
 escrito, pero la cuenta vuelve a cuadrar. Esto vuelve a pasar por la puerta de

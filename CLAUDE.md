@@ -131,9 +131,11 @@ FILTRO=B01 npm run medir:generacion # solo ese caso
 ```
 
 Además acepta `SIN_CORTE=1` (quita el tiempo de espera, para ver cuánto tarda
-de verdad algo que muere en el timeout), `MAX_TOKENS=600` y
-`MODELO=@cf/...` — los tres envolviendo el `fetch`, **sin tocar `lib/ia.ts`**,
-que es código de producción y cuyo cambio dispara los evals al publicar.
+de verdad algo que muere en el timeout), `MAX_TOKENS=600`,
+`MODELO=@cf/...` y `STOP='\n\n\n'` (secuencias de parada, varias separadas
+por una barra vertical) — los cuatro envolviendo el `fetch`, **sin tocar
+`lib/ia.ts`**, que es código de producción y cuyo cambio dispara los evals al
+publicar.
 
 Con 5 casos y una tasa de acierto del 20-40 %, la diferencia entre 1/5 y 2/5
 es ruido, no señal.
@@ -154,6 +156,17 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
 - Antes de mandar algo a producción, **pruébalo en una rama** y abre su vista
   previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
   fueron todos directos a producción.
+- **Para saber si hacen falta los evals, el robot compara con lo que hay
+  publicado**, no con el push anterior (T115, 26/08/2026): le pregunta a Vercel
+  qué commit está servido en producción. Antes, un cambio de IA que la puerta
+  bloqueó se quedaba en `master` sin publicar y el siguiente commit inocuo lo
+  arrastraba a producción sin evals. Si no se puede saber qué hay publicado,
+  **se evalúa**. En ramas y PR la base sigue siendo `master`.
+- **Si tocas el paso `decidir` de `publicar.yml`, pasa `npm run
+  probar:decidir` antes.** Son 15 escenarios que sacan el guión del propio
+  YAML y lo ejecutan contra repositorios de mentira, sin red ni cuota.
+  Equivocarse ahí sale caro en las dos direcciones: publicar IA sin medir, o
+  tirar media cuota diaria en evals que no hacían falta.
 - Un commit con **`[sin evals]`** en el mensaje salta los evals a conciencia
   (lint y pruebas siguen). Es para cuando hace falta la cuota de Cloudflare o
   de Groq (el juez) para otra cosa, no para esquivar un rojo. **La marca solo
@@ -165,9 +178,9 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
   Vercel devuelve el código, **no** las migraciones, las variables de entorno
   ni la configuración de Supabase Auth.
 
-### Tres trampas verificadas en vivo (20-21/08/2026)
+### Cuatro trampas verificadas en vivo (20-26/08/2026)
 
-Las tres costaron horas. No volver a caer:
+Las tres primeras costaron horas. No volver a caer:
 
 1. **Las variables de entorno de Vercel son de tipo *Sensitive*: su valor no
    se puede leer desde fuera.** Y falla **en silencio** — `vercel env pull`
@@ -201,6 +214,13 @@ Las tres costaron horas. No volver a caer:
    pongas `[sin evals]` como lo último de la primera línea salvo que de
    verdad quieras saltarte los evals.** Detalle en `knowledge/paso-16-publicar.md`
    (sesión 21/08/2026).
+
+Y una cuarta, del 26/08/2026, que no costó horas porque se cazó a tiempo:
+**una prueba que no se ha visto fallar no se sabe si prueba algo.** El banco
+de `npm run probar:decidir` daba 15 de 15 y no comprobaba nada — el `jq` de
+mentira traía el camino escrito dentro en vez de interpretar el del workflow,
+así que se podía romper el filtro de verdad y seguía todo verde. Antes de
+fiarte de unas pruebas nuevas, rómpelas a propósito y mira que se quejen.
 
 Corolario para el ritmo de trabajo: una tanda de evals dura **~25 minutos** y
 se lleva **la mitad de la cuota diaria**. Planifícalo, no lo lances a la
