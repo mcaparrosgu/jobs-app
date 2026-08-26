@@ -58,6 +58,14 @@ existe en produccion y no se toca desde aqui.
   408 a los 180 s. Y el recuento de "sin evaluar" es **por aserción, no por
   caso**: 4 casos reventados de 13 cruzan el umbral del 25 % y tumban la
   tanda. Descarta por medición la propuesta de subir el corte a 44 s.
+- [arreglo-bucle-saltos-de-linea.md](arreglo-bucle-saltos-de-linea.md) —
+  26/08/2026, la causa de los tres días de fallos: el prompt exigía saltos de
+  línea reales dentro de `cv_texto` (para arreglar los CVs de una sola línea) y
+  el modelo se pasaba al otro extremo, **3.089 líneas** en un campo de quince.
+  Arreglo de raíz: el esquema pide **listas** (`cv_lineas`,
+  `carta_parrafos`) y el código las une, así que el modelo ya no escribe
+  saltos de línea y no puede atascarse generándolos. Verificado (la línea del
+  error baja de 3.089 a 19); la mejora en tasa de éxito, pendiente de medir.
 - [agujero-robot-cambio-ia-arrastrado.md](agujero-robot-cambio-ia-arrastrado.md)
   — 26/08/2026: el detector de `publicar.yml` compara con el push anterior, no
   con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo

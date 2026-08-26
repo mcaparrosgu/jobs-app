@@ -116,7 +116,18 @@ function repartir<T>(lista: T[], cuantos: number): T[] {
 // `MAX_TOKENS_CLOUDFLARE_GENERACION`: es el techo que decide hasta dónde puede
 // escribir un modelo que se ha desbocado, y medir su efecto en vivo es la
 // única forma de saber si bajarlo arregla algo o solo trunca los CVs buenos.
-function envolverFetch({ sinCorte, maxTokens }: { sinCorte: boolean; maxTokens?: number }): void {
+// `MODELO` hace lo mismo con el modelo: permite comparar candidatos en vivo
+// (¿se cuelga solo mistral, o es Cloudflare entero?) sin tocar
+// `MODELO_CLOUDFLARE_GENERACION`.
+function envolverFetch({
+  sinCorte,
+  maxTokens,
+  modelo,
+}: {
+  sinCorte: boolean;
+  maxTokens?: number;
+  modelo?: string;
+}): void {
   const fetchOriginal = globalThis.fetch;
   globalThis.fetch = ((entrada: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
@@ -127,8 +138,11 @@ function envolverFetch({ sinCorte, maxTokens }: { sinCorte: boolean; maxTokens?:
       siguiente = { ...siguiente };
       delete siguiente.signal;
     }
-    if (maxTokens && typeof siguiente.body === 'string') {
-      siguiente = { ...siguiente, body: JSON.stringify({ ...JSON.parse(siguiente.body), max_tokens: maxTokens }) };
+    if ((maxTokens || modelo) && typeof siguiente.body === 'string') {
+      const cuerpo = JSON.parse(siguiente.body);
+      if (maxTokens) cuerpo.max_tokens = maxTokens;
+      if (modelo) cuerpo.model = modelo;
+      siguiente = { ...siguiente, body: JSON.stringify(cuerpo) };
     }
     return fetchOriginal(entrada, siguiente);
   }) as typeof fetch;
@@ -166,10 +180,11 @@ async function main(): Promise<void> {
   const filtro = (process.env.FILTRO ?? '').split(',').map((f) => f.trim()).filter(Boolean);
 
   const maxTokens = process.env.MAX_TOKENS ? Number(process.env.MAX_TOKENS) : undefined;
+  const modelo = process.env.MODELO || undefined;
 
   // Antes del import de lib/ia.ts: hay que envolver el fetch global antes de
   // que el módulo lo capture en ningún sitio.
-  if (sinCorte || maxTokens) envolverFetch({ sinCorte, maxTokens });
+  if (sinCorte || maxTokens || modelo) envolverFetch({ sinCorte, maxTokens, modelo });
 
   const { generarCvYCarta } = await import('../lib/ia');
 
@@ -186,6 +201,7 @@ async function main(): Promise<void> {
   console.log(`${casos.length} casos del golden dataset · ${new Date().toISOString()}`);
   if (sinCorte) console.log('SIN CORTE: a Cloudflare no se le aplica el timeout de 26 s.');
   if (maxTokens) console.log(`MAX_TOKENS forzado a ${maxTokens} (en producción son 12.000).`);
+  if (modelo) console.log(`MODELO forzado a ${modelo}.`);
   console.log('');
 
   const mediciones: Medicion[] = [];
@@ -250,8 +266,9 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    '\n  Lectura: el corte de Cloudflare está en 26 s (TIMEOUT_CLOUDFLARE_GENERACION_MS).\n' +
-      '  Compara esta tabla con la de la otra máquina antes de tocar ningún número.\n',
+    '\n  Lectura: desde T114, `generarCvYCarta` hace TRES intentos contra Cloudflare\n' +
+      '  (24 + 14 + 14 s, TIMEOUTS_CLOUDFLARE_GENERACION_MS). Un caso correcto que tarda\n' +
+      '  ~30 s es uno al que le falló el primer intento y lo salvó el segundo.\n',
   );
 
   // JSON al final, en una línea, para poder guardarlo y comparar tandas.

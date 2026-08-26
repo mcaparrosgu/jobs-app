@@ -1,5 +1,44 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (bis — encontrada y arreglada la causa de raíz)
+
+* **La causa de los tres días de fallos era el propio prompt**: exigía saltos
+  de línea reales dentro de `cv_texto` (añadido el 25/08 porque 2 de 13 CVs
+  salían en una sola línea corrida), y el modelo se pasaba al otro extremo
+  **generando saltos de línea sin parar**: 3.089 líneas en un campo que debía
+  tener quince, hasta agotar el techo de tokens y morir en un timeout. Lo
+  destapó la forma de fallar de `llama-4-scout`, que en vez de un timeout opaco
+  devolvía el error de JSON con el número de línea dentro.
+* **Arreglo de raíz**: `ESQUEMA_GENERACION` pasa de pedir dos textos a pedir
+  **dos listas** (`cv_lineas`, `carta_parrafos`), y `validarGeneracion` las une
+  con `\n`. El modelo ya no escribe ni un salto de línea, así que el bucle deja
+  de ser posible, y tampoco puede devolver un CV "en una sola línea". Hacia el
+  resto de la app no cambia nada: `generarCvYCarta` sigue devolviendo
+  `cv_texto` y `carta_texto` como texto corrido. Es el principio del Paso 11:
+  en vez de pedir que no se equivoque, quitarle la forma de equivocarse.
+* **Verificado**: con el techo forzado a 600 tokens para provocar el truncado,
+  la línea donde revienta el JSON baja de **3.089 a 19**. Cubierto por
+  `tests/lib/ia-generacion-lineas.test.ts` (4 pruebas nuevas); 279 pruebas en
+  verde y tipos limpios.
+* **Antes del arreglo de raíz, dos cambios de robustez** (también en
+  `lib/ia.ts`): el techo de tokens de la generación baja de **12.000 a 1.500**
+  (una generación real gasta 409-503; 12.000 era lo que dejaba a un bucle
+  escribir cinco minutos), y la llamada pasa a hacer **tres intentos** contra
+  Cloudflare (24 + 14 + 14 s) en vez de uno, porque el fallo es intermitente:
+  el mismo caso B01 salió en 12,9 s por la mañana y se colgó 181 s una hora
+  después. Las rondas de OpenRouter bajan de 14 a 2 s — tenían reservada la
+  mitad del minuto de Vercel para contestar 429 en 0,4 s. Medido en vivo: el
+  caso B13 se salvó a los 32,3 s, es decir, gracias al segundo intento.
+* **Lo que queda pendiente y no se pudo medir**: la tasa de éxito real. Las
+  tandas de la tarde dan entre 1 y 2 aciertos de 5 con cualquier combinación
+  porque Cloudflare estaba en muy mal momento, y con ese ruido la diferencia
+  entre 1/5 y 2/5 no significa nada. Hay que volver a medir con el proveedor en
+  condiciones normales antes de publicar.
+* **Descartado**: `llama-4-scout` como modelo principal (1/5 frente a 2/5 de
+  mistral en la misma tanda). Se queda `mistral-small-3.1-24b-instruct`.
+* **Creación**: `arreglo-bucle-saltos-de-linea.md`.
+* **Actualización**: `prompts/system.md` (puntos 3, 4 y 5 del Prompt B).
+
 ## 2026-08-26 (T114: medida la causa real de que la puerta no concluya)
 
 * **La sospecha de T114 era falsa.** Se sospechaba de la latencia del runner

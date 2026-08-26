@@ -245,24 +245,30 @@ ofertas que no ha elegido.
 3. Adapta el titular del puesto (campo `puesto`): tradúcelo/adáptalo al
    idioma decidido (paso 4), corto (2 a 6 palabras), sin inventar un cargo
    distinto del que ya tenía la persona.
-4. Escribe el CV adaptado (`cv_texto`) en texto plano organizado en
-   secciones: cada título de sección en MAYÚSCULAS en su propia línea,
-   cada punto de una lista empieza por `"- "` en su propia línea, sin
-   markdown ni tablas ni asteriscos. El CV **no** empieza por el nombre ni
-   los datos de contacto de la persona — eso ya se muestra aparte, encima
-   del documento (ver `docs/diseno-cv-pdf` / skill de diseño). Empieza
-   directamente por la primera sección de contenido. `cv_texto` **tiene que
-   llevar saltos de línea reales dentro** (el carácter de nueva línea,
-   escrito como `
-` dentro del JSON): un CV entero en una sola línea
-   corrida se rechaza, por bueno que sea su contenido. Añadido el 25/08/2026
-   (T109): 2 de 13 casos de la primera tanda con contenido real se
-   rechazaron exactamente por eso.
-5. Escribe la carta de presentación (`carta_texto`): 200 a 300 palabras,
-   dirigida a la empresa de la oferta, organizada en varios párrafos
-   cortos (saludo, cuerpo, despedida) separados por línea en blanco. No
-   repite el CV entero: explica por qué esta persona encaja en esta
-   oferta concreta.
+4. Escribe el CV adaptado en `cv_lineas`, que es una **lista** donde cada
+   elemento es UNA línea del CV, en texto plano. Cada título de sección va
+   en MAYÚSCULAS y ocupa su propio elemento; cada punto de una lista
+   empieza por `"- "` y ocupa también el suyo. Sin markdown, tablas ni
+   asteriscos. Un CV normal son entre 15 y 40 elementos. El CV **no**
+   empieza por el nombre ni los datos de contacto de la persona — eso ya se
+   muestra aparte, encima del documento (ver `docs/diseno-cv-pdf` / skill de
+   diseño). Empieza directamente por la primera sección de contenido.
+
+   **No se escriben saltos de línea dentro de ningún elemento**: el salto lo
+   pone la lista, y el código une los elementos al recibirlos. Cambiado el
+   26/08/2026 (T114). Antes se pedía un único texto y había que insistirle
+   al modelo en que metiera saltos de línea de verdad (2 de 13 casos salían
+   en una sola línea corrida, T109); con esa insistencia encima, el modelo
+   se pasaba al otro extremo y entraba en **bucle generando saltos de
+   línea** — 3.089 líneas en un campo que debía tener quince, hasta agotar
+   el techo de tokens y morir en un timeout. Pidiendo una lista, ese fallo
+   deja de ser posible: no hay saltos de línea que escribir.
+5. Escribe la carta de presentación en `carta_parrafos`, que es también una
+   **lista**: cada elemento es un párrafo entero, sin saltos de línea
+   dentro. Entre 4 y 6 elementos (saludo, dos o tres de cuerpo,
+   despedida) y 200 a 300 palabras en total, dirigida a la empresa de la
+   oferta. No repite el CV entero: explica por qué esta persona encaja en
+   esta oferta concreta.
 6. El idioma de **todo** el documento —titular, CV y carta, sin
    excepción— es el que el código te indica en el mensaje (detectado a
    partir del título y la descripción de la oferta, `docs/05-ia.md` §6.5).
@@ -276,10 +282,17 @@ JSON con esquema fijo, tres campos obligatorios:
 ```json
 {
   "puesto": "string, máximo 80 caracteres",
-  "cv_texto": "string",
-  "carta_texto": "string"
+  "cv_lineas": ["string, una línea del CV por elemento"],
+  "carta_parrafos": ["string, un párrafo de la carta por elemento"]
 }
 ```
+
+Los dos documentos se piden como **listas** desde el 26/08/2026 (T114), y es
+el código (`validarGeneracion` en `lib/ia.ts`) quien une los elementos con
+saltos de línea. Hacia el resto de la app no cambia nada:
+`generarCvYCarta` sigue devolviendo `cv_texto` y `carta_texto` como texto
+corrido. El porqué está en el punto 4 de las instrucciones: pidiendo un solo
+texto, el modelo entraba en bucle generando saltos de línea.
 
 Sin marcadores de texto tipo `===CV===` para separar el CV de la carta
 (el fallo conocido del workflow de n8n actual, `docs/05-ia.md` §6.4): cada
