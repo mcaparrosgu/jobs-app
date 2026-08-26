@@ -1,5 +1,35 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (sexto — T115, el robot mira lo publicado)
+
+* **La base del `git diff` en `master` ya no es el push anterior**, sino el
+  commit que Vercel dice tener **servido en producción**. Se consulta
+  `targets.production` del proyecto y no el despliegue más reciente: después
+  de un rollback no son el mismo, y usar el más reciente dejaría fuera del
+  diff justo el cambio que se acaba de deshacer.
+* **`vercel deploy` graba el commit** con `--meta sha=`. Hace falta ponerlo a
+  mano: el repositorio se desconectó del proyecto en Vercel el 21/08, así que
+  Vercel ya no sabe de qué commit viene un despliegue si no se lo decimos.
+* **Ante la duda, se evalúa**: sin token, con la llamada caída, con una
+  respuesta que no es JSON o con un sha que no existe en el repositorio, se
+  lanzan los evals. Cuesta cuota; publicar a ciegas cuesta el agujero. El
+  resumen del robot dice ahora **contra qué se comparó**.
+* **Ramas y PR no cambian**: se siguen comparando contra `master`.
+* **Banco de pruebas nuevo**: `npm run probar:decidir`
+  (`scripts/probar-paso-decidir.sh`). Saca el guión del propio YAML y lo
+  ejecuta contra repositorios de mentira, con `curl` y `jq` sustituidos. 15
+  escenarios, 15 en verde — incluida la trampa 3 del freno `[sin evals]`.
+* **El primer banco daba 15 de 15 y no probaba nada**: el `jq` de mentira
+  traía el camino escrito dentro, así que se podía romper el filtro del
+  workflow y seguía todo verde. Se vio rompiéndolo a propósito. Corregido,
+  esa rotura da 3 fallos. **Una prueba que no se ha visto fallar no se sabe si
+  prueba algo.**
+* **Sin verificar en vivo**: no hay token de Vercel en local y el MCP de Vercel
+  no alcanza este proyecto, así que la forma de la respuesta está deducida de
+  la documentación. Lo dirá la primera publicación a `master`; si fallara,
+  se gastan evals de más y **no se publica nada sin medir**.
+* Documento: `arreglo-agujero-robot-t115.md`.
+
 ## 2026-08-26 (quinto — T118, el cierre que el modelo no escribe)
 
 * **Decisión de Mar**, entre cuatro opciones medidas: **reparar el JSON en el

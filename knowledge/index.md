@@ -87,6 +87,17 @@ existe en produccion y no se toca desde aqui.
   — 26/08/2026: el detector de `publicar.yml` compara con el push anterior, no
   con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo
   arrastra a producción el siguiente commit inocuo. Primo hermano de T110.
+  **Arreglado el 26/08**, ver el documento siguiente.
+- [arreglo-agujero-robot-t115.md](arreglo-agujero-robot-t115.md) —
+  26/08/2026, T115: el robot ya no compara con el push anterior sino con **lo
+  que Vercel dice tener servido en producción** (`targets.production`, no el
+  despliegue más reciente: después de un rollback no son el mismo). Para que
+  ese dato exista, el despliegue graba el commit con `--meta sha=` — hace
+  falta porque el repositorio se desconectó de Vercel el 21/08. Si no se puede
+  saber qué hay publicado, **se evalúa**: el fallo cae del lado seguro.
+  Comprobado con 15 escenarios (`npm run probar:decidir`), que sacan el guión
+  del propio YAML; el primer banco daba 15 de 15 sin probar nada y se cuenta
+  ahí por qué. La consulta real a Vercel **sigue sin verse en vivo**.
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.

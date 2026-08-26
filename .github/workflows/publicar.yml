@@ -50,6 +50,7 @@ jobs:
     outputs:
       lanzar_evals: ${{ steps.mirar.outputs.lanzar_evals }}
       motivo: ${{ steps.mirar.outputs.motivo }}
+      base: ${{ steps.mirar.outputs.base }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -58,10 +59,12 @@ jobs:
       - id: mirar
         name: Mirar qué archivos han cambiado
         env:
-          ANTES: ${{ github.event.before }}
           AHORA: ${{ github.sha }}
           BASE_PR: ${{ github.event.pull_request.base.sha }}
           EVENTO: ${{ github.event_name }}
+          # T115 · Solo para PREGUNTAR qué hay publicado. Aquí no se despliega
+          # nada; el token se usa en una única lectura contra la API de Vercel.
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -76,30 +79,69 @@ jobs:
           # prompt acaba en la vista previa sin haberse medido nunca.
           # (Pasó en la ejecución #4 del 20/08/2026.)
           #
-          # En MASTER sí se compara con el empujón anterior: ahí lo que llega
-          # es justo lo que se va a publicar.
+          # En MASTER la base es LO QUE HAY PUBLICADO, no el empujón anterior.
+          # T115, descubierta el 26/08/2026: comparar con el push anterior da
+          # por supuesto que ese push se publicó, y no siempre es verdad. Si la
+          # puerta lo bloqueó (ROJO o NO CONCLUYENTE), el código se quedó en
+          # master sin desplegar, y el siguiente commit inocuo — una nota en
+          # docs/, un script de diagnóstico — ya no veía el cambio de IA como
+          # "cambiado" y lo arrastraba a producción **sin evals**, diciendo con
+          # toda honestidad "El cambio no toca la IA". La puerta no protegía a
+          # producción: solo retrasaba el cambio malo hasta el commit siguiente.
+          # Ver knowledge/agujero-robot-cambio-ia-arrastrado.md.
           RAMA="${GITHUB_REF#refs/heads/}"
 
           if [ "$EVENTO" = "pull_request" ]; then
+            BASE_USADA="la rama de destino del PR"
             CAMBIADOS=$(git diff --name-only "$BASE_PR" "$AHORA")
           elif [ "$RAMA" != "master" ]; then
             git fetch --no-tags --depth=100 origin master 2>/dev/null || true
             BASE_RAMA=$(git merge-base FETCH_HEAD "$AHORA" 2>/dev/null || echo '')
 
             if [ -n "$BASE_RAMA" ] && [ "$BASE_RAMA" != "$AHORA" ]; then
+              BASE_USADA="master ($BASE_RAMA)"
               CAMBIADOS=$(git diff --name-only "$BASE_RAMA" "$AHORA")
             else
               # No se pudo comparar con master: ante la duda, se evalúa.
+              BASE_USADA="nada (no se pudo comparar con master): se evalúa todo"
               CAMBIADOS=$(git ls-files)
             fi
-          elif [ -n "${ANTES:-}" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
-            CAMBIADOS=$(git diff --name-only "$ANTES" "$AHORA")
           else
-            # Primer push de master, o ejecución a mano: no hay con qué
-            # comparar. Ante la duda, se evalúa.
-            CAMBIADOS=$(git ls-files)
+            # Se le pregunta a Vercel qué commit está servido AHORA MISMO en
+            # producción. Se mira `targets.production` del proyecto y no el
+            # despliegue más reciente, porque no son lo mismo: después de un
+            # rollback (docs/07-emergencia.md §1) el más reciente NO es el que
+            # está servido, y usarlo dejaría fuera del diff justo el cambio que
+            # se acaba de deshacer.
+            SHA_PROD=''
+            if [ -n "${VERCEL_TOKEN:-}" ]; then
+              RESPUESTA=$(curl -sS --max-time 20                 -H "Authorization: Bearer $VERCEL_TOKEN"                 "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}"                 || echo '')
+              # `meta.sha` lo pone este mismo robot al desplegar (--meta sha=),
+              # así que es dato nuestro y no depende de que Vercel adivine el
+              # commit — que no puede: el repositorio se desconectó del
+              # proyecto el 21/08/2026. `githubCommitSha` queda de respaldo
+              # para los despliegues anteriores a este cambio.
+              SHA_PROD=$(printf '%s' "$RESPUESTA"                 | jq -r '.targets.production.meta.sha // .targets.production.meta.githubCommitSha // empty'                 2>/dev/null || echo '')
+            fi
+
+            if [ -n "$SHA_PROD" ] && git cat-file -e "${SHA_PROD}^{commit}" 2>/dev/null; then
+              BASE_USADA="lo que hay publicado en producción ($SHA_PROD)"
+              CAMBIADOS=$(git diff --name-only "$SHA_PROD" "$AHORA")
+            else
+              # Sin saber qué hay publicado no se puede afirmar que este cambio
+              # no toca la IA. Se evalúa: cuesta cuota, pero la alternativa es
+              # publicar a ciegas, que es exactamente el agujero de T115.
+              #
+              # Pasa, y es normal, en la PRIMERA publicación después de este
+              # cambio: el despliegue que hay en producción todavía no lleva la
+              # marca `--meta sha=`. A partir de la siguiente, ya la lleva.
+              BASE_USADA="nada (Vercel no dijo qué hay publicado): se evalúa todo"
+              CAMBIADOS=$(git ls-files)
+            fi
           fi
 
+          echo "Base de comparación: $BASE_USADA"
+          echo "base=$BASE_USADA" >> "$GITHUB_OUTPUT"
           echo "Archivos cambiados:"
           echo "$CAMBIADOS" | sed 's/^/  /'
 
@@ -139,6 +181,7 @@ jobs:
             echo ""
             echo "- ¿Se lanzan? **${{ steps.mirar.outputs.lanzar_evals }}**"
             echo "- Motivo: ${{ steps.mirar.outputs.motivo }}"
+            echo "- Comparado contra: ${{ steps.mirar.outputs.base }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────────────
@@ -442,7 +485,13 @@ jobs:
       - name: Publicar
         id: desplegar
         run: |
-          URL=$(vercel deploy ${{ steps.destino.outputs.flag }} --token=${{ secrets.VERCEL_TOKEN }})
+          # `--meta sha=` es lo que hace posible el arreglo de T115: deja
+          # grabado en el despliegue QUÉ commit lleva dentro, para que la
+          # próxima vez el paso `decidir` pueda preguntar qué hay publicado.
+          # Hace falta ponerlo a mano porque el repositorio se desconectó del
+          # proyecto en Vercel el 21/08/2026: Vercel ya no sabe de qué commit
+          # viene un despliegue si no se lo decimos nosotros.
+          URL=$(vercel deploy ${{ steps.destino.outputs.flag }}             --meta sha="$GITHUB_SHA"             --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Publicado en $URL"
 
