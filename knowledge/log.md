@@ -1,5 +1,36 @@
 # Registro de cambios del bundle
 
+## 2026-08-26 (T114: medida la causa real de que la puerta no concluya)
+
+* **La sospecha de T114 era falsa.** Se sospechaba de la latencia del runner
+  de GitHub, y la propuesta pendiente era subir el corte de Cloudflare a
+  ~44 s. Medido con una sonda sobre la función real (`generarCvYCarta`, 7
+  llamadas de cuota): **los timeouts pasan igual en local**, 1 de cada 5
+  casos, sin runner por medio.
+* **Los casos que fallan no son lentos: se desbocan.** B10 medido sin corte
+  tarda **181,5 s** y muere en un HTTP 408 del propio Cloudflare; con el techo
+  bajado a 1.500 tokens llega al techo en 37,4 s y devuelve un JSON truncado.
+  A ~40 tokens/s (los casos buenos: ~500 tokens en 10-13,5 s), el corte de
+  26 s solo da para ~1.000 tokens y B10 necesitaría ~300 s. **Subir el corte
+  a 44 s no salvaría ni un caso**: propuesta descartada por medición.
+* **Por qué eso tumbaba la puerta, y es aritmético**: el recuento de "sin
+  evaluar" de `puerta-calidad.mjs` es **por aserción, no por caso**. Los "17 y
+  18 sin evaluar" son ~3-4 casos de 13; con `maxPorcentajeNoConcluyente: 25`,
+  4 casos reventados = 30 % = NO CONCLUYENTE. Con la tasa de desbocamiento
+  medida (20 %), la puerta estaba condenada a no concluir casi siempre.
+* **T112 confirmada en vivo**: las dos rondas de OpenRouter devolvieron 429
+  (`temporarily rate-limited upstream`) en menos de medio segundo.
+* **Hallazgo colateral**: el detector de `publicar.yml` compara con el push
+  anterior, no con lo publicado, así que un cambio de IA bloqueado por la
+  puerta lo arrastra a producción el siguiente commit inocuo. Nuevo concepto
+  `agujero-robot-cambio-ia-arrastrado.md`; se usa a sabiendas y con permiso
+  para desbloquear producción, y queda anotado como T115.
+* **Creación**: `medicion-t114-desbocamiento.md`,
+  `agujero-robot-cambio-ia-arrastrado.md` y
+  `scripts/medir-latencia-generacion.ts` (sonda reutilizable: mide la función
+  real y permite quitar el corte o forzar otro `max_tokens` envolviendo el
+  `fetch`, sin tocar `lib/ia.ts`).
+
 ## 2026-08-25 (quater — T109: el arreglo del prompt rompió la generación)
 
 * **El ajuste de prompt contra los CVs cortos (`7e41a11`) dejó la generación

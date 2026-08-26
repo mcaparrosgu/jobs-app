@@ -38,7 +38,7 @@ existe en produccion y no se toca desde aqui.
 - [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md)
   — el planteamiento de los dos problemas del 25/08: generar el CV falla en
   producción (T109, ya resuelto) y la migración 0018 nunca se aplicó (T108,
-  🔴 **sigue pendiente**, solo puede ejecutarla Mar en Supabase).
+  aplicada por Mar el 25/08: los CVs ya generados vuelven a verse).
 - [incidente-gemma4-razonamiento-t109.md](incidente-gemma4-razonamiento-t109.md)
   — 25/08/2026, T109: por qué la generación de CV fallaba al 100% desde el
   23/08. `@cf/google/gemma-4-26b-a4b-it` es un modelo **de razonamiento** que
@@ -51,6 +51,17 @@ existe en produccion y no se toca desde aqui.
   generación al 0 % porque le decía al modelo que conservara todo sin decirle
   dónde parar (408 a los 180 s). Incluye una conclusión precipitada y su
   corrección: ese cuelgue **no** era lo que hacía fallar los evals del robot.
+- [medicion-t114-desbocamiento.md](medicion-t114-desbocamiento.md) —
+  26/08/2026, T114: por qué la puerta de calidad no llegaba a un veredicto.
+  **No era el runner de GitHub**: los timeouts pasan igual en local (1 de cada
+  5 casos). Los casos que fallan no son lentos, **se desbocan** hasta un HTTP
+  408 a los 180 s. Y el recuento de "sin evaluar" es **por aserción, no por
+  caso**: 4 casos reventados de 13 cruzan el umbral del 25 % y tumban la
+  tanda. Descarta por medición la propuesta de subir el corte a 44 s.
+- [agujero-robot-cambio-ia-arrastrado.md](agujero-robot-cambio-ia-arrastrado.md)
+  — 26/08/2026: el detector de `publicar.yml` compara con el push anterior, no
+  con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo
+  arrastra a producción el siguiente commit inocuo. Primo hermano de T110.
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.
