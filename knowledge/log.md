@@ -1,5 +1,28 @@
 # Registro de cambios del bundle
 
+## 2026-08-27 (primero — T118 confirmado y T119 cerrada)
+
+Primera medición del día con cuota fresca, y las dos preguntas que quedaron
+abiertas anoche tienen respuesta:
+
+* **Creación**: `medicion-t119-secuencia-parada.md`. **T118 funciona: 5 de 5**,
+  frente al 0 de 5 del 26/08. La app vuelve a generar CVs.
+* **T119 cerrada**. El relleno del bucle resultó ser **tabuladores**, no los
+  saltos de línea que documentaba T117 — *el patrón cambia de un día para
+  otro*, que es la lección de método de hoy. Una parada de tres tabuladores
+  deja la generación en **11,2 s y 70 neuronas** (antes 36,5 s y 133), con el
+  CV idéntico.
+* **Lo que no hay que hacer, medido**: añadir paradas de saltos de línea para
+  cubrir los otros patrones baja de 5/5 a 2/5, porque cortan el documento por
+  la mitad. La red universal es `repararJsonCortado`; la parada es solo ahorro.
+* **Actualización**: `lib/ia.ts` (+38 líneas, nada borrado) y cuatro pruebas
+  nuevas en `tests/lib/ia-paradas.test.ts`, **vistas fallar en dos roturas a
+  propósito** antes de darlas por buenas. 299 pruebas en verde.
+* ⚠️ Queda: la versión de producción del cambio **no se ha visto en vivo** — la
+  cuota se agotó midiendo (~30 generaciones). Y **T113 pasa a ser el problema
+  principal de calidad**: los CVs salen cortos en entradas pobres, con parada y
+  sin ella.
+
 ## 2026-08-26 (séptimo — poner al día la documentación del día)
 
 Repaso de todo lo que las cuatro tareas de hoy (T115, T117, T118, T119)

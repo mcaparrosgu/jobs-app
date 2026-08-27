@@ -257,9 +257,15 @@ const TIMEOUT_OPENROUTER_MS = 12_000;
 // después, pero no dan para un segundo intento. Un reintento corto no serviría
 // de nada: no le da tiempo a terminar.
 //
-// Si algún día el modelo deja de escribir basura hasta el techo (ver
-// `repararJsonCortado`), la llamada volverá a durar ~20 s y entonces sí
-// caben dos intentos. Medir antes de volver a ponerlos.
+// T119 (27/08/2026) · La secuencia de parada (PARADAS_CLOUDFLARE_GENERACION)
+// hizo justo eso: cuando dispara, la llamada baja a 11-14 s. Pero **no siempre
+// dispara** — B10, medido el mismo día, agotó igualmente los 1.500 tokens y
+// tardó 35,4 s, porque el relleno cambia de forma. La latencia es bimodal, y
+// un segundo intento habría que dimensionarlo contra el caso lento, no contra
+// el rápido: 35 s + 35 s no caben en el `maxDuration = 60` de la ruta.
+//
+// Así que sigue habiendo un solo intento. Para volver a poner dos hace falta
+// que el caso LENTO baje de ~25 s, no el rápido. Medir antes.
 const TIMEOUTS_CLOUDFLARE_GENERACION_MS = [48_000] as const;
 const TIMEOUT_OPENROUTER_GENERACION_MS = 2_000;
 
@@ -287,6 +293,35 @@ const MAX_TOKENS_CLOUDFLARE_PERFIL = 1_100;
 // —el triple de lo que gasta una generación normal— un bucle topa en ~37 s y,
 // sobre todo, deja sitio a que el reintento entre dentro del minuto de Vercel.
 const MAX_TOKENS_CLOUDFLARE_GENERACION = 1_500;
+
+// T119 (27/08/2026) · Corta el bucle de basura antes de que agote el techo.
+//
+// Medido en vivo: tras cerrar `cv_lineas`, el modelo no escribe el cierre del
+// JSON — se queda emitiendo relleno hasta agotar `MAX_TOKENS_CLOUDFLARE_GENERACION`.
+// El documento ya está entero en ese punto (`repararJsonCortado` lo demuestra:
+// 5 de 5 recuperables), así que todo lo que viene después es cuota tirada.
+//
+// El relleno del 27/08 era **un espacio y 1.013 tabuladores seguidos**, sin un
+// solo salto de línea. Como el documento se indenta siempre con espacios y
+// nunca con tabuladores, tres tabuladores seguidos no pueden aparecer dentro
+// de un documento válido: es una marca inequívoca de que empezó el bucle.
+//
+// Efecto medido sobre el mismo caso (B01) y confirmado en B04 y B13:
+//   sin parada:  36,5 s · 1.500 tokens · 133 neuronas
+//   con parada:  11,2 s ·   472 tokens ·  70 neuronas · CV idéntico (411 car.)
+//
+// **Solo tabuladores, a propósito.** El relleno cambia de forma entre días —el
+// 26/08 eran saltos de línea indentados—, y la tentación es añadir también
+// `\n\n\n` y `\n  \n  \n  `. Se probó: baja de 3/5 a 2/5, porque el modelo sí
+// deja líneas en blanco **dentro** del documento y esas paradas lo cortan por
+// la mitad. La red de seguridad universal es `repararJsonCortado` (T118), que
+// funciona con cualquier relleno; esto es solo la optimización de coste para
+// el patrón dominante. Si un día deja de disparar, se pierde el ahorro y no
+// se rompe nada.
+//
+// No se aplica a `extraerPerfil` (no ha dado este problema) ni al respaldo de
+// OpenRouter (sin medir ahí).
+const PARADAS_CLOUDFLARE_GENERACION = ['\t\t\t'] as const;
 
 type Mensaje = { role: 'system' | 'user'; content: string };
 
@@ -408,6 +443,8 @@ async function llamarModelo(
   esquema: Esquema,
   maxTokens: number | undefined,
   senal: AbortSignal,
+  // T119 · Secuencias de parada. Ver PARADAS_CLOUDFLARE_GENERACION.
+  paradas?: readonly string[],
 ): Promise<{ contenido: string } & UsoIA> {
   const respuesta = await fetch(proveedor.url, {
     method: 'POST',
@@ -420,6 +457,7 @@ async function llamarModelo(
       messages: mensajes,
       response_format: { type: 'json_schema', json_schema: esquema },
       ...(maxTokens ? { max_tokens: maxTokens } : {}),
+      ...(paradas && paradas.length > 0 ? { stop: [...paradas] } : {}),
       ...proveedor.extra,
     }),
     signal: senal,
@@ -481,6 +519,9 @@ async function llamarAlModelo(
     // TIMEOUTS_CLOUDFLARE_GENERACION_MS.
     timeoutsCloudflareMs?: readonly number[];
     maxTokensCloudflare?: number;
+    // T119 · Secuencias de parada, solo para Cloudflare. Ver
+    // PARADAS_CLOUDFLARE_GENERACION.
+    paradasCloudflare?: readonly string[];
     timeoutOpenRouterMs?: number;
     maxTokens?: number;
     // T93 · Permite que `generarCvYCarta` use un modelo de Cloudflare distinto
@@ -493,6 +534,7 @@ async function llamarAlModelo(
     timeoutCloudflareMs = TIMEOUT_CLOUDFLARE_MS,
     timeoutsCloudflareMs,
     maxTokensCloudflare = MAX_TOKENS_CLOUDFLARE_PERFIL,
+    paradasCloudflare,
     timeoutOpenRouterMs = TIMEOUT_OPENROUTER_MS,
     maxTokens,
     modeloCloudflare = MODELO_CLOUDFLARE,
@@ -513,6 +555,7 @@ async function llamarAlModelo(
         esquema,
         maxTokensCloudflare,
         AbortSignal.timeout(corte),
+        paradasCloudflare,
       );
     } catch (error) {
       fallos.push(error);
@@ -1445,6 +1488,7 @@ export async function generarCvYCarta(
   const resultado = await llamarAlModelo(mensajes, ESQUEMA_GENERACION, {
     timeoutsCloudflareMs: TIMEOUTS_CLOUDFLARE_GENERACION_MS,
     maxTokensCloudflare: MAX_TOKENS_CLOUDFLARE_GENERACION,
+    paradasCloudflare: PARADAS_CLOUDFLARE_GENERACION,
     modeloCloudflare: MODELO_CLOUDFLARE_GENERACION,
     timeoutOpenRouterMs: TIMEOUT_OPENROUTER_GENERACION_MS,
     maxTokens: 6_000,

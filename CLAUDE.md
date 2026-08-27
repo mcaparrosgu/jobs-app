@@ -140,6 +140,28 @@ publicar.
 Con 5 casos y una tasa de acierto del 20-40 %, la diferencia entre 1/5 y 2/5
 es ruido, no señal.
 
+### La forma concreta de un fallo intermitente caduca — vuelve a mirar el crudo
+
+Lección del 27/08/2026. `knowledge/medicion-t117-cierre-json.md` documentaba,
+medido y con volcado, que el modelo agota el techo de tokens emitiendo
+`\n␣␣` una y otra vez. Al día siguiente el relleno eran **1.013 tabuladores
+seguidos, sin un solo salto de línea**, y en otra llamada del mismo día,
+`\n␣\n␣`. La secuencia de parada escrita contra el patrón documentado no
+cortaba nada, y sin volcar la respuesta cruda no había forma de saber por qué.
+
+Un documento que describe **el mecanismo** de un fallo (el modelo no cierra el
+JSON y rellena hasta el techo) sigue siendo válido. Uno que describe **los
+caracteres concretos** vale para el día en que se midió. Antes de construir
+nada que dependa de la forma exacta —una secuencia de parada, una expresión
+regular, un parseo—, vuelve a volcar la respuesta cruda.
+
+Corolario, medido el mismo día: **al elegir esa forma, prefiere la que no
+pueda aparecer en una salida buena.** Tres tabuladores no caben en un
+documento que se indenta con espacios, así que cortan solo basura (5/5). Las
+paradas de saltos de línea parecían cubrir más patrones y **bajaron a 2/5**,
+porque el modelo deja líneas en blanco dentro del CV. Cubrir de más costó más
+que cubrir de menos.
+
 Y ojo con el coste de medir: una sola llamada desbocada gasta en cuota lo que
 decenas de generaciones normales.
 

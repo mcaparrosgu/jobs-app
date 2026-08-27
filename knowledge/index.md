@@ -74,7 +74,17 @@ existe en produccion y no se toca desde aqui.
   toma del perfil de la usuaria, como ya hacía `titularSeguro`. Los timeouts
   pasan de 24+14+14 s a **un solo intento de 48 s**, porque una generación
   buena tarda 32-41 s y la ruta declara `maxDuration = 60`. 295 pruebas en
-  verde; **sin verificar en vivo**, la cuota se agotó midiendo.
+  verde; **verificado en vivo el 27/08 (5 de 5)**, ver
+  `medicion-t119-secuencia-parada.md`.
+- [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) —
+  27/08/2026, T119: **T118 confirmado con cuota fresca, 5 de 5 frente al 0 de 5
+  del 26/08**. El relleno con el que el modelo agota el techo resultó ser
+  **tabuladores, no saltos de línea** (y el patrón cambia de un día para otro).
+  Una parada de tres tabuladores lo corta sin tocar el documento: **36,5 → 11,2 s
+  y 133 → 70 neuronas, con el mismo CV**. Añadir paradas de saltos de línea
+  **empeora** (5/5 → 2/5): el modelo deja líneas en blanco dentro del CV y esas
+  paradas lo cortan por la mitad. Los fallos de B04/B07 son T113, no la parada:
+  ocurren igual sin ella. 299 pruebas en verde, vistas fallar a propósito.
 - [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md) —
   26/08/2026, T117: **el bucle no murió, se mudó**. Tras T116 el documento sale
   correcto y completo, pero al terminar `cv_lineas` el modelo se queda
