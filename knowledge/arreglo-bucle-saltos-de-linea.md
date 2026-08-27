@@ -99,5 +99,12 @@ mecanismo del bucle está arreglado y verificado; **la mejora en tasa de éxito
 está pendiente de medirse con el proveedor en condiciones normales**. Es el
 primer trabajo del día siguiente.
 
+> **Medida el 27/08/2026, y la respuesta tiene dos partes.** T116 arregló su
+> bucle, pero el bucle **se mudó** al espacio entre claves del JSON (T117), y
+> la tasa el 26/08 seguía siendo 0 de 5. Lo que devolvió la generación a **5 de
+> 5** fue T118, cerrando el JSON desde el código. Es decir: este arreglo era
+> necesario pero no suficiente, y medirlo con el proveedor estable es lo que lo
+> demostró. Ver [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) §1.
+
 Relacionado: [[medicion-t114-desbocamiento]],
 [[incidente-gemma4-razonamiento-t109]].

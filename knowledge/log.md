@@ -23,6 +23,39 @@ abiertas anoche tienen respuesta:
   principal de calidad**: los CVs salen cortos en entradas pobres, con parada y
   sin ella.
 
+## 2026-08-27 (quinto — segunda pasada: los punteros hacia adelante)
+
+El repaso anterior miró los documentos que **describen cómo funciona** la app.
+Este mira los que **apuntaban a un trabajo futuro** que hoy ya tiene respuesta,
+y los `description:` del frontmatter, que es lo que se lee para decidir si un
+documento es relevante y se había quedado atrás en varios sitios:
+
+* **`agujero-robot-cambio-ia-arrastrado.md`**: describía el agujero del robot
+  **sin decir en ninguna parte que T115 ya lo cerró**, el mismo día. Marcado
+  como cerrado, arriba y en el `description`, con el cabo que sigue suelto (la
+  consulta real a Vercel no se ha visto en vivo).
+* **`arreglo-json-sin-cerrar.md`**: el `description` seguía diciendo "sin
+  verificar en vivo" aunque el cuerpo ya decía lo contrario.
+* **`pendiente-generacion-cv-falla-25-08.md`**: su `description` seguía siendo
+  "PRIMERA TAREA de la próxima sesión".
+* **`medicion-t117-cierre-json.md`**: además de anotar que T119 respondió su
+  pregunta abierta, se **corrige un dato suyo**: describía el relleno como
+  `\n␣␣`, y al día siguiente eran tabuladores. Queda escrito que la forma
+  concreta caduca y que hay que volver a volcar el crudo.
+* **`arreglo-bucle-saltos-de-linea.md`**: su "pendiente de medirse" ya tiene
+  respuesta, y no es la que esperaba — el arreglo era necesario pero **no
+  suficiente**; quien devolvió la generación al 5/5 fue T118.
+* **`incidente-gemma4-razonamiento-t109.md`**: su "queda como T112" está hecho.
+* **`decision-respaldo-groq.md`**: es donde alguien buscaría "¿qué red tenemos
+  si falla el proveedor?", así que ahora responde lo que sabemos hoy — **no hay
+  ninguna**.
+* **`knowledge/index.md`**: corregida la entrada de T116.
+
+Comprobado además que los 57 documentos de `knowledge/` están listados en
+`index.md`, que todos los enlaces internos `.md` resuelven (salvo uno al repo
+vecino `Docker n8n`, externo y previo) y que las únicas tareas abiertas en
+`docs/06-tareas.md` son T68, T95 y T113.
+
 ## 2026-08-27 (cuarto — poner al día la documentación del día)
 
 Repaso de lo que las cuatro tareas de hoy (T118 verificada, T119, T110, T112)

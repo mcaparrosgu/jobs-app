@@ -65,7 +65,9 @@ existe en produccion y no se toca desde aqui.
   Arreglo de raíz: el esquema pide **listas** (`cv_lineas`,
   `carta_parrafos`) y el código las une, así que el modelo ya no escribe
   saltos de línea y no puede atascarse generándolos. Verificado (la línea del
-  error baja de 3.089 a 19); la mejora en tasa de éxito, pendiente de medir.
+  error baja de 3.089 a 19). **Medido el 27/08: era necesario pero no
+  suficiente** — el bucle se mudó (T117) y quien devolvió la generación al 5/5
+  fue T118.
 - [arreglo-json-sin-cerrar.md](arreglo-json-sin-cerrar.md) —
   26/08/2026, T118: si el modelo no cierra el JSON, lo cierra el código.
   `repararJsonCortado` recorta el espacio en blanco de cola y cierra lo que

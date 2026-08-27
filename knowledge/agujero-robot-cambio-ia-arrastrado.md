@@ -1,11 +1,25 @@
 ---
 type: Hallazgo
 title: "Agujero del robot: un cambio de IA que no llegó a publicarse lo arrastra a producción el siguiente commit inocuo"
-description: "El detector de .github/workflows/publicar.yml compara con el push anterior, no con lo que hay publicado. Si una publicación se bloquea por la puerta, el cambio de IA se queda pendiente y el siguiente commit que no toque la IA lo lleva a producción sin evals. Descubierto el 26/08/2026 al buscar cómo publicar el arreglo de T109."
+description: "CERRADO por T115 el 26/08/2026. El detector de .github/workflows/publicar.yml comparaba con el push anterior, no con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo arrastraba a producción el siguiente commit inocuo, sin evals. Ahora se le pregunta a Vercel qué commit está servido en producción; si no se puede saber, se evalúa."
 tags: [jobs-app, hallazgo, publicacion, evals, puerta-calidad, github-actions, t110, t114]
 okf_version: "0.2"
 timestamp: 2026-08-26T12:10:00Z
 ---
+
+> ✅ **CERRADO por T115 el 26/08/2026**, el mismo día que se descubrió. Se
+> conserva porque explica el porqué del arreglo, y porque el agujero se usó a
+> sabiendas una vez (ver la nota del final).
+>
+> El robot ya no compara con el push anterior: le pregunta a Vercel qué commit
+> está **servido** en producción (`targets.production`, no el despliegue más
+> reciente — tras un rollback no son el mismo). **Si no se puede saber qué hay
+> publicado, se evalúa.** Ver
+> [arreglo-agujero-robot-t115.md](arreglo-agujero-robot-t115.md).
+>
+> ⚠️ Queda un cabo: **la consulta real a Vercel no se ha visto en vivo**, porque
+> en local no hay token. Lo dirá el resumen de la primera publicación a
+> `master`; si fallara, se gastan evals de más y nada se publica sin medir.
 
 # El agujero
 
@@ -58,6 +72,8 @@ hasta que pase la puerta o hasta que alguien use el freno a conciencia.
 
 No se arregla el 26/08 a propósito: producción lleva tres días sin poder
 generar un CV y lo primero es desbloquearla. Queda anotado como tarea.
+
+> Se arregló ese mismo día por la tarde, antes de lo previsto: **T115**.
 
 # Nota sobre esta publicación en concreto
 

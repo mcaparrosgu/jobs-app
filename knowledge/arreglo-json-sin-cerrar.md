@@ -1,7 +1,7 @@
 ---
 type: Arreglo
 title: "T118 · Si el modelo no cierra el JSON, lo cierra el código: la reparación del documento cortado"
-description: "Aplicado el 26/08/2026 tras la medición de T117. El modelo escribe la carta y el CV completos pero nunca escribe el cierre del JSON ni el campo puesto, y el documento entero se perdía. Ahora se recorta el espacio en blanco de cola, se cierra lo que quedó abierto y el titular que falta se toma del perfil de la usuaria. Sin verificar en vivo: la cuota diaria de Cloudflare se agotó midiendo."
+description: "Aplicado el 26/08/2026 tras la medición de T117. El modelo escribe la carta y el CV completos pero nunca escribe el cierre del JSON ni el campo puesto, y el documento entero se perdía. Ahora se recorta el espacio en blanco de cola, se cierra lo que quedó abierto y el titular que falta se toma del perfil de la usuaria. Verificado en vivo el 27/08/2026 con cuota fresca: 5 de 5, frente al 0 de 5 del día anterior."
 tags: [jobs-app, arreglo, ia, cloudflare, structured-outputs, generacion, t117, t118]
 okf_version: "0.2"
 timestamp: 2026-08-26T16:20:00Z

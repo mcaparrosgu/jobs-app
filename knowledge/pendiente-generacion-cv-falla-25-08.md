@@ -1,7 +1,7 @@
 ---
 type: Incidente
 title: Generar CV y carta falla en producción con una usuaria real (25/08/2026)
-description: "PRIMERA TAREA de la próxima sesión. Dos problemas encadenados: la migración 0018 nunca se aplicó (los CVs ya generados son invisibles), y la generación de CV falla de verdad en producción — la misma señal que T95 lleva dos días sin poder confirmar."
+description: "CERRADO el 27/08/2026; se conserva como historial. Planteó los dos problemas encadenados del 25/08: la migración 0018 sin aplicar (los CVs generados eran invisibles) y la generación de CV fallando en producción. El primero lo resolvió T108 y lo vigila ahora T110; el segundo, la cadena T116→T119, verificada en vivo con 5 de 5."
 tags: [jobs-app, incidente, produccion, ia, supabase, migraciones]
 okf_version: "0.2"
 timestamp: 2026-08-25T11:40:00Z

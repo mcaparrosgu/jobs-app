@@ -112,6 +112,18 @@ corta y más barata.
 La tanda no se pudo repetir el mismo día: la cuota diaria de Cloudflare quedó
 agotada a las 14:10. Cualquier medición nueva espera al reinicio diario.
 
+> ✅ **Medido el 27/08/2026 (T119): la parada funciona** — 11,2 s y 70 neuronas
+> frente a 36,5 s y 133, con el CV idéntico.
+>
+> ⚠️ **Pero corrige un dato de este documento.** Aquí arriba se describe el
+> relleno como `\n␣␣` repetido, y así estaba medido el 26/08. Al día siguiente
+> eran **1.013 tabuladores seguidos, sin un solo salto de línea**, y en otra
+> llamada del mismo día, `\n␣\n␣`. **La forma concreta del relleno cambia**; el
+> mecanismo (el modelo no cierra el JSON y rellena hasta el techo) es lo que se
+> mantiene. Una secuencia de parada escrita contra el patrón de este documento
+> no corta nada: hay que volver a volcar la respuesta cruda antes de elegirla.
+> Ver [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) §2.
+
 Relacionado: [arreglo-bucle-saltos-de-linea.md](arreglo-bucle-saltos-de-linea.md),
 [medicion-t114-desbocamiento.md](medicion-t114-desbocamiento.md),
 [paso-13-evals.md](paso-13-evals.md).

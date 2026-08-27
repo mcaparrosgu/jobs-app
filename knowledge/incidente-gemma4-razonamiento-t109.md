@@ -205,6 +205,15 @@ Comprobado en vivo el mismo día:
 No se ha tocado: la regla del propio fichero es no poner un modelo de respaldo
 sin medirlo antes en vivo. Queda como **T112**.
 
+> ✅ **T112 medida el 27/08/2026, y la respuesta es que no hay sustituto.**
+> Probados los 17 modelos `:free` con el prompt real: ninguno genera el
+> documento. `dots-3` confirma la sospecha de aquí arriba —razona y agota el
+> techo antes de escribir nada—, pero el dato que manda es otro: **8 de los 17
+> están bloqueados por la propia política de privacidad de la cuenta**, que es
+> el precio correcto de haber apagado los endpoints que entrenaban con los CVs.
+> En la práctica **Cloudflare es proveedor único**. Ver
+> [medicion-t112-respaldo-openrouter.md](medicion-t112-respaldo-openrouter.md).
+
 # Segunda vuelta: el arreglo del prompt rompió la generación otra vez
 
 La misma tarde del 25/08, ya con el modelo arreglado, el ajuste de prompt
