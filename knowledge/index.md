@@ -76,6 +76,15 @@ existe en produccion y no se toca desde aqui.
   buena tarda 32-41 s y la ruta declara `maxDuration = 60`. 295 pruebas en
   verde; **verificado en vivo el 27/08 (5 de 5)**, ver
   `medicion-t119-secuencia-parada.md`.
+- [arreglo-guardia-esquema.md](arreglo-guardia-esquema.md) —
+  27/08/2026, T110: `npm run comprobar:esquema` lee el esquema **vivo** de
+  Supabase (API OpenAPI de PostgREST, una llamada, sin SQL) y lo compara con
+  las columnas que pide cada consulta del código — 144 peticiones en 6 tablas.
+  **Verificada contra el commit del incidente real** (`COMMIT=c1049ed`): caza
+  `perfiles.puesto` justo donde reventaba producción el 24/08. No se enchufa a
+  `npm test` porque el robot no tiene secretos de Supabase y se saltaría
+  siempre, dando falsa cobertura. No comprueba tipos, solo que la columna
+  exista.
 - [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) —
   27/08/2026, T119: **T118 confirmado con cuota fresca, 5 de 5 frente al 0 de 5
   del 26/08**. El relleno con el que el modelo agota el techo resultó ser

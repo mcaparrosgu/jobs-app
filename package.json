@@ -14,7 +14,8 @@
     "evals:puerta": "node evals/puerta-calidad.mjs evals/promptfoo/resultado-perfil.json evals/promptfoo/resultado-generar.json",
     "evals": "node evals/lanzar.mjs",
     "medir:generacion": "tsx scripts/medir-latencia-generacion.ts",
-    "probar:decidir": "bash scripts/probar-paso-decidir.sh"
+    "probar:decidir": "bash scripts/probar-paso-decidir.sh",
+    "comprobar:esquema": "tsx scripts/comprobar-esquema.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.6.1",

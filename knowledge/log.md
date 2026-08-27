@@ -23,6 +23,25 @@ abiertas anoche tienen respuesta:
   principal de calidad**: los CVs salen cortos en entradas pobres, con parada y
   sin ella.
 
+## 2026-08-27 (segundo — T110, la guardia de esquema)
+
+* **Creación**: `arreglo-guardia-esquema.md` y `scripts/comprobar-esquema.ts`
+  (`npm run comprobar:esquema`). Compara el esquema **vivo** de Supabase con
+  las columnas que pide el código: 144 peticiones en 6 tablas.
+* **Decisión de Mar (27/08)**: script local, **sin meter la
+  `SUPABASE_SERVICE_ROLE_KEY` en los secretos de GitHub**. Es la clave que
+  salta la RLS y da acceso a los CVs de sus compañeras; no compensa exponerla
+  en un runner para esto. El coste es que hay que acordarse de lanzarlo, y por
+  eso entra en el guion de publicación de `CLAUDE.md`.
+* **Verificada contra el incidente real**, no solo en verde:
+  `COMMIT=c1049ed npm run comprobar:esquema` caza `perfiles.puesto` en los dos
+  ficheros donde reventaba producción el 24/08. Más dos roturas a propósito
+  (columna y tabla inventadas).
+* **Dos fallos encontrados al romperla**, que en verde no se veían: con
+  `COMMIT=` se listaban los ficheros del disco en vez de los del commit, y
+  `process.exit(1)` **aborta Node en Windows** si queda salida sin vaciar
+  (devolvía 127 en vez de 1, truncando el informe).
+
 ## 2026-08-26 (séptimo — poner al día la documentación del día)
 
 Repaso de todo lo que las cuatro tareas de hoy (T115, T117, T118, T119)

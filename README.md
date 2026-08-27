@@ -76,6 +76,7 @@ npm run evals    # los 25 casos de la parte de IA (~25 min, gasta cuota real)
 # Y dos comprobaciones sueltas, para cuando toques justo esa pieza:
 npm run medir:generacion   # ¿responde bien Cloudflare hoy? (5 casos, poca cuota)
 npm run probar:decidir     # ¿acierta el robot al decidir si hacen falta evals?
+npm run comprobar:esquema  # ¿le pide el código a Supabase algo que no existe?
 ```
 
 `npm run evals` llama de verdad a Cloudflare y a OpenRouter con tus claves

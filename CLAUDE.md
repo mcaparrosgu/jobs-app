@@ -178,6 +178,17 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
 - Antes de mandar algo a producción, **pruébalo en una rama** y abre su vista
   previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
   fueron todos directos a producción.
+- **Antes de publicar, pasa `npm run comprobar:esquema`** (T110). Compara el
+  esquema **vivo** de Supabase con las columnas que pide el código. Las
+  migraciones se aplican a mano en el SQL Editor, así que el esquema cambia sin
+  esperar a ningún despliegue, y cuando el código y el esquema se separan
+  producción se rompe entera y en silencio — pasó el 24/08 (`perfiles.puesto`)
+  y el 25/08 (`generaciones.rehechos`). **El robot NO lo comprueba**: no tiene
+  secretos de Supabase, y meter ahí la `SUPABASE_SERVICE_ROLE_KEY` se descartó
+  a propósito (es la clave que salta la RLS). Depende de que se lance a mano.
+  `COMMIT=<sha> npm run comprobar:esquema` comprueba otra versión del código —
+  por ejemplo, la que está publicada ahora mismo. No comprueba tipos, solo que
+  la columna exista. Ver `knowledge/arreglo-guardia-esquema.md`.
 - **Para saber si hacen falta los evals, el robot compara con lo que hay
   publicado**, no con el push anterior (T115, 26/08/2026): le pregunta a Vercel
   qué commit está servido en producción. Antes, un cambio de IA que la puerta
