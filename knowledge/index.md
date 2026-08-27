@@ -76,6 +76,14 @@ existe en produccion y no se toca desde aqui.
   buena tarda 32-41 s y la ruta declara `maxDuration = 60`. 295 pruebas en
   verde; **verificado en vivo el 27/08 (5 de 5)**, ver
   `medicion-t119-secuencia-parada.md`.
+- [medicion-t112-respaldo-openrouter.md](medicion-t112-respaldo-openrouter.md) —
+  27/08/2026, T112: **no hay respaldo gratuito viable en OpenRouter**. De los 17
+  modelos `:free`, **8 los bloquea la propia política de privacidad** (el 404 de
+  "data policy" es la consecuencia de apagar el entrenamiento con los CVs), 3
+  dan 429 —entre ellos **los dos configurados hoy**— y de los 4 que responden
+  ninguno produce el documento. Además el respaldo tiene un corte de **2 s**,
+  así que no salvaría una generación aunque el modelo existiera: Cloudflare se
+  come 48 s de los 60 de la ruta. Deja a Cloudflare como proveedor único.
 - [arreglo-guardia-esquema.md](arreglo-guardia-esquema.md) —
   27/08/2026, T110: `npm run comprobar:esquema` lee el esquema **vivo** de
   Supabase (API OpenAPI de PostgREST, una llamada, sin SQL) y lo compara con

@@ -15,7 +15,8 @@
     "evals": "node evals/lanzar.mjs",
     "medir:generacion": "tsx scripts/medir-latencia-generacion.ts",
     "probar:decidir": "bash scripts/probar-paso-decidir.sh",
-    "comprobar:esquema": "tsx scripts/comprobar-esquema.ts"
+    "comprobar:esquema": "tsx scripts/comprobar-esquema.ts",
+    "medir:respaldo": "tsx scripts/medir-respaldo-openrouter.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.6.1",

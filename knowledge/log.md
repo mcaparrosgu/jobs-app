@@ -23,6 +23,28 @@ abiertas anoche tienen respuesta:
   principal de calidad**: los CVs salen cortos en entradas pobres, con parada y
   sin ella.
 
+## 2026-08-27 (tercero — T112, el respaldo medido: no hay)
+
+* **Creación**: `medicion-t112-respaldo-openrouter.md` y
+  `scripts/medir-respaldo-openrouter.ts` (`npm run medir:respaldo`), que
+  **captura** el cuerpo real que la app manda a Cloudflare y lo reenvía a
+  OpenRouter cambiando solo el modelo.
+* **Resultado: ninguno de los 17 modelos `:free` sirve.** El dato que manda:
+  **8 están bloqueados por la propia política de privacidad** de la cuenta —
+  el 404 de "data policy" es la consecuencia directa y correcta de apagar el
+  entrenamiento con los CVs el 20/08. Otros 3 dan 429, **incluidos los dos que
+  `RONDAS_MODELOS` tiene configurados**.
+* **Hallazgo estructural no medido hasta hoy**: `TIMEOUT_OPENROUTER_GENERACION_MS`
+  son **2 segundos**. Cloudflare se lleva 48 s de los 60 del `maxDuration`, así
+  que el respaldo no puede salvar ninguna generación por rápido que sea el
+  modelo. Era decorativo por diseño, y el 429 lo tapaba.
+* **Fallo en la propia sonda, corregido**: juzgaba las respuestas con
+  `JSON.parse` a secas, más estricto que producción (que usa
+  `repararJsonCortado` desde T118). Medir con un criterio más duro que el real
+  descarta modelos que sí servirían.
+* **Sin cambiar `RONDAS_MODELOS`**: qué hacer con un proveedor único es
+  decisión de Mar, y ahora tiene los datos.
+
 ## 2026-08-27 (segundo — T110, la guardia de esquema)
 
 * **Creación**: `arreglo-guardia-esquema.md` y `scripts/comprobar-esquema.ts`
