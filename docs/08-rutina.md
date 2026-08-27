@@ -153,7 +153,7 @@ instalar nada. Pensada para hacerse un solo día fijo a la semana (por
 ejemplo, todos los lunes).
 
 1. **(2 min) Healthchecks.io** — ¿`Jobs App · ingesta` ha corrido los 7
-   días? Si falta alguna señal, ver `docs/07-emergencia.md` §4.4.
+   días? Si falta alguna señal, ver `docs/07-emergencia.md` §4.5.
 2. **(3 min) Resumen de la semana en `metricas_ia`**:
 
    ```sql

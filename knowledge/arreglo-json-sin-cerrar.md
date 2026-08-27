@@ -77,6 +77,14 @@ Cloudflare una secuencia de parada (`stop`) que corte el bucle en cuanto
 empiece— está sin medir y sin aplicar: si funcionara, la llamada bajaría a
 ~20 s y volverían a caber dos intentos.
 
+> ✅ **Medida y aplicada el 27/08/2026 (T119).** Funciona, y mejor de lo
+> previsto: **11,2 s y 70 neuronas** frente a 36,5 s y 133, con el CV idéntico.
+> Pero la secuencia hubo que elegirla mirando la respuesta cruda, porque el
+> relleno no eran los saltos de línea documentados en T117 sino **tabuladores**,
+> y el patrón cambia de un día para otro. **No vuelven a caber dos intentos**:
+> la parada no siempre dispara y algún caso sigue tardando 35 s. Ver
+> [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md).
+
 # Verificación
 
 - 295 pruebas en verde, 7 nuevas en `tests/lib/ia-json-cortado.test.ts`, que
@@ -84,10 +92,14 @@ empiece— está sin medir y sin aplicar: si funcionara, la llamada bajaría a
   va dentro de una cadena, la basura que no es JSON, y la generación de punta a
   punta con el titular tomado del perfil.
 - Tipos y lint limpios.
-- ⚠️ **Sin verificar en vivo.** La cuota diaria de Cloudflare (10.000 neuronas)
-  se agotó a las 14:10 con las ~22 llamadas de la medición. Antes de publicar
-  hay que pasar `npm run medir:generacion` con cuota fresca y ver que la tasa
-  sube del 0/5 de hoy.
+- ~~⚠️ **Sin verificar en vivo.**~~ La cuota diaria de Cloudflare (10.000
+  neuronas) se agotó a las 14:10 con las ~22 llamadas de la medición. Antes de
+  publicar hay que pasar `npm run medir:generacion` con cuota fresca y ver que
+  la tasa sube del 0/5 de hoy.
+- ✅ **Verificado en vivo el 27/08/2026 a las 08:44, con cuota fresca: 5 de 5**
+  (32,4 a 36,5 s, CVs de 338 a 411 caracteres), frente al 0 de 5 del 26/08. El
+  arreglo aguanta contra el proveedor real y la app vuelve a generar CVs.
+  Detalle en [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) §1.
 
 Relacionado: [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md),
 [arreglo-bucle-saltos-de-linea.md](arreglo-bucle-saltos-de-linea.md),

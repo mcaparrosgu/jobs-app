@@ -375,6 +375,23 @@ verdad, ya no solo `localhost`.
 > `knowledge/incidente-gemma4-razonamiento-t109.md`; el planteamiento
 > original, en `knowledge/pendiente-generacion-cv-falla-25-08.md`.
 
+> ✅ **Actualización del 27/08/2026 — la avería está cerrada.**
+>
+> * **La generación vuelve a funcionar**: 5 de 5 medido en vivo con cuota
+>   fresca, frente al 0 de 5 del 26/08. T118 aguanta contra el proveedor real.
+> * **T119 cerrada**: una secuencia de parada corta el bucle de basura. Una
+>   generación pasa de 36,5 s y 133 neuronas a **11,2 s y 70**, con el mismo CV.
+> * **T110 cerrada**: `npm run comprobar:esquema` vigila que el código y
+>   Supabase no se separen. Verificada contra el commit del incidente real.
+> * **T112 cerrada, con mala noticia**: no hay respaldo gratuito viable. **En
+>   la práctica Cloudflare es proveedor único**, y su cupo se agota a diario.
+>   Qué hacer con eso está **pendiente de decidir por Mar**.
+>
+> **Lo único que queda abierto de este bloque es T113** (los CVs salen cortos
+> con entradas pobres), y para cerrarla hace falta una tanda de evals con cuota
+> fresca. Nada de esto está publicado todavía: sigue todo en la rama local
+> `medicion-t114`.
+
 | Tarea | Prioridad | Qué hay que hacer | Dónde | Cómo se comprueba | Depende de | Hecha |
 |---|---|---|---|---|---|---|
 | T108 | 1 · Crítica (rápida) | Aplicar la migración `0018_generaciones_rehechos.sql`, escrita en el repo pero **nunca ejecutada en Supabase**. Sin la columna `rehechos`, la consulta de `generaciones` falla entera y el código la degrada en silencio: **los CVs ya generados son invisibles** y no se pueden descargar | Supabase SQL Editor (a mano, en una línea) | `/ofertas` muestra "CV y carta preparados ✓" con Descargar y Rehacer en las 6 ofertas que Mar ya tenía generadas. **Hecha por Mar el 25/08**: las ofertas y los CVs ya generados se ven | — | [x] |

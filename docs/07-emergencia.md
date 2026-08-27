@@ -97,10 +97,11 @@ Antes de tocar nada, mira **dónde** falla. Ahorra media hora.
 | Lo que ves | Dónde está el problema | Qué hacer |
 | :--- | :--- | :--- |
 | La web no carga, error 404 o 500 en todas las pantallas | El **código** publicado | Rollback (sección 1) |
-| La web carga pero al entrar dice error | **Supabase** (pausado o Auth mal) | Sección 4.1 y 4.3 |
+| La web carga pero al entrar dice error | **Supabase** (pausado o Auth mal) | Sección 4.1 y 4.4 |
 | Todo va bien pero "Preparar CV" falla siempre | **Cloudflare** sin cuota | Sección 4.2 |
-| El enlace del email lleva a "no se puede acceder a este sitio" | **URL de Supabase Auth** | Sección 4.3 |
-| No llegan ofertas nuevas | **n8n** (`Jobs App · ingesta`) | Sección 4.4 |
+| **"No se pudo leer tu perfil"**, o una pantalla que falla para **todas** | El código y la **base de datos** no cuadran | Sección 4.3 — `npm run comprobar:esquema` |
+| El enlace del email lleva a "no se puede acceder a este sitio" | **URL de Supabase Auth** | Sección 4.4 |
+| No llegan ofertas nuevas | **n8n** (`Jobs App · ingesta`) | Sección 4.5 |
 | Una sola usuaria tiene problemas, las demás no | Su navegador o su sesión | Que cierre sesión y vuelva a pedir enlace |
 
 ---
@@ -167,13 +168,20 @@ activo** — probablemente la causa es esa.
 > ⚠️ Hasta el 23/08/2026 esta sección hablaba de Groq (**200.000 tokens al
 > día**, **8.000 por minuto**). Groq se retiró del todo del proyecto — el
 > principal ahora es Cloudflare, que limita distinto: **10.000 "neuronas" al
-> día**, renovables cada día, sin tope por minuto. La app ya reintenta con
-> OpenRouter (el respaldo) si Cloudflare falla o se agota; el error visible
-> a la usuaria solo aparece si los dos fallan a la vez.
+> día**, renovables cada día, sin tope por minuto. La app intenta pasarle el
+> turno a OpenRouter (el respaldo) si Cloudflare falla o se agota.
+>
+> 🔴 **Corrección importante (27/08/2026, T112): ese respaldo no funciona.** Se
+> midieron los 17 modelos gratuitos de OpenRouter con el prompt real y
+> **ninguno genera el documento**; los dos que están configurados contestan
+> `429`. Así que, en la práctica, **si Cloudflare se cae o agota su cupo, la
+> app no genera nada** — no hay red debajo. Ver
+> [`knowledge/medicion-t112-respaldo-openrouter.md`](../knowledge/medicion-t112-respaldo-openrouter.md).
 
-- **Cupo diario agotado**: se agotaron las 10.000 "neuronas" del día.
-  **No se arregla esperando un rato**: hay que esperar a la renovación
-  diaria, o confiar en que OpenRouter (el respaldo) absorba el resto.
+- **Cupo diario agotado**: se agotaron las 10.000 "neuronas" del día
+  (~133 por generación, ~70 desde T119). **No se arregla esperando un rato ni
+  lo cubre el respaldo**: hay que esperar a la renovación, que es a
+  **medianoche UTC — las 02:00 en España**.
 - Si ves el error también en los **evals** (no en la app en vivo), puede ser
   el juez de las aserciones llm-rubric, que sigue usando Groq — su cupo
   (200.000/día, 8.000/minuto) es aparte del de Cloudflare.
@@ -196,7 +204,54 @@ pasada se lleva más o menos la mitad de la cuota diaria de Groq (el juez).
 > Detalle completo en
 > [`knowledge/arreglo-puerta-motivo-real.md`](../knowledge/arreglo-puerta-motivo-real.md).
 
-### 4.3 El enlace del email no lleva a ningún sitio
+### 4.3 "No se pudo leer tu perfil" — el código y la base de datos no cuadran
+
+**Es la emergencia que más veces ha pasado: dos en dos días** (24 y 25/08/2026),
+y las dos dejaron la app rota para **todas** las usuarias a la vez.
+
+**Cómo se reconoce**: un mensaje del tipo *"No se pudo leer tu perfil."*, o una
+pantalla que falla siempre, para todo el mundo, en cualquier dispositivo — no
+para una sola usuaria. Falla en el servidor, así que no se arregla recargando.
+
+**La causa, siempre la misma**: las migraciones se aplican **a mano** en el SQL
+Editor de Supabase, así que la base de datos cambia en el momento en que pegas
+el SQL. El código publicado va por otro camino. Cuando uno de los dos se
+adelanta, el código le pide a Supabase una columna que ya no existe (o todavía
+no existe) y todo revienta.
+
+**Qué hacer, por orden:**
+
+1. **Diagnosticar en 10 segundos**, sin adivinar:
+
+   ```
+   npm run comprobar:esquema
+   ```
+
+   Te dice exactamente qué columna falta y en qué fichero y línea se pide. Si
+   sale limpio, el problema es otro y esta sección no es la tuya.
+
+2. **Comprobar qué versión hay publicada de verdad**, que es lo que estuvo
+   fallando el 24/08: el código de tu ordenador puede estar bien y el
+   **publicado** no.
+
+   ```
+   COMMIT=<sha publicado> npm run comprobar:esquema
+   ```
+
+3. **Arreglar en la dirección correcta.** Si falta aplicar una migración,
+   aplícala en el SQL Editor (ojo con el truco de pegarla en una sola línea).
+   Si la migración ya está y lo que falta es publicar el código que la
+   acompaña, **publica** — normalmente eso es lo que pasa.
+
+> ⚠️ **Lo que hace esto peligroso es que el robot NO lo comprueba.** Se decidió
+> a propósito no darle a GitHub la clave `SUPABASE_SERVICE_ROLE_KEY`, que se
+> salta todos los permisos. Así que esta comprobación **depende de que la
+> lances tú** antes de publicar. Detalle en
+> [`knowledge/arreglo-guardia-esquema.md`](../knowledge/arreglo-guardia-esquema.md)
+> y el incidente original en
+> [`knowledge/incidente-esquema-desajuste-24-08.md`](../knowledge/incidente-esquema-desajuste-24-08.md).
+
+### 4.4 El enlace del email no lleva a ningún sitio
 
 Ya pasó una vez (T76). La causa nunca está en el código: está en
 **Supabase → Authentication → URL Configuration**.
@@ -210,7 +265,7 @@ Ya pasó una vez (T76). La causa nunca está en el código: está en
 arreglarlo hay que pedir un enlace **nuevo**; el del correo antiguo seguirá sin
 funcionar.
 
-### 4.4 No llegan ofertas nuevas
+### 4.5 No llegan ofertas nuevas
 
 El workflow `Jobs App · ingesta` de n8n corre a las 13:00. Entra en n8n →
 Executions y mira si esa ejecución falló.
@@ -218,7 +273,7 @@ Executions y mira si esa ejecución falló.
 > 🚫 **Nunca toques los workflows `Jobs ·` (sin "App")**. Son la búsqueda de
 > empleo real, en producción. El de Jobs App es `Jobs App · ingesta`.
 
-### 4.5 Se me ha escapado una clave
+### 4.6 Se me ha escapado una clave
 
 Si una clave acaba en GitHub, en una captura o en un chat, **darla por
 comprometida y cambiarla**. No sirve borrar el mensaje: lo que se publicó una
@@ -236,7 +291,7 @@ Después de cambiar una: actualízala en **Vercel → Settings → Environment
 Variables** y en tu `.env.local`, y **vuelve a publicar** para que la nueva
 entre en vigor.
 
-### 4.6 Alguien que no debería está usando la app
+### 4.7 Alguien que no debería está usando la app
 
 La entrada está cerrada: solo entran las personas invitadas desde el panel de
 Supabase. Si aun así ves usuarias que no reconoces:
@@ -411,6 +466,9 @@ verdad; el objetivo es no descubrir nada en directo.
 ### Antes de publicar el cambio
 
 - [ ] `npm test` en verde en local (`npm run lint` también).
+- [ ] **`npm run comprobar:esquema` en verde.** El robot NO lo hace; si el
+      código y Supabase no cuadran, producción se rompe para todas. Ya pasó
+      dos veces (§4.3).
 - [ ] Si toqué la IA: `npm run evals` lanzado y con veredicto **VERDE**.
 - [ ] Lo he probado en una **vista previa** antes de mandarlo a producción
       (rama nueva → push → abrir la URL de preview).

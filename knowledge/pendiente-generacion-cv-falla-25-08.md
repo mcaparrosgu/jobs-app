@@ -7,6 +7,23 @@ okf_version: "0.2"
 timestamp: 2026-08-25T11:40:00Z
 ---
 
+> ✅ **CERRADO el 27/08/2026. Este documento ya no es una tarea pendiente**, se
+> conserva como historial de cómo se llegó hasta aquí.
+>
+> * **Problema 1** (la migración 0018 sin aplicar): resuelto. La columna
+>   `generaciones.rehechos` existe hoy en Supabase — comprobado con
+>   `npm run comprobar:esquema`, que da las 6 tablas en verde. Para que no
+>   vuelva a pasar en silencio nació **T110**, la guardia que compara el código
+>   con el esquema vivo: ver
+>   [arreglo-guardia-esquema.md](arreglo-guardia-esquema.md).
+> * **Problema 2** (la generación falla de verdad): resuelto por la cadena
+>   T116 → T117 → T118 → T119. La causa raíz era un bucle del modelo, que se
+>   mudó dos veces antes de dejarse cazar. **Verificado en vivo el 27/08: 5 de
+>   5.** Ver [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md).
+>
+> Lo que queda abierto de todo aquello es **T113**: los CVs salen cortos
+> cuando el CV de entrada es pobre. Eso es calidad, no avería.
+
 # Lo primero que hay que hacer al retomar
 
 Mar pidió expresamente **no arreglar nada el 25/08 por la tarde** y dejarlo

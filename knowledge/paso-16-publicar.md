@@ -112,6 +112,14 @@ sesión en `vercel.com` en ese móvil una vez.
 | `tests/lib/puerta-calidad.test.ts` | 22 pruebas de la propia puerta |
 | `tests/components/PantallaAcceso.test.tsx` | 6 pruebas de la entrada por invitación |
 | [`docs/07-emergencia.md`](../docs/07-emergencia.md) | Marcha atrás y lista de comprobación previa |
+| `scripts/comprobar-esquema.ts` | **Añadido el 27/08 (T110).** La comprobación que el robot NO hace: que el código y el esquema vivo de Supabase cuadren. Ver [arreglo-guardia-esquema.md](arreglo-guardia-esquema.md) |
+
+> ⚠️ **La puerta no lo cubre todo, y conviene saber qué deja fuera.** El robot
+> comprueba lint, pruebas y —si el cambio toca la IA— la calidad de los evals.
+> **No comprueba que la base de datos tenga lo que el código pide**, porque eso
+> exigiría darle la `SUPABASE_SERVICE_ROLE_KEY` y se decidió que no. Es el
+> único hueco conocido del guion de publicación, y se tapa a mano con
+> `npm run comprobar:esquema` antes de fusionar a `master`.
 
 ## El detalle que más importa de la puerta: tres veredictos, no dos
 

@@ -23,6 +23,43 @@ abiertas anoche tienen respuesta:
   principal de calidad**: los CVs salen cortos en entradas pobres, con parada y
   sin ella.
 
+## 2026-08-27 (cuarto — poner al día la documentación del día)
+
+Repaso de lo que las cuatro tareas de hoy (T118 verificada, T119, T110, T112)
+dejaron desfasado fuera de sus propios documentos:
+
+* **`docs/04-plan-tecnico.md`**: el **modelo de datos estaba mal**, y mal justo
+  en el campo del incidente — decía `puesto` (un texto) cuando la columna es
+  `puestos` (una lista) desde la migración 0017. También decía "cuatro cajones"
+  y hay **seis tablas y una vista**: faltaban `extracciones`, `metricas_ia` y
+  `perfiles_con_email` enteras, y cinco columnas de `generaciones`. Corregido
+  contra el esquema vivo, con un aviso de que esta tabla se desincroniza sola y
+  de que quien tiene razón es `npm run comprobar:esquema`. Además: el respaldo
+  de OpenRouter ya no se describe como si funcionara, la latencia recoge T119,
+  y las "253 pruebas" pasan a 299.
+* **`docs/05-ia.md`**: corrección sobre el aviso de cabecera — OpenRouter
+  figura como "único respaldo" y ese respaldo no respalda nada.
+* **`docs/07-emergencia.md`**: sección nueva **4.3, "No se pudo leer tu
+  perfil"** — la emergencia que más veces ha pasado (dos en dos días) y que no
+  tenía entrada propia, con el diagnóstico en 10 segundos. Renumeradas las
+  siguientes y arregladas las referencias cruzadas (incluida una en
+  `docs/08-rutina.md`). En 4.2 se corrige lo más peligroso que decía el
+  documento: "confiar en que OpenRouter absorba el resto". No hay red debajo.
+  Y `npm run comprobar:esquema` entra en la lista previa a publicar.
+* **`CLAUDE.md`**: OpenRouter deja de figurar como respaldo real; el corolario
+  de ritmo de trabajo recoge que una generación cuesta ~70 neuronas en vez de
+  ~133 **pero que eso no se ha medido aún sobre una tanda entera**, y que ~30
+  generaciones de diagnóstico agotan el cupo diario.
+* **`knowledge/arreglo-json-sin-cerrar.md`**: el "⚠️ sin verificar en vivo"
+  pasa a verificado (5 de 5), tachado y no borrado, para no perder el rastro.
+  Su apartado sobre la secuencia de parada recoge que T119 funcionó, y que
+  **no** hacen caber dos intentos como se esperaba.
+* **`knowledge/pendiente-generacion-cv-falla-25-08.md`**: marcado **CERRADO**.
+  Dejó de ser "la primera tarea de la próxima sesión".
+* **`knowledge/paso-16-publicar.md`**: qué deja fuera la puerta — es el único
+  hueco conocido del guion de publicación.
+* **`README.md`**: 299 pruebas y los dos comandos nuevos.
+
 ## 2026-08-27 (tercero — T112, el respaldo medido: no hay)
 
 * **Creación**: `medicion-t112-respaldo-openrouter.md` y

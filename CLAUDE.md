@@ -38,10 +38,18 @@ son Mar: sus cuatro compañeras de clase.
   - **Cloudflare Workers AI** (principal desde el 23/08/2026, sustituye a
     Groq): declaración oficial de que no entrena con el contenido por
     defecto. Ver `knowledge/decision-cloudflare-generarcv.md`.
-  - **OpenRouter** (respaldo): tenía activado "Allow free endpoints that train
-    on request data", es decir, los modelos gratuitos podían **entrenar con
-    los CVs**. Se apagó. Ver
+  - **OpenRouter** (respaldo *sobre el papel*): tenía activado "Allow free
+    endpoints that train on request data", es decir, los modelos gratuitos
+    podían **entrenar con los CVs**. Se apagó. Ver
     `knowledge/decision-groq-principal-privacidad.md`.
+    ⚠️ **Medido el 27/08/2026 (T112): ese respaldo no respalda nada.** Los 17
+    modelos `:free` probados con el prompt real, y ninguno genera el documento;
+    **8 los bloquea la propia política de privacidad** (error "data policy"),
+    que es el precio correcto de haber apagado lo anterior. En la práctica
+    **Cloudflare es el proveedor único**: si se cae o agota su cupo diario, la
+    app no genera. Al tocar `RONDAS_MODELOS`, partir de ahí y no de la idea de
+    que hay una red debajo. Ver
+    `knowledge/medicion-t112-respaldo-openrouter.md`.
 - Los datos se borran automáticamente al mes (regla 10 de la spec).
 
 ## Lo que NUNCA se debe hacer en este repositorio
@@ -258,6 +266,16 @@ fiarte de unas pruebas nuevas, rómpelas a propósito y mira que se quejen.
 Corolario para el ritmo de trabajo: una tanda de evals dura **~25 minutos** y
 se lleva **la mitad de la cuota diaria**. Planifícalo, no lo lances a la
 ligera.
+
+Desde T119 (27/08/2026) una generación cuesta **~70 neuronas en vez de ~133**
+cuando la secuencia de parada dispara, así que una tanda debería salir bastante
+más barata — **pero eso todavía no se ha medido sobre una tanda entera**, solo
+sobre llamadas sueltas. Hasta comprobarlo, sigue planificando con la cifra
+vieja. Y ojo con la otra mitad de la cuenta: el juez de las aserciones
+"llm-rubric" gasta cuota de **Groq**, que T119 no toca.
+
+Referencia medida el 27/08: **~30 generaciones de diagnóstico agotaron el cupo
+diario de Cloudflare** (10.000 neuronas). Medir no es gratis.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
