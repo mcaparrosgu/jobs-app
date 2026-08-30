@@ -18,28 +18,14 @@ workflow de n8n. Detalle en `docs/04-plan-tecnico.md`.
 
 ## Entorno opencode (WSL)
 
-Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos (el resto están apagados globalmente):
-
-| MCP | Para qué sirve |
-|-----|----------------|
-| `google-sheets` | Leer/escribir Google Sheets |
-| `google-workspace` | Gmail, Docs, Drive, Calendar, Forms |
-| `playwright` | Navegador automatizado (scraping, tests) |
-| `github` | Issues, PRs, búsqueda de código |
-
-Si necesitas otro MCP, dímelo y lo activamos puntualmente.
-
----
-
-## Entorno opencode (WSL)
-
-Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos:
+Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos (el
+resto están apagados globalmente):
 
 | MCP | Para qué sirve |
 |-----|----------------|
 | `google-sheets` | Leer/escribir hojas de cálculo (CVs, ofertas) |
-| `google-workspace` | Gmail, Docs, Drive, Calendar |
-| `playwright` | Automatizar navegador (scraping ofertas) |
+| `google-workspace` | Gmail, Docs, Drive, Calendar, Forms |
+| `playwright` | Automatizar navegador (scraping de ofertas, pruebas) |
 | `github` | Issues, PRs, búsqueda de código |
 
 Si necesitas otro MCP, dímelo y lo activamos puntualmente.
