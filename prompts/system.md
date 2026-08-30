@@ -263,12 +263,45 @@ ofertas que no ha elegido.
    línea** — 3.089 líneas en un campo que debía tener quince, hasta agotar
    el techo de tokens y morir en un timeout. Pidiendo una lista, ese fallo
    deja de ser posible: no hay saltos de línea que escribir.
+   **Límite de tamaño, solo si el CV de entrada es enorme** (añadido el
+   30/08/2026, T113): cuando el CV original pasa de 3.000 caracteres
+   (`CV_ENTRADA_LARGA_CARACTERES`), y **solo entonces**, el prompt lleva
+   además una regla que le pide seleccionar lo relevante para esa oferta en
+   vez de recogerlo todo, sin pasar de unas 30 líneas. El motivo es que un
+   export de LinkedIn no cabe en
+   `MAX_TOKENS_CLOUDFLARE_GENERACION` (1.500): el modelo se quedaba sin
+   techo **a media faena** y el mismo caso (B05) daba 203, 1.074, 1.499 y
+   1.847 caracteres en cuatro llamadas seguidas, según por dónde le pillara
+   el corte. Subir el techo no es opción — a ~40 tokens/s, 1.500 tokens ya
+   son ~38 s y el corte de Cloudflare está en 48.
+
+   **Por qué la regla la decide el código y no está siempre puesta**: se
+   probó como regla fija para todos y **el modelo la leyó como objetivo, no
+   como límite** — B01, el caso base del golden dataset, bajó de 421 a 366
+   caracteres y suspendió su propio mínimo. Mismo patrón que T109 y T116.
+   Así, una generación normal recibe el prompt de siempre byte a byte y la
+   regresión es imposible por construcción.
 5. Escribe la carta de presentación en `carta_parrafos`, que es también una
    **lista**: cada elemento es un párrafo entero, sin saltos de línea
    dentro. Entre 4 y 6 elementos (saludo, dos o tres de cuerpo,
    despedida) y 200 a 300 palabras en total, dirigida a la empresa de la
    oferta. No repite el CV entero: explica por qué esta persona encaja en
    esta oferta concreta.
+
+   **La empresa de la oferta es un DATO, no un tema sobre el que escribir**
+   (añadido el 30/08/2026, T113): la carta no le atribuye valores, cultura,
+   prestigio, programas ni forma de trabajar que la oferta no haya dicho
+   literalmente. Si la oferta no trae descripción, la carta **nombra** a la
+   empresa y no la describe. Frases como *"su reconocida trayectoria"* o
+   *"su apuesta por la innovación"* escritas sin respaldo son información
+   inventada igual que una cifra falsa en el CV.
+
+   ⚠️ Esta regla ya estaba **descrita como caso límite** en §4 desde el
+   principio (*"no inventes requisitos ni funciones que la oferta no ha
+   declarado"*) pero **nunca había llegado al prompt real**, y el caso B03
+   la incumplía en cuanto dejó de fallar por longitud. Una regla documentada
+   no es una regla implementada: al tocar §4, comprobar que
+   `mensajesDeGeneracion` la dice de verdad.
 6. El idioma de **todo** el documento —titular, CV y carta, sin
    excepción— es el que el código te indica en el mensaje (detectado a
    partir del título y la descripción de la oferta, `docs/05-ia.md` §6.5).
@@ -437,15 +470,38 @@ Después de la respuesta, el código aplica sin excepción (`lib/ia.ts`,
   texto truncado como una generación desbocada. El máximo es fijo (20.000
   para el CV, 8.000 para la carta). El mínimo de la carta es fijo (200); el
   del CV es **flexible desde el 24/08/2026** (T94,
-  `knowledge/paso-13-evals.md`): nunca más de 400, pero tampoco menos que
-  150, ajustado a cuánto había en el CV original — un CV de entrada de 3
-  líneas no puede llegar a 400 caracteres sin inventar, y exigírselo
-  empujaba al modelo a elegir entre desobedecer el prompt (regla de arriba:
-  nunca rellenar con contenido inventado) o fallar la validación. Un CV de
-  entrada con material de sobra sigue exigiendo el mismo mínimo de 400 de
-  siempre.
+  `knowledge/paso-13-evals.md`): nunca más de 400, pero tampoco menos que el
+  suelo absoluto, ajustado a cuánto había en el CV original — un CV de
+  entrada de 3 líneas no puede llegar a 400 caracteres sin inventar, y
+  exigírselo empujaba al modelo a elegir entre desobedecer el prompt (regla
+  de arriba: nunca rellenar con contenido inventado) o fallar la validación.
+  Un CV de entrada con material de sobra sigue exigiendo el mismo mínimo de
+  400 de siempre.
+
+  Afinado dos veces más (`knowledge/arreglo-t113-techo-tokens-y-minimos.md`):
+  el 29/08 se dejó de contar el **texto ajeno al CV** (una "nota para quien
+  procese esto", el CV de otra persona) que el modelo hace bien en descartar
+  y que inflaba el listón; y el 30/08 se aflojó al **72 %** de la entrada por
+  debajo de 250 caracteres, con el suelo absoluto de 150 → **110**. El motivo
+  es que **reformatear un CV comprime** —se funde el encabezado, se quita el
+  "Experiencia:" de delante, se unen líneas sueltas—, así que sobre una
+  entrada minúscula la salida honesta queda *por debajo* de ella: se estaban
+  rechazando CVs correctos por 15-40 caracteres (B02, B03, B06).
 - Saltos de línea reales entre secciones y puntos (mínimo de líneas con
-  contenido) — caza el texto pegado en un único bloque ilegible.
+  contenido) — caza el texto pegado en un único bloque ilegible. **Bajado de
+  6 a 5 el 30/08/2026** (T113): ese 6 se puso cuando el CV venía como texto
+  libre y el modelo podía escribirlo todo corrido, pero desde T114/T116 el
+  esquema pide una **lista**, así que un CV "todo en un bloque" es hoy una
+  lista de un elemento y lo caza el suelo de 3. El 6 se quedó vigilando un
+  fallo imposible y tumbando documentos correctos — B13, el caso *fácil* del
+  golden dataset, salió en 5 líneas y suspendió.
+
+  ⚠️ **Cuando cualquiera de estas comprobaciones lanza, TODAS las aserciones
+  de ese caso caen en los evals**, no solo la de `formato`: un CV 30
+  caracteres corto se cuenta además como fallo de `fidelidad`, de `idioma` y
+  de `resistencia_inyeccion`. Por eso un listón mal calibrado no es un
+  detalle cosmético — es el mayor amplificador de ruido del arnés, y dos
+  casos bastan para hundir cuatro métricas.
 - Titular del puesto: se comprueba que guarde relación con el puesto del
   perfil o con el título de la oferta; si no, se descarta y se usa el del
   perfil (`titularSeguro` en `lib/ia.ts`). Es el texto que se imprime bajo

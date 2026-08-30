@@ -104,6 +104,34 @@ existe en produccion y no se toca desde aqui.
   **empeora** (5/5 → 2/5): el modelo deja líneas en blanco dentro del CV y esas
   paradas lo cortan por la mitad. Los fallos de B04/B07 son T113, no la parada:
   ocurren igual sin ella. 299 pruebas en verde, vistas fallar a propósito.
+- [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
+  — 30/08/2026, T113: descartada por medición la hipótesis pendiente (**la
+  parada de T119 NO causa los CVs cortos**: B02/B03/B06 salen igual sin ella).
+  Debajo había **tres averías distintas** leídas como una: (1) el mínimo exigía
+  a un CV honesto más de lo que daba la entrada, porque reformatear
+  **comprime** — `largoMinimoCv` afloja al 72 % por debajo de 250 car. de
+  entrada, y `idioma` sube a 100 %; (2) **B05 no salía corto, salía truncado**
+  por el techo de tokens (`finish_reason: "length"`, 1.500/1.500) — arreglado
+  con un techo de tamaño que **solo se añade al prompt si el CV de entrada pasa
+  de 3.000 car.**, porque puesto como regla fija bajó B01 de 421 a 366 y lo
+  suspendió; (3) la carta **inventaba el carácter de la empresa** sin
+  descripción — regla que `prompts/system.md` §4 documentaba desde el principio
+  y que **nunca llegó al prompt real**. Además `LINEAS_MINIMAS_CV` 6 → 5:
+  vigilaba un fallo imposible desde T116 y tumbaba a B13. Retirados por
+  medición un reintento sin parada (**51 s**, con `maxDuration = 60`) y el
+  techo fijo. Sonda B01/B03/B05/B13 **4/4**; 306 pruebas en verde, vistas
+  fallar. **Falta la tanda completa (las DOS llamadas) para el veredicto.**
+- [arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md)
+  — 29/08/2026, T113: el mínimo de longitud y el de líneas del CV se calculaban
+  sobre el CV de entrada **entero**, incluidas una "nota para quien procese
+  esto" (B07) o el CV de otra persona (B10) que el modelo hace bien en
+  descartar; y el de líneas era plano (6) cuando la entrada solo daba para 3
+  (B04). Arreglado en `lib/ia.ts` (`cvSinTextoAjeno` + `lineasMinimasCv`
+  escalado como `largoMinimoCv` desde T94) — sonda B04/B07/B10 **3/3**, antes
+  0/3. **Pero la tanda completa sigue ROJO**: (1) `helpers.cjs` medía con el
+  400 plano viejo (arreglado, sin re-lanzar por cuota); (2) B02/B03/B05/B06 —
+  el modelo se queda corto en entradas honestas, `generarCvYCarta` lanza; medir
+  si es la parada de T119 antes de tocar el prompt. **T113 sigue abierta.**
 - [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md) —
   26/08/2026, T117: **el bucle no murió, se mudó**. Tras T116 el documento sale
   correcto y completo, pero al terminar `cv_lineas` el modelo se queda
@@ -355,6 +383,14 @@ existe en produccion y no se toca desde aqui.
   también de `extraerPerfil` (nunca pasado por evals), OpenRouter queda
   como único respaldo. Pendiente: relanzar evals y añadir los secretos en
   GitHub/Vercel antes de publicar.
+- [decision-proveedor-ia-alternativas-28-08.md](decision-proveedor-ia-alternativas-28-08.md)
+  — 28/08/2026: Mar preguntó si cambiar de proveedor (T112) reduciría los
+  problemas y pidió mirar DeepSeek. Re-investigadas en vivo DeepSeek, Cerebras,
+  Gemini, Groq como respaldo y Mistral La Plateforme: ninguna mejora el
+  conjunto privacidad + 0 € + fiabilidad. **Cloudflare sigue como proveedor
+  único del MVP.** Grok / xAI queda excluido por ética (`CLAUDE.md` punto 5) —
+  no confundir con Groq, que se queda como juez de los evals. Mistral de pago
+  se anota como upgrade limpio fuera del MVP.
 - [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
   T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
   ("más profesional", "más conciso") y la IA redacta otra vez el CV y la

@@ -81,9 +81,28 @@ que el cambio de firma no afecta a nada fuera del fichero.
 - 275/275 pruebas deterministas en verde y tipos limpios tras el cambio
   (ninguna llama a un modelo real, así que no comprueban esto).
 
+# Actualización del 29/08/2026 (T113)
+
+El mínimo flexible que introdujo T94 (`largoMinimoCv` en `lib/ia.ts`) tenía
+dos huecos, corregidos en T113:
+
+- **`evals/promptfoo/helpers.cjs::formatoValidoGeneracion` nunca replicó el
+  escalado** — siguió exigiendo 400 caracteres planos, así que el eval
+  suspendía en `formato` generaciones que la app aceptaba.
+- **El mínimo de *líneas* (`LINEAS_MINIMAS_CV`) seguía plano en 6** aunque el
+  de caracteres ya escalaba; un CV de entrada de 3 líneas no puede salir en 6
+  sin inventar (B04). T113 le da la misma forma con `lineasMinimasCv`.
+
+Además, T113 añade `cvSinTextoAjeno`: los dos mínimos se calculan sobre el CV
+de entrada **sin** el texto que no es el CV de la usuaria (una nota de
+inyección, el CV de otra persona), que antes inflaba el listón. Ver
+[arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md).
+
 # Relacionado
 
 - [paso-13-evals.md](paso-13-evals.md) — el ROJO completo, caso a caso.
+- [arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md)
+  — T113 extiende el mínimo flexible de T94.
 - [decision-cloudflare-generarcv.md](decision-cloudflare-generarcv.md) — por
   qué Cloudflare es el proveedor principal.
 - `docs/06-tareas.md` — T94 y T95, dentro del bloque de prioridades del

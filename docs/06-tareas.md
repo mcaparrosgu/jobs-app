@@ -214,7 +214,11 @@ ofertas nuevas, te llega un correo con un enlace de vuelta a la app.
 | T65 | Condicional: seguir solo si hay ofertas nuevas Y hay usuarias con perfil (regla 8) | `Jobs App · ingesta` | Con 0 ofertas nuevas, el flujo no llega al paso de enviar el email | T63, T64 | [x] |
 | T66 | Redactar la plantilla fija del email de aviso, en castellano | `Jobs App · ingesta` (nodo Gmail) | El nodo Gmail muestra asunto y cuerpo ya escritos, con el hueco del enlace | T65 | [x] |
 | T67 | Enviar el email a cada usuaria con perfil | `Jobs App · ingesta` | Ejecutas el flujo a mano una vez y te llega el correo de aviso | T66 | [x] |
-| T68 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T67 | [ ] |
+| T68 | Publicar el workflow y esperar la ejecución real de las 13:00 | — (n8n) | Al día siguiente, si hubo ofertas nuevas, revisas tu bandeja y el aviso ha llegado | T67 | [x] |
+
+> **T68 confirmada (29/08/2026).** El workflow `Jobs App · ingesta` corre
+> solo cada día: el email de aviso llega a la bandeja de Mar sobre las **13:03**
+> de forma consistente. La ingesta automática y el aviso quedan cerrados.
 
 ## Hito 9 · Publicar en internet
 
@@ -330,6 +334,39 @@ verdad, ya no solo `localhost`.
 > publicar cualquier cambio de `lib/ia.ts`, no solo T93 — ver **T94**, primera
 > tarea del bloque de prioridades de más abajo.
 
+## ⏭️ LO PRIMERO DE MAÑANA (31/08/2026): la tanda con cuota fresca
+
+> El cupo de Cloudflare renueva a las **02:00** (medianoche UTC). Nada más
+> tenerlo, y **antes de tocar ninguna otra cosa**:
+>
+> ```bash
+> npm run evals          # las DOS llamadas seguidas y después la puerta
+> ```
+>
+> **Tiene que ser `npm run evals`, no `npm run evals:generar`.** La puerta lee
+> `resultado-perfil.json` **y** `resultado-generar.json`, y el de perfil es del
+> **25/08**: sus fallos (A06 "poeta", A10 "dos empresas") arrastran `fidelidad`
+> y `resistencia_inyeccion` en todos los veredictos sin ser de la tanda que se
+> está midiendo. Es la trampa que avisa `CLAUDE.md`, y arreglarla es
+> literalmente **T95**. Una sola tanda de las dos cierra **T113 y T95 a la vez**.
+>
+> Presupuesto: ~25 generaciones de las ~30 del día, unos 40 minutos. **No lanzar
+> nada de diagnóstico antes** — si se gasta cuota en sondas, la tanda sale
+> NO CONCLUYENTE y el día está perdido.
+>
+> **Qué esperar.** Estas cuatro señales ya no deberían aparecer (arregladas y
+> verificadas por sonda el 30/08, 4/4): B02/B04/B06/B11 por longitud, **B05** por
+> truncamiento, **B13** por número de líneas, y **B03** inventando el carácter de
+> la empresa. Si alguna vuelve, es que el arreglo no aguanta la tanda completa y
+> hay que volver a `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
+>
+> **Qué sigue abierto pase lo que pase**: **B12** (una inyección que cuela datos
+> de contacto). Es superficie de guardrail (`lib/guardrails.ts`), no de longitud
+> ni del prompt de generación, y no se ha tocado.
+>
+> Si el veredicto sale **NO CONCLUYENTE**, no es el prompt: es cuota o el modelo
+> juez de Groq sin responder. Relanzar, no "arreglar".
+
 ## Pendientes para cerrar el MVP — orden de prioridad (24/08/2026)
 
 > La clase vuelve el lunes 24/08/2026 y con ella las cinco usuarias reales.
@@ -392,6 +429,60 @@ verdad, ya no solo `localhost`.
 > fresca. Nada de esto está publicado todavía: sigue todo en la rama local
 > `medicion-t114`.
 
+> **29/08/2026 · Primer arreglo de T113, y la tanda completa destapa más.**
+> Ver `knowledge/arreglo-t113-cv-corto-entrada-pobre.md`.
+> * **Arreglado en `lib/ia.ts`** (`cvSinTextoAjeno` + `lineasMinimasCv`): los
+>   mínimos del CV ya no cuentan el texto que no es el CV de la usuaria (una
+>   "nota para quien procese esto", el CV de otra persona), y el mínimo de
+>   líneas escala con la entrada igual que el de longitud desde T94. Sonda en
+>   vivo B04/B07/B10: **3/3** (antes 0/3). 304 pruebas en verde, vistas fallar
+>   a propósito.
+> * **Tanda completa (`npm run evals:generar`, 0 errores) → puerta ROJO.** El
+>   arreglo hace lo suyo (B07 y B10 pasan), pero salen dos cosas más:
+>   1. **El propio eval mide con la regla vieja**: `helpers.cjs`
+>      `formatoValidoGeneracion` exigía 400 car. planos (T94 ya lo había hecho
+>      flexible en `lib/ia.ts`). Arreglado en la misma sesión; **falta una
+>      tanda nueva que lo confirme**.
+>   2. **B02, B03, B05, B06**: el modelo genera un CV demasiado corto en
+>      entradas honestas (B05: 215 car. de un CV enorme) y `generarCvYCarta`
+>      lanza. No es inyección, así que el arreglo no los toca. **Antes de tocar
+>      el prompt**, medir si es la parada `\t\t\t` de T119 (solo validada sobre
+>      5 casos) la que corta: `STOP=` vacío en la sonda.
+> * **Cuota**: ~21 de ~30 generaciones del día gastadas. Otra tanda, mañana.
+
+> **30/08/2026 · La hipótesis era falsa, y debajo había tres averías distintas.**
+> Ver `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
+> * **Descartado lo primero que había que descartar**: la parada `\t\t\t` de
+>   T119 **no** causa los CVs cortos. Con `STOP=ninguna` en la sonda, B02
+>   (177 vs 184), B03 (224 vs 221) y B06 (130 vs 130) salen igual. La parada se
+>   queda como está.
+> * **Tanda completa de la mañana** (13 casos, 18 min, 0 errores) → ROJO, pero
+>   con avance real: B02, B04, B06 y B11 pasan, sin regresiones. `idioma`
+>   83,3 % → **100 %**, `formato` 66,7 % → 75 %, `fidelidad` 76 % → 80 %.
+> * **Tres causas separadas, arregladas**:
+>   1. **El listón, no el modelo.** Reformatear un CV **comprime**, así que
+>      sobre una entrada minúscula la salida honesta queda *por debajo* de ella.
+>      `largoMinimoCv` afloja al 72 % por debajo de 250 car. de entrada; suelo
+>      150 → 110. `helpers.cjs` replicado.
+>   2. **B05 no salía corto, salía TRUNCADO.** Volcada la respuesta cruda:
+>      `finish_reason: "length"`, 1.500/1.500 tokens — el modelo intenta recoger
+>      un CV enorme y se queda sin techo a media faena (203/1.074/1.499/1.847
+>      car. en cuatro llamadas). El techo no se puede subir (~38 s ya, corte en
+>      48). Arreglado con un límite de tamaño que **solo se añade al prompt si
+>      la entrada pasa de 3.000 car.**: puesto como regla fija bajó B01 de 421 a
+>      **366** y lo suspendió.
+>   3. **La carta se inventaba la empresa** sin descripción (B03). La regla
+>      estaba en `prompts/system.md` §4 desde el principio y **nunca había
+>      llegado al prompt real**. Merece un repaso: puede haber más.
+> * **`LINEAS_MINIMAS_CV` 6 → 5**: vigilaba un fallo imposible desde T116 (el
+>   esquema pide una lista) y tumbaba a **B13, el caso fácil**.
+> * **Retirados por medición**, no por opinión: un reintento sin parada
+>   (innecesario, y **51 s** medidos con `maxDuration = 60`) y el techo fijo.
+> * **Verificado**: sonda B01/B03/B05/B13 **4/4** (423, 221, 1.805 y 412 car.).
+>   306 pruebas en verde, las nuevas vistas fallar a propósito.
+> * **Cuota**: ~27 de ~30 gastadas. **Falta la tanda completa de las DOS
+>   llamadas** (`npm run evals`), que es lo que cierra T113 **y T95**.
+
 | Tarea | Prioridad | Qué hay que hacer | Dónde | Cómo se comprueba | Depende de | Hecha |
 |---|---|---|---|---|---|---|
 | T108 | 1 · Crítica (rápida) | Aplicar la migración `0018_generaciones_rehechos.sql`, escrita en el repo pero **nunca ejecutada en Supabase**. Sin la columna `rehechos`, la consulta de `generaciones` falla entera y el código la degrada en silencio: **los CVs ya generados son invisibles** y no se pueden descargar | Supabase SQL Editor (a mano, en una línea) | `/ofertas` muestra "CV y carta preparados ✓" con Descargar y Rehacer en las 6 ofertas que Mar ya tenía generadas. **Hecha por Mar el 25/08**: las ofertas y los CVs ya generados se ven | — | [x] |
@@ -404,9 +495,12 @@ verdad, ya no solo `localhost`.
 | T117 | ✅ Medida el 26/08 | **Medida la tasa de éxito tras T116: 0 de 5 por la vía normal.** T116 arregló su bucle pero no la generación: el bucle se mudó al **espacio en blanco entre claves del JSON**. El modelo escribe carta y CV bien, cierra `cv_lineas`, y a partir de ahí emite un salto de línea y dos espacios, una y otra vez, hasta agotar el techo — nunca escribe el campo `puesto` ni la llave de cierre, y el parseo tira un documento que estaba entero. **5 de 5 casos son recuperables** ignorando ese cierre. No era mala racha del proveedor (B01 sin corte: 38,1 s, no se cuelga). Subir el techo de tokens no arregla nada. Una generación buena tarda **32-41 s**, muy por encima del primer corte de 24 s. Ver `knowledge/medicion-t117-cierre-json.md` | `scripts/medir-latencia-generacion.ts` | Hecho: tanda de 5 casos con el detalle en el documento de conocimiento | T116 | [x] |
 | T118 | 1 · Crítica | **Arreglado el cierre del JSON que el modelo no escribe** (26/08, decisión de Mar entre cuatro opciones: reparar el JSON en el código). `repararJsonCortado` recorta el espacio en blanco de cola y cierra lo que quedó abierto; una cadena a medias **no** se cierra con una comilla, se descarta y se retrocede. El `puesto` que falta se toma del perfil, como ya hacía `titularSeguro`. Timeouts de `[24_000, 14_000, 14_000]` a **`[48_000]`**: los tres intentos se calcularon cuando una generación tardaba 13 s y hoy tarda 32-41 s, así que fallaban por definición. 295 pruebas en verde (7 nuevas), tipos y lint limpios. ⚠️ **Falta verificarlo en vivo**: la cuota diaria de Cloudflare se agotó a las 14:10 midiendo T117. **✅ Verificado en vivo el 27/08 con cuota fresca: 5 de 5**, frente al 0 de 5 del 26/08 — la app vuelve a generar CVs. Ver `knowledge/arreglo-json-sin-cerrar.md` y `knowledge/medicion-t119-secuencia-parada.md` | `lib/ia.ts`, `tests/lib/ia-json-cortado.test.ts` | Hecho: `npm run medir:generacion` da 5/5 (27/08, 08:44) | T117 | [x] |
 | T119 | 2 · Alta | **Medir si una secuencia de parada (`stop`) corta el bucle de espacio en blanco** antes de llegar al techo de tokens. Hoy toda llamada agota los 1.500 tokens escribiendo basura: son ~10 s y ~60 neuronas tirados por generación, y es lo que impide tener un segundo intento dentro del `maxDuration = 60` de la ruta. Si funciona, la llamada baja a ~20 s. La sonda ya lo admite sin tocar `lib/ia.ts`: `STOP='\n\n\n' npm run medir:generacion`, y admite varias secuencias separadas por una barra vertical. **✅ Medida y aplicada el 27/08.** El relleno resultó ser **tabuladores, no saltos de línea** (y el patrón cambia de un día para otro: el 26/08 eran saltos indentados). Con `stop: ['\t\t\t']` la generación pasa de **36,5 s y 133 neuronas a 11,2 s y 70**, con el CV idéntico y el documento entero (`finish_reason: stop`, termina en `]`). **Añadir paradas de saltos de línea empeora** (5/5 → 2/5): el modelo deja líneas en blanco dentro del CV y esas paradas lo cortan por la mitad — solo tabuladores, y `repararJsonCortado` sigue siendo la red universal. Los fallos de B04/B07 son T113, no la parada: pasan igual sin ella. ⚠️ El cambio en `lib/ia.ts` **no se ha visto correr en vivo** (cuota agotada al terminar de medir). Ver `knowledge/medicion-t119-secuencia-parada.md` | `lib/ia.ts` (`PARADAS_CLOUDFLARE_GENERACION`, `llamarModelo`), `tests/lib/ia-paradas.test.ts` | Hecho: 11,2 s y 70 neuronas frente a 36,5 s y 133, documento entero. 299 pruebas en verde | T118 | [x] |
-| T113 | 3 · Alta | **Confirmar la calidad de la generación**: la tanda del 25/08 salió ROJO por CVs demasiado cortos (6 de 13, entre 125 y 348 car.) y sin saltos de línea (2 de 13) — **ni un solo fallo de invención**, así que el refuerzo de T94 funciona y el problema es el contrario. Se ajustó el prompt el mismo día, y **el ajuste rompió la generación entera**: la regla decía "conserva todo" sin decir dónde parar, el modelo agotaba los 12.000 tokens y Cloudflare cortaba con un 408 a los 180 s. Eso, y no la falta de cuota, es lo que llenó de "sin evaluar" la tanda del robot y le hizo dictar NO CONCLUYENTE. Reescrita acotada la misma noche ("cuando hayas recorrido el CV original una vez, PARA"): 13,5 s, CV de 545 car. **Sigue faltando una tanda completa concluyente** que diga si los CVs ya no salen cortos. Si no basta, el siguiente candidato ya está medido: `llama-4-scout` (6,7 s) — **ojo: su descarte como principal (1/5) se midió sobre datos contaminados por T117 y no vale**. **Sube a 2 · Alta el 27/08**: con T118 y T119 cerradas, esto es lo único que queda entre la app y publicar, y hay datos nuevos. Medidos B04 y B07 **sin ninguna secuencia de parada**, los CVs salen de **240 y 270 caracteres** (umbral 311/400) y B07 falla en 1 de cada 2 vueltas: el problema está en los casos con **CV de entrada pobre**, no en el mecanismo de generación, y no lo causa la parada de T119 — pasa igual sin ella. Ver `knowledge/medicion-t119-secuencia-parada.md` §5 | `lib/ia.ts`, `prompts/system.md`, `evals/` | `npm run evals:generar` seguido de `npm run evals:puerta` da VERDE | T109 | [ ] |
+| T113 | 3 · Alta | **Confirmar la calidad de la generación**: la tanda del 25/08 salió ROJO por CVs demasiado cortos (6 de 13, entre 125 y 348 car.) y sin saltos de línea (2 de 13) — **ni un solo fallo de invención**, así que el refuerzo de T94 funciona y el problema es el contrario. Se ajustó el prompt el mismo día, y **el ajuste rompió la generación entera**: la regla decía "conserva todo" sin decir dónde parar, el modelo agotaba los 12.000 tokens y Cloudflare cortaba con un 408 a los 180 s. Eso, y no la falta de cuota, es lo que llenó de "sin evaluar" la tanda del robot y le hizo dictar NO CONCLUYENTE. Reescrita acotada la misma noche ("cuando hayas recorrido el CV original una vez, PARA"): 13,5 s, CV de 545 car. **Sigue faltando una tanda completa concluyente** que diga si los CVs ya no salen cortos. Si no basta, el siguiente candidato ya está medido: `llama-4-scout` (6,7 s) — **ojo: su descarte como principal (1/5) se midió sobre datos contaminados por T117 y no vale**. **Sube a 2 · Alta el 27/08**: con T118 y T119 cerradas, esto es lo único que queda entre la app y publicar, y hay datos nuevos. Medidos B04 y B07 **sin ninguna secuencia de parada**, los CVs salen de **240 y 270 caracteres** (umbral 311/400) y B07 falla en 1 de cada 2 vueltas: el problema está en los casos con **CV de entrada pobre**, no en el mecanismo de generación, y no lo causa la parada de T119 — pasa igual sin ella. Ver `knowledge/medicion-t119-secuencia-parada.md` §5. **29/08: primer arreglo hecho (`lib/ia.ts` + `helpers.cjs`), tanda completa aún ROJO — ver la nota de arriba y `knowledge/arreglo-t113-cv-corto-entrada-pobre.md`.** **30/08: descartada la hipótesis de la parada (no era ella) y arregladas las tres causas reales — el listón que exigía de más, el techo de tokens que truncaba a B05, y la carta que se inventaba la empresa; más `LINEAS_MINIMAS_CV` 6 → 5, que tumbaba al caso fácil. Sonda 4/4, 306 pruebas en verde. Solo falta la tanda completa de las DOS llamadas con cuota fresca, que cierra esto y T95. Ver `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.** | `lib/ia.ts`, `prompts/system.md`, `evals/` | `npm run evals` (las dos llamadas) seguido de `npm run evals:puerta` da VERDE | T109 | [ ] |
 | T112 | 5 · Media | El respaldo de OpenRouter **no respalda nada**: sus dos modelos devuelven **429 en menos de medio segundo** (`temporarily rate-limited upstream`, pool compartido del proveedor), y la ronda 1 usaba el mismo modelo lento de razonamiento que Cloudflare, con 10 s de espera. Además `google/gemma-4-26b-a4b-it:free` ni declara `structured_outputs`, que es lo que esta cascada le pide siempre. Buscar sustitutos **midiéndolos en vivo** (solo 4 de los 17 modelos `:free` declaran `structured_outputs`; el único que respondió a una prueba real es `dots-studio/dots-3-note-preview:free`, que también razona). **✅ Medida el 27/08, y la respuesta es que NO HAY sustituto.** Probados los 17 modelos `:free` con el prompt real (`npm run medir:respaldo`): **8 los bloquea la propia política de privacidad** (404 "data policy", consecuencia directa y correcta de apagar el entrenamiento con los CVs el 20/08), 3 dan 429 —**incluidos los dos configurados hoy**—, 2 dan 403, y de los 4 que responden ninguno produce el documento: `dots-3` razona hasta agotar el techo, `cohere/north-mini-code` es inestable (vacío/roto/vacío) y los dos `minimax` ignoran el esquema y se inventan un formato con etiquetas. **Además, hallazgo estructural**: `TIMEOUT_OPENROUTER_GENERACION_MS` son **2 s**, porque Cloudflare se lleva 48 s de los 60 del `maxDuration` — el respaldo no salvaría una generación aunque hubiera modelo. Era decorativo por diseño y el 429 lo tapaba. **Queda a Cloudflare como proveedor único**, con la cuota agotándose a diario. `RONDAS_MODELOS` **sin tocar**: qué hacer con eso es decisión de Mar. Ver `knowledge/medicion-t112-respaldo-openrouter.md` | `RONDAS_MODELOS` en `lib/ia.ts`, `scripts/medir-respaldo-openrouter.ts` | Medido: 0 de 17 sirven, y el porqué de cada uno | T109 | [x] |
-| — | 9 · Espera (mañana) | **T68**, ya numerada en el Hito 8: confirmar que el email de aviso llega de verdad tras la ejecución real de las 13:00 | — | Ver Hito 8 más arriba | T96 | [ ] |
+| — | 9 · Espera (mañana) | **T68**, ya numerada en el Hito 8: confirmar que el email de aviso llega de verdad tras la ejecución real de las 13:00 | — | Ver Hito 8 más arriba | T96 | [x] |
+
+> **✅ T68 confirmada el 29/08/2026**: el aviso llega cada día a la bandeja de
+> Mar sobre las 13:03. Cerrada.
 | — | 10 · Opcional | Corregir el `comment on column` de `supabase/migrations/0015_metricas_ia.sql`, que sigue mencionando a Groq (no urgente, no bloquea nada; exige una migración nueva, no tocar la 0015) | migración nueva | El comentario en Supabase ya no menciona a Groq | — | [ ] |
 
 > ⚠️ **T94 necesita tu decisión antes de tocar código** (regla de

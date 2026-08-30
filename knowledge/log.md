@@ -1,5 +1,107 @@
 # Registro de cambios del bundle
 
+## 2026-08-30 (T113 · descartada la hipótesis de la parada; tres averías separadas)
+
+* **Creación**: `arreglo-t113-techo-tokens-y-minimos.md`.
+* **Hipótesis pendiente del 29/08, descartada por medición**: la secuencia de
+  parada `\t\t\t` de T119 **no** causa los CVs cortos. Con `STOP=ninguna`,
+  B02 (177 vs 184), B03 (224 vs 221) y B06 (130 vs 130) salen igual. La parada
+  se queda como está.
+* **Tanda `npm run evals:generar` de la mañana (13 casos, 18 min, 0 errores)**:
+  puerta ROJO, pero el arreglo del 29/08 más el aflojado de `largoMinimoCv`
+  hacen pasar B02, B04, B06 y B11 sin regresiones — `idioma` 83,3 % → **100 %**,
+  `formato` 66,7 % → 75 %, `fidelidad` 76 % → 80 %.
+* **Arreglos en `lib/ia.ts`**:
+  - `largoMinimoCv`: por debajo de `UMBRAL_CV_CORTO` (250 car. de entrada) el
+    mínimo pasa al 72 % (`TOLERANCIA_CV_CORTO`) y el suelo baja de 150 a 110 —
+    reformatear un CV **comprime**, y el listón exigía a una salida honesta más
+    de lo que la entrada daba. `evals/promptfoo/helpers.cjs` replicado.
+  - `CV_ENTRADA_LARGA_CARACTERES` (3.000): con un CV de entrada enorme, B05 no
+    salía corto sino **truncado** por el techo de tokens (`finish_reason:
+    "length"`, 1.500/1.500) — de ahí 203/1.074/1.499/1.847 car. en cuatro
+    llamadas. Ahora `mensajesDeGeneracion` le pide seleccionar, **solo en ese
+    caso**: como regla fija bajó B01 de 421 a 366 y lo suspendió.
+  - Regla nueva en el prompt: la empresa de la oferta es un dato, no un tema;
+    sin descripción, la carta la nombra y no la describe (B03). Estaba
+    documentada en `prompts/system.md` §4 y **nunca había llegado al prompt**.
+  - `LINEAS_MINIMAS_CV` 6 → 5: vigilaba un fallo imposible desde T116 (el
+    esquema pide una lista) y tumbaba a B13, el caso fácil.
+* **Retirados por medición**: un reintento sin parada (innecesario —
+  `repararJsonCortado` ya cubre el caso— e inviable: **51 s** medidos con
+  `maxDuration = 60`) y el techo de tamaño como regla fija.
+* **Sonda**: opciones nuevas `STOP=ninguna` y `VER_CRUDO=1` (vuelca
+  `finish_reason`, tokens y la cola cruda) en `scripts/medir-latencia-generacion.ts`.
+* **Verificación**: sonda B01/B03/B05/B13 **4/4**; 306 pruebas en verde, las
+  nuevas vistas fallar a propósito. **Falta la tanda completa de las DOS
+  llamadas** — no cabía en la cuota del día (~27 de ~30). T113 sigue abierta.
+* **Actualización**: `prompts/system.md` (Prompt B) — el prompt real había
+  cambiado y la documentación no, que es **exactamente el fallo que esta misma
+  sesión descubrió** (la regla de la empresa llevaba meses documentada en §4 y
+  nunca implementada). Documentados el límite de tamaño condicional y por qué
+  lo decide el código, la regla nueva de la empresa, los dos mínimos afinados y
+  el `LINEAS_MINIMAS_CV` 6 → 5, más el aviso de que un fallo de validación
+  tumba **todas** las aserciones del caso.
+* **Actualización**: `CLAUDE.md` — sección nueva "Un listón mal puesto se
+  disfraza de fallo del modelo", con las tres lecciones duraderas: el
+  amplificador de las métricas, que un límite superior en un prompt se lee como
+  objetivo (y por eso se decide en código), y que una regla documentada no es
+  una regla implementada.
+* **Actualización**: `docs/06-tareas.md` — bloque "⏭️ LO PRIMERO DE MAÑANA"
+  con el guion exacto de la tanda del 31/08: `npm run evals` (las dos
+  llamadas, no solo `evals:generar`), presupuesto de cuota, qué señales no
+  deberían volver a salir y qué sigue abierto (B12).
+
+## 2026-08-29 (T68 cerrada; T113 · primer arreglo, sigue abierta)
+
+* **T68 confirmada y cerrada**: el email de aviso de `Jobs App · ingesta` llega
+  a la bandeja de Mar cada día sobre las 13:03. `docs/06-tareas.md` (dos sitios).
+* **Creación**: `arreglo-t113-cv-corto-entrada-pobre.md`. Sonda con cuota
+  fresca: 2/5, y el proveedor estable — fallo real. Causa: `largoMinimoCv` y el
+  mínimo de líneas de `validarGeneracion` se calculaban sobre el CV de entrada
+  entero, contando una "nota para quien procese esto" (B07) o el CV de otra
+  persona (B10) que el modelo hace bien en descartar; y el de líneas era plano
+  (6) cuando la entrada solo daba para 3 (B04).
+* **Arreglo `lib/ia.ts`**: `cvSinTextoAjeno` descarta esos párrafos antes de
+  medir; `lineasMinimasCv` escala como `largoMinimoCv` (T94). 5 pruebas nuevas
+  en `tests/lib/ia-cv-entrada-pobre.test.ts`, vistas fallar a propósito. 304 en
+  verde, tipos y lint limpios. Sonda en vivo B04/B07/B10: **3/3**.
+* **Tanda completa (`npm run evals:generar`, 0 errores) → puerta ROJO.** El
+  arreglo funciona (B07 y B10 pasan), pero destapa dos cosas más:
+  1. `evals/promptfoo/helpers.cjs::formatoValidoGeneracion` seguía exigiendo
+     400 car. planos (T94 lo hizo flexible solo en `lib/ia.ts`). **Arreglado**
+     en la misma sesión, sin re-lanzar por cuota.
+  2. **B02/B03/B05/B06**: el modelo genera un CV demasiado corto en entradas
+     honestas (B05: 215 car. de un CV enorme). Sin inyección → el arreglo no lo
+     toca. Antes de tocar el prompt, medir si es la parada `\t\t\t` de T119.
+* **Cuota**: ~21 de ~30 generaciones del día. Otra tanda, mañana.
+* **Actualización**: `docs/06-tareas.md` (T68 ✅, nota de estado de T113),
+  `index.md`.
+* **T113 sigue abierta.**
+
+## 2026-08-28 (alternativas de proveedor de IA — se sigue con Cloudflare)
+
+Mar preguntó si cambiar de proveedor (T112) reduciría los problemas, y pidió
+investigar DeepSeek porque las IAs que más protegen los datos daban demasiada
+guerra.
+
+* **Creación**: `decision-proveedor-ia-alternativas-28-08.md`. Investigadas en
+  vivo DeepSeek, Cerebras, Gemini, Groq como respaldo y Mistral La Plateforme.
+  Ninguna mejora el conjunto privacidad + coste 0 € + fiabilidad:
+  * **DeepSeek**: sin tier gratis permanente, datos en China, entrena por
+    defecto, bloqueado en Italia por el Garante (GDPR).
+  * **Cerebras**: quitó el free tier en julio 2026.
+  * **Gemini** free tier: entrena sin opt-out.
+  * **Mistral** free: entrena por defecto (toggle), ~2 RPM; solo gana en
+    jurisdicción (UE).
+* **Decisión de Mar**: Cloudflare sigue como proveedor único del MVP.
+  **Grok / xAI excluido para siempre** por ética — no confundir con **Groq**
+  (con Q), que se queda como juez de los evals. Mistral de pago se anota como
+  el upgrade limpio si se abre presupuesto, pero fuera del MVP.
+* **Actualización**: `CLAUDE.md` punto 5 (añadido Grok / xAI a la exclusión
+  ética, con la aclaración Groq ≠ Grok). `index.md`.
+* Siguiente paso real: **T113** (CVs cortos con entradas pobres), lo único
+  entre la app y publicar.
+
 ## 2026-08-27 (primero — T118 confirmado y T119 cerrada)
 
 Primera medición del día con cuota fresca, y las dos preguntas que quedaron

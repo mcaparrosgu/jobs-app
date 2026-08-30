@@ -147,6 +147,7 @@ describe('generarCvYCarta · secuencia de parada contra el bucle de basura', () 
   });
 });
 
+
 describe('extraerPerfil · sin secuencia de parada', () => {
   it('no manda ninguna: ahí el bucle no se ha medido', async () => {
     const { cuerpos } = espiarPeticiones({

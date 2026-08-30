@@ -16,6 +16,36 @@ una analogía cotidiana. Todo se escribe **en castellano**.
 **Stack**: Next.js + Supabase + Cloudflare Workers AI + Vercel, más un
 workflow de n8n. Detalle en `docs/04-plan-tecnico.md`.
 
+## Entorno opencode (WSL)
+
+Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos (el resto están apagados globalmente):
+
+| MCP | Para qué sirve |
+|-----|----------------|
+| `google-sheets` | Leer/escribir Google Sheets |
+| `google-workspace` | Gmail, Docs, Drive, Calendar, Forms |
+| `playwright` | Navegador automatizado (scraping, tests) |
+| `github` | Issues, PRs, búsqueda de código |
+
+Si necesitas otro MCP, dímelo y lo activamos puntualmente.
+
+---
+
+## Entorno opencode (WSL)
+
+Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos:
+
+| MCP | Para qué sirve |
+|-----|----------------|
+| `google-sheets` | Leer/escribir hojas de cálculo (CVs, ofertas) |
+| `google-workspace` | Gmail, Docs, Drive, Calendar |
+| `playwright` | Automatizar navegador (scraping ofertas) |
+| `github` | Issues, PRs, búsqueda de código |
+
+Si necesitas otro MCP, dímelo y lo activamos puntualmente.
+
+---
+
 ## La restricción principal
 
 **Presupuesto: 0 €/mes. Es una restricción dura, no una preferencia.**
@@ -67,8 +97,12 @@ son Mar: sus cuatro compañeras de clase.
    la búsqueda de empleo real de Mar, en producción. Jobs App usa un
    workflow **nuevo e independiente**, `Jobs App · ingesta`, creado
    copiando el JSON.
-5. **Proponer modelos ni servicios de OpenAI.** Decisión ética de Mar,
-   incluye los modelos de peso abierto `gpt-oss`. No relitigarlo.
+5. **Proponer modelos ni servicios de OpenAI, ni de Grok / xAI.** Decisión
+   ética de Mar. En el caso de OpenAI incluye los modelos de peso abierto
+   `gpt-oss`. Grok (con K) es xAI, de Elon Musk, y queda descartado del todo
+   (28/08/2026) — **no confundir con Groq, con Q**, empresa distinta sin
+   relación con Musk, que sí se usa como juez de los evals. No relitigar
+   ninguna de las dos.
 6. **Renombrar o reestructurar `docs/`.** El esqueleto `00-problema.md` …
    `06-tareas.md` es fijo.
 7. **Dar por cerrada una elección entre varias opciones sin habérsela
@@ -94,6 +128,25 @@ ejecutable con Promptfoo en `evals/promptfoo/`.
 `lib/ia.ts`), o el formato de los datos de entrada o salida.** Un cambio
 que no se comprueba contra el golden dataset puede arreglar un caso y
 romper otro sin que nadie se entere hasta que le pase a una usuaria real.
+
+**Y al revés: si tocas un validador de `lib/ia.ts` (`largoMinimoCv`,
+`LINEAS_MINIMAS_CV`, `verificarCv`…), repasa si `evals/promptfoo/helpers.cjs`
+replica ese mismo criterio.** El helper re-implementa comprobaciones en
+CommonJS y se queda atrás en silencio: T94 hizo flexible el mínimo de
+longitud del CV en `lib/ia.ts` y `helpers.cjs` siguió exigiendo 400 planos
+más de un mes, suspendiendo en `formato` generaciones que la app aceptaba
+(T113, 29/08/2026). Mismo patrón que T111 (comparaba CVs traducidos palabra a
+palabra). El provider llama a la función real, así que si la salida no trae
+`error` el criterio de producción ya pasó — el helper solo debe añadir, no
+contradecir.
+
+**Para un veredicto limpio de un cambio en una de las dos llamadas, re-genera
+sus resultados, no solo los de esa llamada**: `npm run evals:puerta` lee
+`resultado-perfil.json` **y** `resultado-generar.json`, y una tanda vieja del
+otro fichero mete fallos ajenos en el cómputo por métrica (T113: A06/A10 del
+perfil del 25/08 arrastraron `fidelidad` en una tanda que solo medía
+generación). En el detalle por caso, `A##` es `extraerPerfil` y `B##` es
+`generarCvYCarta`.
 
 ```
 npm run evals          # los dos evals seguidos y después la puerta de calidad
@@ -172,6 +225,36 @@ que cubrir de menos.
 
 Y ojo con el coste de medir: una sola llamada desbocada gasta en cuota lo que
 decenas de generaciones normales.
+
+### Un listón mal puesto se disfraza de fallo del modelo
+
+Tres lecciones del 30/08/2026 (T113), que juntas explican por qué "el modelo
+genera CVs cortos" resultó no ser un problema del modelo. Detalle en
+`knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
+
+**1. Un fallo de validación cuenta contra TODAS las métricas, no solo la suya.**
+Cuando `validarGeneracion` lanza, el caso entero se cae: un CV 30 caracteres
+corto se cuenta también como fallo de `fidelidad`, de `idioma` y de
+`resistencia_inyeccion`. Dos casos bastaron para hundir cuatro métricas. Antes
+de tocar un prompt porque `fidelidad` está roja, mira **si el caso llegó a
+generarse**: si el detalle dice "demasiado corto" o "muy pocas líneas", el
+problema es el listón y no hay ninguna invención que arreglar.
+
+**2. Un límite superior escrito en el prompt se lee como objetivo.** Poner
+"el CV no pasa de 30 líneas ni de 400 palabras" para que un CV de entrada
+enorme cupiera en el techo de tokens bajó **B01, el caso base, de 421 a 366
+caracteres**, suspendiéndolo. Mismo patrón que T109 y T116. Si hace falta un
+límite que solo aplica a algunas entradas, **decídelo en código** y añádelo al
+prompt solo en ese caso (`CV_ENTRADA_LARGA_CARACTERES` en `lib/ia.ts`): así la
+generación normal recibe el prompt de siempre byte a byte y la regresión es
+imposible por construcción, no por suerte.
+
+**3. Una regla documentada no es una regla implementada.** `prompts/system.md`
+§4 describía desde el principio qué hacer con una oferta sin descripción
+("no inventes requisitos ni funciones que la oferta no ha declarado") y esa
+frase **nunca había llegado al prompt real** de `mensajesDeGeneracion`. El
+fallo estuvo tapado meses porque ese caso ni llegaba a generarse. Al tocar
+`prompts/system.md`, comprueba que el prompt lo dice de verdad — y al revés.
 
 ## Publicación (Paso 16)
 

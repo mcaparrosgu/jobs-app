@@ -42,6 +42,14 @@
 //               (T119) si cortar el bucle de espacio en blanco evita que el
 //               modelo agote el techo de tokens escribiendo basura.
 //               Ejemplo: STOP='\n\n\n|]\n  \n'. Ver `envolverFetch`.
+//               STOP=ninguna (o "no"/"0") mide SIN ninguna parada: la sonda le
+//               quita `stop` a la petición para comprobar (T113) si la parada
+//               `\t\t\t` de producción es la que corta los CVs demasiado pronto
+//               en entradas pobres (B02/B03/B05/B06).
+//   VER_CRUDO   si vale 1, saca de cada respuesta de Cloudflare el
+//               `finish_reason` y los tokens gastados — para saber si el
+//               reintento sin parada de T113 (`generarCvYCarta`) tiene con qué
+//               dispararse. Solo diagnóstico.
 //
 // Nota: lee los casos del YAML de los evals para no duplicar el dataset. El
 // parser (js-yaml) entra de rebote con promptfoo; si algún día promptfoo deja
@@ -129,14 +137,18 @@ function envolverFetch({
   maxTokens,
   modelo,
   paradas,
+  quitarParadas,
+  verCrudo,
 }: {
   sinCorte: boolean;
   maxTokens?: number;
   modelo?: string;
   paradas?: string[];
+  quitarParadas?: boolean;
+  verCrudo?: boolean;
 }): void {
   const fetchOriginal = globalThis.fetch;
-  globalThis.fetch = ((entrada: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = (async (entrada: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
     if (!url.includes('api.cloudflare.com')) return fetchOriginal(entrada, init);
 
@@ -145,14 +157,40 @@ function envolverFetch({
       siguiente = { ...siguiente };
       delete siguiente.signal;
     }
-    if ((maxTokens || modelo || paradas) && typeof siguiente.body === 'string') {
+    if ((maxTokens || modelo || paradas || quitarParadas) && typeof siguiente.body === 'string') {
       const cuerpo = JSON.parse(siguiente.body);
       if (maxTokens) cuerpo.max_tokens = maxTokens;
       if (modelo) cuerpo.model = modelo;
       if (paradas) cuerpo.stop = paradas;
+      if (quitarParadas) delete cuerpo.stop;
       siguiente = { ...siguiente, body: JSON.stringify(cuerpo) };
     }
-    return fetchOriginal(entrada, siguiente);
+
+    const respuesta = await fetchOriginal(entrada, siguiente);
+    if (!verCrudo || !respuesta.ok) return respuesta;
+
+    // VER_CRUDO=1 · Lee la respuesta sin consumirla (clone) y saca los campos
+    // que deciden si el reintento de T113 debería dispararse: `finish_reason`
+    // y cuántos tokens gastó. Solo diagnóstico.
+    try {
+      const datos = await respuesta.clone().json();
+      const eleccion = datos.choices?.[0] ?? {};
+      const contenido: string = eleccion.message?.content ?? '';
+      console.log(
+        `  [crudo] finish_reason=${JSON.stringify(eleccion.finish_reason)} ` +
+          `completion_tokens=${datos.usage?.completion_tokens ?? '?'} ` +
+          `content_len=${contenido.length}`,
+      );
+      // CLAUDE.md · "La forma concreta de un fallo intermitente caduca": la
+      // cola cruda es lo único que dice de qué está hecho el relleno HOY, y es
+      // lo que decide si una secuencia de parada puede cortarlo. Se escapa
+      // para poder distinguir un tabulador de un espacio de un salto de línea.
+      const cola = contenido.slice(-120);
+      console.log(`  [crudo] cola=${JSON.stringify(cola)}`);
+    } catch {
+      console.log('  [crudo] no se pudo leer la respuesta como JSON');
+    }
+    return respuesta;
   }) as typeof fetch;
 }
 
@@ -189,19 +227,27 @@ async function main(): Promise<void> {
 
   const maxTokens = process.env.MAX_TOKENS ? Number(process.env.MAX_TOKENS) : undefined;
   const modelo = process.env.MODELO || undefined;
+  const verCrudo = process.env.VER_CRUDO === '1';
+
+  // STOP=ninguna/no/0 → medir SIN ninguna parada (T113): la sonda le quita
+  // `stop` a la petición de Cloudflare, dejando el resto del código de
+  // producción igual.
+  const quitarParadas = /^(ninguna|no|0)$/i.test(process.env.STOP ?? '');
 
   // Las secuencias vienen separadas por `|` porque la coma y el espacio son
   // parte de lo que se quiere cortar. `\n` se escribe así en la línea de
   // comandos y aquí se convierte en el salto de línea de verdad.
-  const paradas = process.env.STOP
-    ? process.env.STOP.split('|')
-        .map((secuencia) => secuencia.replace(/\\n/g, '\n'))
-        .filter(Boolean)
-    : undefined;
+  const paradas =
+    !quitarParadas && process.env.STOP
+      ? process.env.STOP.split('|')
+          .map((secuencia) => secuencia.replace(/\\n/g, '\n'))
+          .filter(Boolean)
+      : undefined;
 
   // Antes del import de lib/ia.ts: hay que envolver el fetch global antes de
   // que el módulo lo capture en ningún sitio.
-  if (sinCorte || maxTokens || modelo || paradas) envolverFetch({ sinCorte, maxTokens, modelo, paradas });
+  if (sinCorte || maxTokens || modelo || paradas || quitarParadas || verCrudo)
+    envolverFetch({ sinCorte, maxTokens, modelo, paradas, quitarParadas, verCrudo });
 
   const { generarCvYCarta } = await import('../lib/ia');
 
@@ -219,7 +265,8 @@ async function main(): Promise<void> {
   if (sinCorte) console.log('SIN CORTE: a Cloudflare no se le aplica el timeout de 26 s.');
   if (maxTokens) console.log(`MAX_TOKENS forzado a ${maxTokens} (en producción son 12.000).`);
   if (modelo) console.log(`MODELO forzado a ${modelo}.`);
-  if (paradas) console.log(`STOP: ${JSON.stringify(paradas)} (en producción no se manda ninguna).`);
+  if (paradas) console.log(`STOP: ${JSON.stringify(paradas)} (en producción se manda ['\\t\\t\\t']).`);
+  if (quitarParadas) console.log("SIN PARADAS: se le quita a Cloudflare la parada de producción ['\\t\\t\\t'] (T119).");
   console.log('');
 
   const mediciones: Medicion[] = [];

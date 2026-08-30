@@ -50,3 +50,4 @@ yarn-error.log*
 
 # Salidas de una ejecución de los evals (Paso 13) — resultado de -o, no código
 evals/promptfoo/resultado-*.json
+opencode.json

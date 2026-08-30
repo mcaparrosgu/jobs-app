@@ -518,3 +518,55 @@ aunque frustrante, al menos no dejaba pasar el contenido inyectado).
   si `verificarCv.ts`/`helpers.cjs` necesitan una comprobación adicional de
   "aparecen secciones enteras sin ningún solape con el CV original", no solo
   cifras.
+
+# Actualización del 29/08/2026 (T113) — el arnés de evals se había desincronizado de `lib/ia.ts`
+
+Primera tanda completa concluyente (13 casos, **0 errores**, veredicto real)
+desde que se cerraron T118 y T119. **Puerta: ROJO.** Detalle completo en
+[arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md);
+aquí lo que afecta al método de los evals.
+
+## Lección: un helper del eval puede quedarse midiendo con la regla vieja
+
+T94 (24/08) hizo que `largoMinimoCv` en `lib/ia.ts` **escalara** el mínimo de
+caracteres del CV con el tamaño del CV de entrada (un CV de 3 líneas no llega
+a 400 sin inventar). Pero `evals/promptfoo/helpers.cjs::formatoValidoGeneracion`
+**siguió exigiendo `cv_texto.length >= 400` planos**. Resultado: durante más
+de un mes el eval suspendía en `formato` generaciones que la app da por
+buenas — B04 (200 car.), B08 (330), B09 (194), B11 (267) —, y ese ruido hacía
+imposible que `formato` llegara al 95 %.
+
+Es el mismo patrón que ya pasó con T111 (el eval comparaba palabra a palabra
+CVs traducidos). **Regla que sale de aquí, además de la de "relanzar los
+evals cuando cambie el prompt/modelo": cuando cambie un validador de
+`lib/ia.ts` (`largoMinimoCv`, `LINEAS_MINIMAS_CV`, `verificarCv`, …), repasar
+si `helpers.cjs` replica ese mismo criterio.** El provider llama a la función
+real, así que si `output` no trae `error` la longitud ya pasó el criterio de
+producción; el helper solo debería añadir comprobaciones, no contradecirlo.
+
+Arreglado el 29/08: `formatoValidoGeneracion` replica ahora `largoMinimoCv`
+(`max(150, min(400, largo del CV de entrada))`) y recibe `context`.
+**Pendiente de confirmar en una tanda nueva** (no se re-lanzó: cuota).
+
+## El veredicto de la puerta mezcla dos tandas — ojo con `resultado-perfil.json`
+
+`npm run evals:puerta` lee **los dos** ficheros de resultados. El 29/08 solo
+se re-generó `resultado-generar.json`; `resultado-perfil.json` era del 25/08.
+Sus fallos (A06 "poeta", A10 "dos empresas") entraron en el cómputo de
+`fidelidad` y `resistencia_inyeccion` y los empujaron hacia abajo sin tener
+nada que ver con el cambio que se estaba midiendo. Para un veredicto limpio
+de un cambio en `generarCvYCarta`, o se re-lanza también `evals:perfil`, o se
+lee el detalle por caso separando prefijos `A##` (perfil) de `B##`
+(generación).
+
+## Lo que sigue siendo un problema de calidad real: el modelo se queda corto
+
+Quitando el ruido de arriba, quedan **B02, B03, B05, B06**: `generarCvYCarta`
+**lanza "demasiado corto"** de verdad, con el mínimo ya escalado y sin
+inyección de por medio. B05 es el peor: **215 caracteres de un CV de entrada
+enorme**. Cuando un caso lanza, caen todas sus aserciones (fidelidad, idioma,
+resistencia), así que estas cuatro explican casi todo el ROJO.
+
+Antes de tocar el prompt: **medir si la parada `\t\t\t` de T119 corta estos
+casos** (solo se validó sobre B01/B04/B07/B10/B13). `STOP=` vacío en la sonda
+sobre B02/B03/B05/B06. Después, decisión de Mar (parada / prompt / umbrales).
