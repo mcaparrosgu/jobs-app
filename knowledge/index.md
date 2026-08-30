@@ -390,7 +390,10 @@ existe en produccion y no se toca desde aqui.
   conjunto privacidad + 0 € + fiabilidad. **Cloudflare sigue como proveedor
   único del MVP.** Grok / xAI queda excluido por ética (`CLAUDE.md` punto 5) —
   no confundir con Groq, que se queda como juez de los evals. Mistral de pago
-  se anota como upgrade limpio fuera del MVP.
+  se anota como upgrade limpio fuera del MVP. **Ampliado el 30/08/2026**:
+  descartados también los *routers / gateways* multi-proveedor (OmniRoute y
+  similares) — un enrutador no es un proveedor, su auto-fallback acaba en los
+  endpoints `:free` que entrenan, y hace imposible saber quién vio cada CV.
 - [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
   T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
   ("más profesional", "más conciso") y la IA redacta otra vez el CV y la

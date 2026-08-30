@@ -1,5 +1,24 @@
 # Registro de cambios del bundle
 
+## 2026-08-30 (descartados los routers / gateways multi-proveedor de IA)
+
+* **Actualización**: `decision-proveedor-ia-alternativas-28-08.md` — sección
+  nueva "Ampliación 30/08/2026". Mar preguntó por **OmniRoute**, gateway libre
+  con ~290 proveedores y auto-fallback de cuatro escalones. Descartado: **un
+  enrutador no es un proveedor**, no aporta modelos ni cuota; su auto-fallback
+  acaba en los endpoints `:free` que entrenan con lo que reciben (ya medido en
+  T112), destruye la trazabilidad de quién vio cada CV, incluye OpenAI y xAI en
+  su catálogo, no toca las alucinaciones (dependen de modelo, prompt y
+  validadores) y rompe el 0 €/mes al haber que alojarlo. Como agravante para
+  los evals: sin saber qué modelo respondió, la tanda no mide nada.
+* **Anotado como única variante viable de esa idea, para el futuro**: el AI
+  Gateway de la propia Cloudflare (gratis, sin terceros) por su caché y su
+  registro de llamadas — ahorraría cuota en días de evals, pero no cambia quién
+  ve los CVs. No urgente.
+* **Actualización**: `CLAUDE.md` (sección "Datos sensibles") e `index.md`.
+* **Sin cambios en código.** Sigue pendiente lo único en rojo: `npm run evals`
+  completo con cuota fresca, que cierra T113 y T95.
+
 ## 2026-08-30 (T113 · descartada la hipótesis de la parada; tres averías separadas)
 
 * **Creación**: `arreglo-t113-techo-tokens-y-minimos.md`.

@@ -66,6 +66,17 @@ son Mar: sus cuatro compañeras de clase.
     app no genera. Al tocar `RONDAS_MODELOS`, partir de ahí y no de la idea de
     que hay una red debajo. Ver
     `knowledge/medicion-t112-respaldo-openrouter.md`.
+- **Un enrutador (*gateway*) de IA no es un proveedor, y aquí está descartado.**
+  OmniRoute, OpenRouter como router, Portkey, Unify, LiteLLM y similares no
+  aportan modelos ni cuota: solo reparten la llamada. Su auto-fallback termina
+  por diseño en los endpoints `:free`, que son gratis porque entrenan con lo que
+  reciben, y hacen imposible saber **quién vio cada CV**, que es justo la
+  garantía de privacidad de este proyecto. Tampoco reducen alucinaciones (eso es
+  modelo + prompt + validadores) y arruinan los evals: sin saber qué modelo
+  respondió, la tanda no mide nada. Descartado el 30/08/2026 — ver
+  `knowledge/decision-proveedor-ia-alternativas-28-08.md`. La única variante
+  aceptable sería el **AI Gateway de la propia Cloudflare** (mismo proveedor,
+  sin terceros), y solo por su caché y su registro; no cambia quién ve los CVs.
 - Los datos se borran automáticamente al mes (regla 10 de la spec).
 
 ## Lo que NUNCA se debe hacer en este repositorio

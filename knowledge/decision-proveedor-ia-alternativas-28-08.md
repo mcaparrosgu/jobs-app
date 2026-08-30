@@ -75,12 +75,59 @@ de fondo.
 4. El siguiente paso real sigue siendo **T113** (los CVs salen cortos con
    entradas pobres), que es lo único entre la app y publicar.
 
+# Ampliación 30/08/2026 — routers / gateways multi-proveedor (OmniRoute y similares)
+
+Mar preguntó por **OmniRoute**, un *gateway* de IA de código abierto que da
+acceso a ~290 proveedores por un único endpoint compatible con OpenAI, con
+auto-fallback en cuatro escalones (suscripción → API key → barato → **gratis**).
+La duda era si mejoraría la protección de datos y las alucinaciones.
+
+**No es un proveedor: es una centralita.** No tiene modelos propios, solo
+reparte llamadas. Por eso no resuelve ninguna de las dos preocupaciones, y la
+privacidad la empeora.
+
+- **Privacidad: peor.** Quien ve el CV es quien atiende la llamada, no la
+  centralita. El auto-fallback termina por diseño en los endpoints `:free`, que
+  son gratis precisamente porque entrenan con lo que reciben — la misma forma de
+  producto que OpenRouter, ya medida en
+  [medicion-t112-respaldo-openrouter.md](medicion-t112-respaldo-openrouter.md)
+  (17 modelos `:free`, ninguno generó el documento, **8 bloqueados por la propia
+  política de datos**). Y se **pierde la trazabilidad**: hoy se sabe con certeza
+  que cada CV lo vio Cloudflare; con un router encima lo decide una tabla de
+  rutas que se actualiza sola.
+- **Ética**: su catálogo incluye OpenAI y xAI, ambos excluidos (`CLAUDE.md`
+  punto 5). Habría que auditar la tabla de rutas en cada actualización.
+- **Alucinaciones: no las toca.** Dependen del modelo, del prompt y de los
+  validadores (`verificarCv`, guardrails, evals), no de por dónde entre la
+  llamada. Y para los evals sería activamente malo: si no se sabe qué modelo
+  respondió cada caso, la tanda **no mide nada** — el agujero de la tarde del
+  26/08, cuando ninguna combinación distinguía nada.
+- **Coste: rompe el 0 €/mes por la puerta de atrás.** Gratis es el *programa*,
+  no las llamadas. Y al ser local hay que alojarlo: o el portátil encendido
+  (inservible para una app en Vercel) o un servidor de pago.
+
+**Lo único de esta familia que podría interesar algún día** es el **AI Gateway
+de la propia Cloudflare**: gratis, del proveedor que ya se usa, sin meter un
+tercero. Da registro de llamadas y caché de respuestas repetidas, lo que
+ahorraría cuota en días de evals. **No cambia quién ve los CVs** y no es
+urgente.
+
+**Decisión de Mar (30/08/2026): descartado.** Regla que se deriva y vale para
+cualquier producto igual (OpenRouter, Portkey, Unify, LiteLLM, Eden AI…):
+**un enrutador no es un proveedor**. Añadir una capa que elige el proveedor por
+ti es incompatible con un proyecto cuya garantía de privacidad consiste en
+saber exactamente a quién se le manda el CV.
+
 # Fuentes
 
 Política de privacidad de DeepSeek (`cdn.deepseek.com/policies`), tarifas de
 DeepSeek, limitación del Garante italiano (Bird & Bird, Euronews), centro de
 ayuda de Mistral sobre entrenamiento y opt-out, comparativas de tiers gratuitos
 2026 (OpenRouter, ianlpaterson). Todo consultado el 28/08/2026.
+
+Ampliación del 30/08/2026: repositorio y documentación de OmniRoute
+(`github.com/diegosouzapw/OmniRoute`, `omniroute.online`, reseñas en Medium y
+AI/TLDR), consultadas ese mismo día.
 
 # Relacionado
 
