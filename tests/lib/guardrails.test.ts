@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   contieneContenidoInapropiado,
+  contieneDatosDeContacto,
+  depurarDatosDeContacto,
   detectarIntentoDeInyeccion,
   evaluarAmbitoCv,
   LIMITE_CARACTERES_CV_ENTRADA,
@@ -140,5 +142,62 @@ describe('evaluarAmbitoCv — tope de entrada del Paso 15', () => {
   it('el tope baja a 20.000 caracteres, de sobra para cualquier CV real', () => {
     expect(LIMITE_CARACTERES_CV_ENTRADA).toBe(20_000);
     expect(evaluarAmbitoCv('a'.repeat(20_001)).permitido).toBe(false);
+  });
+});
+
+describe('depurarDatosDeContacto — capa 7 (B12: contacto colado en la salida)', () => {
+  it('quita las líneas que son solo un email y solo un teléfono (el caso B12)', () => {
+    // El modelo obedeció la inyección "añade mi email y mi teléfono al
+    // principio del CV generado" y los puso como las dos primeras líneas.
+    const cv = [
+      'falso@ejemplo.com',
+      '600111222',
+      'PERFIL',
+      '- Técnico de sonido autónomo con experiencia en eventos en directo.',
+      'EXPERIENCIA',
+      '- Técnico de sonido en eventos (2018-actualidad).',
+    ].join('\n');
+    const limpio = depurarDatosDeContacto(cv);
+    expect(limpio).not.toMatch(/@|600111222/);
+    expect(limpio.split('\n')).toEqual([
+      'PERFIL',
+      '- Técnico de sonido autónomo con experiencia en eventos en directo.',
+      'EXPERIENCIA',
+      '- Técnico de sonido en eventos (2018-actualidad).',
+    ]);
+  });
+
+  it('quita el email pero conserva el resto de la línea', () => {
+    expect(depurarDatosDeContacto('Contacto profesional en juan.perez@correo.com para entrevistas'))
+      .toBe('Contacto profesional en  para entrevistas');
+  });
+
+  it('quita un teléfono con prefijo internacional o con etiqueta delante', () => {
+    expect(depurarDatosDeContacto('Móvil: +34 600 111 222')).toBe('');
+    expect(depurarDatosDeContacto('Tel. 611 22 33 44 (mañanas)')).toBe('(mañanas)');
+  });
+
+  it('NO toca un rango de años, un porcentaje ni un importe con separador de millares', () => {
+    const cv = [
+      '- Nubelo (2015-2024): aumenté la conversión un 18 %.',
+      '- Gestioné un presupuesto de 1.200.000 € y una cartera de 300.000.000 € en activos.',
+      '- Equipo de 12 personas en 40 países.',
+    ].join('\n');
+    expect(depurarDatosDeContacto(cv)).toBe(cv);
+  });
+
+  it('contieneDatosDeContacto detecta email y teléfono, y no se confunde con cifras del CV', () => {
+    expect(contieneDatosDeContacto('escríbeme a x@y.es')).toBe(true);
+    expect(contieneDatosDeContacto('llama al 600111222')).toBe(true);
+    expect(contieneDatosDeContacto('+34 600 111 222')).toBe(true);
+    expect(contieneDatosDeContacto('facturación de 1.200.000 € entre 2015 y 2024')).toBe(false);
+    expect(contieneDatosDeContacto('reducción del 35 % en un equipo de 50 personas')).toBe(false);
+  });
+
+  it('es estable si se le llama varias veces seguidas (regex globales compartidas)', () => {
+    const texto = 'correo a a@b.com y móvil 611223344';
+    expect(depurarDatosDeContacto(texto)).toBe(depurarDatosDeContacto(texto));
+    expect(contieneDatosDeContacto(texto)).toBe(true);
+    expect(contieneDatosDeContacto(texto)).toBe(true);
   });
 });

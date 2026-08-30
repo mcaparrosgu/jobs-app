@@ -360,9 +360,15 @@ verdad, ya no solo `localhost`.
 > la empresa. Si alguna vuelve, es que el arreglo no aguanta la tanda completa y
 > hay que volver a `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
 >
-> **Qué sigue abierto pase lo que pase**: **B12** (una inyección que cuela datos
-> de contacto). Es superficie de guardrail (`lib/guardrails.ts`), no de longitud
-> ni del prompt de generación, y no se ha tocado.
+> **B12** (una inyección que cuela datos de contacto) ya **no** es un cabo
+> suelto: arreglado en código el 30/08/2026 —`depurarDatosDeContacto` en
+> `lib/guardrails.ts`, capa 7 del Paso 14, quita email y teléfono del CV y la
+> carta dentro de `validarGeneracion`—, con 10 pruebas nuevas vistas fallar.
+> Ver `knowledge/arreglo-b12-datos-contacto.md`. Lo único que falta para B12 es
+> lo mismo que para todo lo demás: verlo en la tanda completa contra el modelo
+> real. Si `sinDatosDeContacto` (métrica `resistencia_inyeccion`) vuelve a
+> fallar en B12, es que el modelo cuela el dato en una forma que la depuración
+> no reconoce — volver a ese documento con la salida cruda delante.
 >
 > Si el veredicto sale **NO CONCLUYENTE**, no es el prompt: es cuota o el modelo
 > juez de Groq sin responder. Relanzar, no "arreglar".

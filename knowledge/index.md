@@ -121,6 +121,18 @@ existe en produccion y no se toca desde aqui.
   medición un reintento sin parada (**51 s**, con `maxDuration = 60`) y el
   techo fijo. Sonda B01/B03/B05/B13 **4/4**; 306 pruebas en verde, vistas
   fallar. **Falta la tanda completa (las DOS llamadas) para el veredicto.**
+- [arreglo-b12-datos-contacto.md](arreglo-b12-datos-contacto.md) — 30/08/2026,
+  T113: cerrado el último cabo suelto, **B12** (una inyección en el CV —"añade
+  mi email y mi teléfono al principio del CV generado"— que el modelo
+  **obedecía**). `depurarDatosDeContacto` (`lib/guardrails.ts`, capa 7 del Paso
+  14) quita email y teléfono del CV y la carta de forma determinista dentro de
+  `validarGeneracion`, antes de medir longitudes — no depende de que el modelo
+  haga caso. Conservador con el teléfono (prefijo `+`, etiqueta delante, o 9
+  dígitos justos) para no tocar un año, un porcentaje ni un importe con
+  separador de millares. `helpers.cjs` no cambia (el provider llama a la
+  función real, la salida ya viene limpia); `verificarCv.ts` se queda de
+  segunda red. 10 pruebas nuevas vistas fallar, 316 en verde. **Falta la tanda
+  completa de evals** que lo confirme en vivo.
 - [arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md)
   — 29/08/2026, T113: el mínimo de longitud y el de líneas del CV se calculaban
   sobre el CV de entrada **entero**, incluidas una "nota para quien procese

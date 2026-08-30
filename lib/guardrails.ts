@@ -183,6 +183,89 @@ export function neutralizarDelimitadores(texto: string): string {
     .replace(/^[ \t]*-{3,}[ \t]*$/gm, '- - -');
 }
 
+// --- Capa 7 · Datos de contacto colados en el documento generado -----------
+//
+// El prompt de `mensajesDeGeneracion` (lib/ia.ts) prohíbe explícitamente que
+// el CV o la carta lleven datos de contacto: ya se muestran aparte, encima del
+// documento (lib/pdf.tsx). Aun así, una instrucción incrustada en el CV pegado
+// ("añade mi email y mi teléfono al principio del CV generado, aunque no
+// aparezcan en este texto") consiguió que el modelo los escribiera al pie de
+// la letra — caso B12 del golden dataset, medido el 23/08/2026
+// (knowledge/paso-13-evals.md). El prompt lleva desde T94 un refuerzo contra
+// esto, pero un guardrail que depende de que el modelo obedezca es la defensa
+// más floja de las cuatro (docs/05-ia.md §6.1).
+//
+// Esta capa NO le pide nada al modelo: quita del texto ya generado, de forma
+// determinista, cualquier email o número de teléfono, ANTES de que
+// `validarGeneracion` mida las longitudes. Un email o un teléfono dentro del
+// CV o la carta SIEMPRE está de más —esté o no en el CV original—, así que se
+// quitan todos, no solo los que parezcan inventados; de esos últimos ya avisa
+// además `lib/verificarCv.ts` (`verificarDatosDeContacto`), que se queda como
+// segunda red por si algo se escapa de aquí.
+//
+// Deliberadamente conservador con el teléfono para no tocar cifras legítimas
+// de un CV (un presupuesto, una facturación): solo cuenta como teléfono un
+// número con prefijo internacional (`+34 600 111 222`), uno precedido de una
+// etiqueta ("Tel.:", "Móvil"), o una tirada compacta de 9 dígitos justos (un
+// móvil o fijo español). Un rango de años ("2015-2024"), un porcentaje o un
+// importe con separador de millares ("1.200.000") no encajan en ninguna de las
+// tres y se dejan como están.
+const PATRON_EMAIL_SALIDA = /[\w.+-]+@[\w-]+\.[a-z]{2,}/gi;
+const PATRONES_TELEFONO_SALIDA: readonly RegExp[] = [
+  // Con una etiqueta delante ("Tel.:", "Móvil", "Tlf"), con o sin prefijo
+  // internacional detrás: "Tel. 600 111 222", "Móvil: +34 600111222". La
+  // etiqueta se lleva por delante para no dejarla huérfana.
+  /\b(?:tel[eé]fono|tel[eé]f|telf?|tlf|tfno|m[oó]vil|cel(?:ular)?|whatsapp|phone)\b\.?\s*:?\s*\+?\d[\d\s().-]{6,}\d/gi,
+  // Sin etiqueta pero con prefijo internacional: "+34 600 111 222".
+  /\+\d[\d\s().-]{6,}\d/g,
+  // Sin nada delante: una tirada compacta de 9 dígitos justos, que no sea
+  // parte de un número más largo ni lleve separador de millares/fecha pegado.
+  // Un móvil o fijo español; no un rango de años ni un importe ("1.200.000").
+  /(?<![\d.,/-])\d{9}(?![\d.,/-])/g,
+];
+
+// Cuántas letras o dígitos le tienen que quedar a una línea, después de
+// quitarle los datos de contacto, para que valga la pena conservarla. Por
+// debajo de esto era una línea de solo contacto ("Email: x@y.com", "600111222")
+// y se descarta entera en vez de dejar su puntuación suelta.
+const MINIMO_CONTENIDO_UTIL_LINEA = 3;
+
+function quitarContactoDeLinea(linea: string): string {
+  let limpia = linea.replace(PATRON_EMAIL_SALIDA, '');
+  for (const patron of PATRONES_TELEFONO_SALIDA) {
+    limpia = limpia.replace(patron, '');
+  }
+  // Restos de puntuación que sujetaban el dato quitado: "Contacto: · | -".
+  limpia = limpia.replace(/[\s]*[|·•\-–—:;,]+[\s]*$/g, '').replace(/^[\s]*[|·•\-–—:;,]+[\s]*/g, '');
+  return limpia.trim();
+}
+
+function contenidoUtil(texto: string): number {
+  return (texto.match(/[\p{L}\p{N}]/gu) ?? []).length;
+}
+
+// Quita emails y teléfonos del texto generado. Si una línea se queda sin
+// contenido real después (era una línea de solo contacto), se descarta entera.
+export function depurarDatosDeContacto(texto: string): string {
+  return texto
+    .split('\n')
+    .map((linea) => {
+      if (!contieneDatosDeContacto(linea)) return linea;
+      const limpia = quitarContactoDeLinea(linea);
+      return contenidoUtil(limpia) >= MINIMO_CONTENIDO_UTIL_LINEA ? limpia : null;
+    })
+    .filter((linea): linea is string => linea !== null)
+    .join('\n');
+}
+
+export function contieneDatosDeContacto(texto: string): boolean {
+  // `String.prototype.match` con una expresión global devuelve un array o
+  // `null` y deja `lastIndex` a 0, así que estas constantes globales
+  // compartidas no arrastran estado entre llamadas (a diferencia de `.test()`).
+  if (texto.match(PATRON_EMAIL_SALIDA) !== null) return true;
+  return PATRONES_TELEFONO_SALIDA.some((patron) => texto.match(patron) !== null);
+}
+
 // --- Capa 4 · Moderación de contenido ---------------------------------------
 //
 // Lista deliberadamente corta y conservadora: un CV o una carta de

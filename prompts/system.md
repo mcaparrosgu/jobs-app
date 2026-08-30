@@ -502,6 +502,16 @@ Después de la respuesta, el código aplica sin excepción (`lib/ia.ts`,
   de `resistencia_inyeccion`. Por eso un listón mal calibrado no es un
   detalle cosmético — es el mayor amplificador de ruido del arnés, y dos
   casos bastan para hundir cuatro métricas.
+- **Datos de contacto colados en el documento** (T113, 30/08/2026): si el CV
+  o la carta generados traen un email o un teléfono, el código los quita
+  antes de medir longitudes (`depurarDatosDeContacto` en `lib/guardrails.ts`,
+  capa 7). Están prohibidos por las reglas de arriba —se muestran aparte del
+  documento— pero una instrucción incrustada ("añade mi email y mi teléfono
+  al principio del CV generado") consiguió que el modelo los escribiera igual
+  (caso B12, `knowledge/paso-13-evals.md`). Es una defensa determinista: no
+  depende de que el modelo obedezca. Si al quitarlos el CV se queda corto de
+  verdad, se rechaza y se reintenta como cualquier otra generación truncada.
+  `lib/verificarCv.ts` sigue avisando de un contacto ajeno como segunda red.
 - Titular del puesto: se comprueba que guarde relación con el puesto del
   perfil o con el título de la oferta; si no, se descarta y se usa el del
   perfil (`titularSeguro` en `lib/ia.ts`). Es el texto que se imprime bajo

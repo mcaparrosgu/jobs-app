@@ -53,6 +53,7 @@ import { detectarIdioma, NOMBRE_IDIOMA, type Idioma } from '@/lib/idioma';
 import { MAXIMO_CARACTERES, normalizarPalabrasClave, paraComparar } from '@/lib/palabras-clave';
 import {
   contieneContenidoInapropiado,
+  depurarDatosDeContacto,
   detectarIntentoDeInyeccion,
   evaluarAmbitoCv,
   neutralizarDelimitadores,
@@ -1282,8 +1283,21 @@ function validarGeneracion(
   // es corto, de una línea y sin puntuación de frase.
   const puestoLimpio = titularSeguro(titularDevuelto, contexto);
 
-  const cv = normalizarPuntos(cv_texto.trim());
-  const carta = normalizarPuntos(carta_texto.trim());
+  // Paso 14, capa 7 · Datos de contacto colados en el documento (email o
+  // teléfono). El prompt los prohíbe y desde T94 lo refuerza, pero el caso
+  // B12 del golden dataset demostró que una instrucción incrustada podía
+  // colarlos igual. `depurarDatosDeContacto` los quita de forma determinista
+  // ANTES de medir longitudes, así que un CV que solo se quedara corto por
+  // haberle quitado dos líneas de contacto se rechaza y se reintenta, igual
+  // que cualquier otra generación truncada. `lib/verificarCv.ts` sigue
+  // avisando de un contacto ajeno como segunda red.
+  const cvSucio = normalizarPuntos(cv_texto.trim());
+  const cartaSucia = normalizarPuntos(carta_texto.trim());
+  const cv = depurarDatosDeContacto(cvSucio);
+  const carta = depurarDatosDeContacto(cartaSucia);
+  if (cv !== cvSucio || carta !== cartaSucia) {
+    console.warn('[GUARDRAIL:contacto] Se han quitado datos de contacto colados en el CV o la carta generados.');
+  }
 
   const minimoCv = largoMinimoCv(entradaCv.largoCvOriginal);
   if (cv.length < minimoCv) {
