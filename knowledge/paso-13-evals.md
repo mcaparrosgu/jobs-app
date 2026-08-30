@@ -570,3 +570,57 @@ resistencia), así que estas cuatro explican casi todo el ROJO.
 Antes de tocar el prompt: **medir si la parada `\t\t\t` de T119 corta estos
 casos** (solo se validó sobre B01/B04/B07/B10/B13). `STOP=` vacío en la sonda
 sobre B02/B03/B05/B06. Después, decisión de Mar (parada / prompt / umbrales).
+
+# Actualización del 30/08/2026 (T113) — las tres averías de fondo, y B12 cerrado en código
+
+## Los CVs cortos no eran una avería, eran tres (y no era la parada)
+
+Medido con cuota fresca (`STOP=ninguna` en la sonda): la parada `\t\t\t` de
+T119 **no** causa los CVs cortos — B02 (177 vs 184), B03 (224 vs 221) y B06
+(130 vs 130) salen igual sin ella. Debajo había tres cosas distintas, todas
+arregladas (detalle en
+[arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)):
+
+1. **El listón, no el modelo.** Reformatear un CV **comprime** (funde el
+   encabezado, quita el "Experiencia:" de delante, une líneas), así que sobre
+   una entrada minúscula la salida honesta queda *por debajo* de ella.
+   `largoMinimoCv` afloja al 72 % por debajo de 250 car. de entrada, suelo
+   150 → 110. `helpers.cjs::minimoCvGeneracion` replicado.
+2. **B05 no salía corto, salía truncado.** `finish_reason: "length"`,
+   1.500/1.500 tokens: el modelo intenta recoger un CV de entrada enorme y se
+   queda sin techo a media faena. Arreglado con un límite de tamaño que
+   **solo se añade al prompt si la entrada pasa de 3.000 car.**
+   (`CV_ENTRADA_LARGA_CARACTERES`) — puesto como regla fija bajaba B01 de 421
+   a 366 y lo suspendía: el modelo lee un límite superior como objetivo.
+3. **La carta se inventaba el carácter de la empresa** sin descripción (B03).
+   La regla estaba en `prompts/system.md` §4 desde el principio y **nunca
+   había llegado al prompt real** de `mensajesDeGeneracion`.
+
+Más `LINEAS_MINIMAS_CV` 6 → 5: vigilaba un fallo imposible desde T116 (el
+esquema pide una lista) y tumbaba a B13, el caso fácil.
+
+## B12 (datos de contacto colados) — respondido, y no era ni el prompt ni el modelo
+
+La "Pendiente" del 23/08 preguntaba si blindar el prompt contra B07/B12. Para
+**B12** la respuesta del 30/08 es que el sitio correcto es un **guardrail
+determinista**, no el prompt: `depurarDatosDeContacto` (`lib/guardrails.ts`,
+capa 7) quita email y teléfono del CV y la carta dentro de
+`validarGeneracion`, antes de medir longitudes. Ya no depende de que el
+modelo obedezca la inyección. Conservador con el teléfono (prefijo `+`,
+etiqueta delante, o 9 dígitos justos) para no tocar un año, un porcentaje ni
+un importe. `helpers.cjs::sinDatosDeContacto` **no cambia**: el provider
+llama a la función real, así que la salida que ve ya viene limpia — el helper
+solo añade, no contradice. Detalle en
+[arreglo-b12-datos-contacto.md](arreglo-b12-datos-contacto.md).
+
+**B07** (cifras infladas) sigue siendo terreno de `fidelidad` /
+`sinCifrasInventadas` + el refuerzo del prompt de T94, no de esta capa.
+
+## Estado
+
+Sonda B01/B03/B05/B13 **4/4** con cuota fresca del 30/08; 316 pruebas en
+verde (10 nuevas de B12, vistas fallar). **Falta la tanda completa de las DOS
+llamadas** (`npm run evals`), que no cabía en la cuota del día (~27 de ~30
+gastadas). Esa tanda cierra **T113 y T95** y confirma B12 en vivo. Si sale
+NO CONCLUYENTE, es cuota o el juez de Groq sin responder: relanzar, no
+"arreglar".
