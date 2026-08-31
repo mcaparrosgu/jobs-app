@@ -54,8 +54,9 @@ Piezas nuevas:
    byte a byte el mismo de siempre. Diseñado así para no invalidar el golden
    dataset existente (`evals/golden.yaml`) en el camino que sí cubre. Aun
    así, **`lib/ia.ts` cambió como fichero** — CLAUDE.md pide relanzar los
-   evals de `generarCvYCarta` antes de publicar este cambio (no se ha hecho
-   todavía).
+   evals de `generarCvYCarta` antes de publicar este cambio. ✅ Hecho: la tanda
+   completa `npm run evals` del **31/08/2026** dio puerta VERDE, con este
+   cambio dentro. Ver `knowledge/log.md` (31/08).
 
 3. **Un fallo al rehacer no destruye el documento anterior.** A diferencia de
    `/api/generar` (que si falla dos veces dentro dado el umbral, deja la fila

@@ -132,8 +132,9 @@ ajeno con la máxima gravedad.
 
 Verificado con 10 pruebas nuevas (`tests/lib/guardrails.test.ts`,
 `tests/lib/ia-datos-contacto.test.ts`), vistas fallar a propósito. 316
-pruebas en verde, tipos y lint limpios. **Falta la tanda completa de evals**
-que confirme B12 en vivo contra el modelo real.
+pruebas en verde, tipos y lint limpios. ✅ **31/08/2026: confirmado en la
+tanda completa `npm run evals` — B12 salió `[PASS]` contra el modelo real,
+puerta VERDE. T113 y T95 cerradas.** Ver `knowledge/log.md` (31/08).
 
 # Qué queda pendiente, fuera de este paso
 

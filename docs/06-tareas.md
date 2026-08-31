@@ -447,6 +447,11 @@ verdad, ya no solo `localhost`.
 > con entradas pobres), y para cerrarla hace falta una tanda de evals con cuota
 > fresca. Nada de esto está publicado todavía: sigue todo en la rama local
 > `medicion-t114`.
+>
+> ✅ **31/08/2026: T113 cerrada (tanda completa → puerta VERDE) y `medicion-t114`
+> fusionada a `master` y publicada a producción con `[sin evals]` (merge
+> `a90ab93`). Ver `knowledge/log.md` (31/08).** Sigue abierto solo lo de T112:
+> qué hacer con Cloudflare como proveedor único — decisión de Mar.
 
 > **29/08/2026 · Primer arreglo de T113, y la tanda completa destapa más.**
 > Ver `knowledge/arreglo-t113-cv-corto-entrada-pobre.md`.
@@ -501,6 +506,9 @@ verdad, ya no solo `localhost`.
 >   306 pruebas en verde, las nuevas vistas fallar a propósito.
 > * **Cuota**: ~27 de ~30 gastadas. **Falta la tanda completa de las DOS
 >   llamadas** (`npm run evals`), que es lo que cierra T113 **y T95**.
+> * ✅ **31/08: hecha. Puerta VERDE, T113 y T95 cerradas.** Ninguna de las cuatro
+>   señales volvió, B12 `[PASS]`. `medicion-t114` publicada a producción con
+>   `[sin evals]` (merge `a90ab93`).
 
 | Tarea | Prioridad | Qué hay que hacer | Dónde | Cómo se comprueba | Depende de | Hecha |
 |---|---|---|---|---|---|---|

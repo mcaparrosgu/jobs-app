@@ -131,11 +131,13 @@ saltos de línea (2 de 4 fallan). 299 pruebas en verde, tipos y lint limpios.
 
 # Lo que queda pendiente
 
-* ⚠️ **La versión de producción de este cambio no se ha visto correr en vivo.**
-  La cuota diaria se agotó (429) durante la última medición. Antes de publicar,
-  una tanda de `npm run medir:generacion` con cuota fresca.
-* **T113 sigue abierta** y ahora es el problema principal de calidad: los CVs
-  salen cortos en los casos de entrada pobre, con parada y sin ella.
+* ✅ **31/08/2026: la parada `\t\t\t` corrió en la tanda completa `npm run evals`
+  sin regresiones — puerta VERDE.** El cambio de `lib/ia.ts` está en producción
+  desde el merge `a90ab93`.
+* ✅ **T113 cerrada el 31/08.** No era el mecanismo de generación ni la parada:
+  eran el listón que exigía de más, el techo de tokens que truncaba a B05 y la
+  carta inventándose la empresa (arreglados el 30/08). Ver
+  [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md).
 * El coste de medir: ~30 generaciones agotaron los 10.000 neuronas del día.
   Renueva a medianoche UTC (02:00 hora española).
 

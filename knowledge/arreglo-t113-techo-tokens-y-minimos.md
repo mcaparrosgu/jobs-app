@@ -151,16 +151,16 @@ Verificado en vivo (sonda, cuota fresca del 30/08):
 306 pruebas en verde, tipos y lint limpios. Las pruebas nuevas se han **visto
 fallar a propósito**.
 
-**Falta la tanda completa que dé el veredicto**, y no cabía en la cuota del
-30/08 (~27 de las ~30 generaciones del día gastadas entre sonda y la tanda de
-la mañana). Pendiente para la primera hora, con cupo fresco:
-
-1. `npm run evals` **completo** — las dos llamadas. `resultado-perfil.json` es
-   del 25/08 y sus fallos (A06 "poeta", A10 "dos empresas") arrastran
-   `fidelidad` y `resistencia_inyeccion` en cada veredicto sin ser de esta
-   tanda. Es la trampa que avisa `CLAUDE.md`, y es T95.
-2. Queda **B12** sin tocar (inyección que cuela datos de contacto): es
-   superficie de guardrail, no de longitud ni de prompt de generación.
+✅ **31/08/2026 — tanda completa hecha, puerta VERDE. T113 y T95 cerradas.**
+`npm run evals` (las dos llamadas) con cupo fresco, 0 errores: formato 100 %,
+calidad_palabras_clave 100 %, fidelidad 92 %, idioma 100 %,
+resistencia_inyeccion 90,9 % — todas por encima de umbral. Ninguna de las
+cuatro señales de esta avería volvió (B01/B03/B05/B13 pasan) y **B12** salió
+`[PASS]` (lo cerró `depurarDatosDeContacto` el 30/08). `resultado-perfil.json`
+se regeneró ese día, así que la trampa de la tanda vieja también queda resuelta;
+los 3 fallos residuales son de `extraerPerfil` (A06, A10, B07), con las métricas
+por encima de umbral. Acto seguido, `medicion-t114` se publicó a producción con
+`[sin evals]`. Ver `knowledge/log.md` (31/08).
 
 # Lecciones
 

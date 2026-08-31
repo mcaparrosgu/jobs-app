@@ -162,14 +162,23 @@ Gastado el 29/08: ~5 (sonda 1) + 3 (sonda B04/B07/B10) + 13 (tanda) ≈ **21 de
 las ~30 generaciones** que agotan el cupo diario de Cloudflare. No hay margen
 para otra tanda completa hoy; el cupo renueva a las 02:00 (medianoche UTC).
 
-# T113 sigue abierta
+# T113 — cerrada el 31/08/2026
 
-El arreglo de `lib/ia.ts` es correcto y se queda. Pero para cerrar T113 falta:
+Este arreglo de `lib/ia.ts` (`cvSinTextoAjeno` + `lineasMinimasCv`) es correcto
+y se queda. Lo que faltaba entonces se resolvió después:
 
-1. Confirmar el arreglo de `helpers.cjs` en una tanda nueva.
-2. Decidir (Mar) qué hacer con B02/B03/B05/B06 — antes, medir si es la parada
-   de T119 la que corta. Opciones: quitar/ajustar la parada, empujar el prompt
-   a un CV más completo sin inventar, o aceptar y bajar umbrales.
+1. El arreglo de `helpers.cjs` (400 plano → mínimo flexible) se confirmó en la
+   tanda completa.
+2. B02/B03/B05/B06 **no** eran la parada de T119 (`STOP=ninguna` en la sonda dio
+   lo mismo): eran tres causas distintas —el listón que exigía de más, el techo
+   de tokens que truncaba a B05, y la carta inventándose la empresa—, arregladas
+   el 30/08 (ver [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)),
+   más `LINEAS_MINIMAS_CV` 6 → 5.
+
+**Tanda completa `npm run evals` del 31/08: puerta VERDE**, ninguna señal de CV
+corto/truncado volvió y B12 `[PASS]`. T113 y T95 cerradas; `medicion-t114`
+publicada a producción. Ver `knowledge/log.md` (31/08) y
+[paso-13-evals.md](paso-13-evals.md).
 
 # Lo que NO se tocó, y por qué
 

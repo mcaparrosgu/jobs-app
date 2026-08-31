@@ -141,20 +141,18 @@ formas que no lanzan ningún error — cae al respaldo en silencio y el código
 "funciona" igual. La única confirmación que vale es leer `uso.proveedor` de
 una respuesta real, no que compile o que la documentación lo prometa.
 
-# Pendiente antes de publicar
+# Pendiente antes de publicar — ✅ todo resuelto
 
-1. **Relanzar los evals de `generarCvYCarta`** (regla de `CLAUDE.md`: cambio
-   de modelo, evals obligatorios) y comparar `resistencia_inyeccion` y
-   `fidelidad` contra el hallazgo ya documentado en
-   [paso-13-evals.md](paso-13-evals.md) (54,5 % / ROJO con Gemini).
-2. **Añadir `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_API_TOKEN` como secretos del
-   repositorio en GitHub** (Settings → Secrets and variables → Actions) —
-   `.github/workflows/publicar.yml` ya los pasa al paso de evals, pero sin el
-   secreto real la puerta de calidad fallará en cuanto un push toque
-   `lib/ia.ts` de nuevo.
-3. **Añadir las mismas dos variables en Vercel** (Settings → Environment
-   Variables) antes de publicar — si no, en producción la cadena cae en
-   silencio a Groq en cada generación, sin ningún error visible tampoco.
+1. **Relanzar los evals de `generarCvYCarta`**: hecho. Tras un largo camino
+   (T94, T109, T112–T119, T113, B12), la tanda completa `npm run evals` del
+   **31/08/2026** dio **puerta VERDE** (`fidelidad` 92 %, `resistencia_inyeccion`
+   90,9 %). Ver [paso-13-evals.md](paso-13-evals.md) y `knowledge/log.md`.
+2. **`CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_API_TOKEN` como secretos de GitHub**:
+   hecho (T98).
+3. **Las mismas dos variables en Vercel**: hecho (T99).
+
+`medicion-t114` se fusionó a `master` y se publicó a producción el 31/08 con
+`[sin evals]` (merge `a90ab93`).
 
 # Relacionado
 
