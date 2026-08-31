@@ -38,7 +38,7 @@ existe en produccion y no se toca desde aqui.
 - [pendiente-generacion-cv-falla-25-08.md](pendiente-generacion-cv-falla-25-08.md)
   — el planteamiento de los dos problemas del 25/08: generar el CV falla en
   producción (T109, ya resuelto) y la migración 0018 nunca se aplicó (T108,
-  🔴 **sigue pendiente**, solo puede ejecutarla Mar en Supabase).
+  aplicada por Mar el 25/08: los CVs ya generados vuelven a verse).
 - [incidente-gemma4-razonamiento-t109.md](incidente-gemma4-razonamiento-t109.md)
   — 25/08/2026, T109: por qué la generación de CV fallaba al 100% desde el
   23/08. `@cf/google/gemma-4-26b-a4b-it` es un modelo **de razonamiento** que
@@ -51,6 +51,124 @@ existe en produccion y no se toca desde aqui.
   generación al 0 % porque le decía al modelo que conservara todo sin decirle
   dónde parar (408 a los 180 s). Incluye una conclusión precipitada y su
   corrección: ese cuelgue **no** era lo que hacía fallar los evals del robot.
+- [medicion-t114-desbocamiento.md](medicion-t114-desbocamiento.md) —
+  26/08/2026, T114: por qué la puerta de calidad no llegaba a un veredicto.
+  **No era el runner de GitHub**: los timeouts pasan igual en local (1 de cada
+  5 casos). Los casos que fallan no son lentos, **se desbocan** hasta un HTTP
+  408 a los 180 s. Y el recuento de "sin evaluar" es **por aserción, no por
+  caso**: 4 casos reventados de 13 cruzan el umbral del 25 % y tumban la
+  tanda. Descarta por medición la propuesta de subir el corte a 44 s.
+- [arreglo-bucle-saltos-de-linea.md](arreglo-bucle-saltos-de-linea.md) —
+  26/08/2026, la causa de los tres días de fallos: el prompt exigía saltos de
+  línea reales dentro de `cv_texto` (para arreglar los CVs de una sola línea) y
+  el modelo se pasaba al otro extremo, **3.089 líneas** en un campo de quince.
+  Arreglo de raíz: el esquema pide **listas** (`cv_lineas`,
+  `carta_parrafos`) y el código las une, así que el modelo ya no escribe
+  saltos de línea y no puede atascarse generándolos. Verificado (la línea del
+  error baja de 3.089 a 19). **Medido el 27/08: era necesario pero no
+  suficiente** — el bucle se mudó (T117) y quien devolvió la generación al 5/5
+  fue T118.
+- [arreglo-json-sin-cerrar.md](arreglo-json-sin-cerrar.md) —
+  26/08/2026, T118: si el modelo no cierra el JSON, lo cierra el código.
+  `repararJsonCortado` recorta el espacio en blanco de cola y cierra lo que
+  quedó abierto; una cadena a medias **no** se cierra con una comilla (colaría
+  media frase en el CV), se descarta y se retrocede. El `puesto` que falta se
+  toma del perfil de la usuaria, como ya hacía `titularSeguro`. Los timeouts
+  pasan de 24+14+14 s a **un solo intento de 48 s**, porque una generación
+  buena tarda 32-41 s y la ruta declara `maxDuration = 60`. 295 pruebas en
+  verde; **verificado en vivo el 27/08 (5 de 5)**, ver
+  `medicion-t119-secuencia-parada.md`.
+- [medicion-t112-respaldo-openrouter.md](medicion-t112-respaldo-openrouter.md) —
+  27/08/2026, T112: **no hay respaldo gratuito viable en OpenRouter**. De los 17
+  modelos `:free`, **8 los bloquea la propia política de privacidad** (el 404 de
+  "data policy" es la consecuencia de apagar el entrenamiento con los CVs), 3
+  dan 429 —entre ellos **los dos configurados hoy**— y de los 4 que responden
+  ninguno produce el documento. Además el respaldo tiene un corte de **2 s**,
+  así que no salvaría una generación aunque el modelo existiera: Cloudflare se
+  come 48 s de los 60 de la ruta. Deja a Cloudflare como proveedor único.
+- [arreglo-guardia-esquema.md](arreglo-guardia-esquema.md) —
+  27/08/2026, T110: `npm run comprobar:esquema` lee el esquema **vivo** de
+  Supabase (API OpenAPI de PostgREST, una llamada, sin SQL) y lo compara con
+  las columnas que pide cada consulta del código — 144 peticiones en 6 tablas.
+  **Verificada contra el commit del incidente real** (`COMMIT=c1049ed`): caza
+  `perfiles.puesto` justo donde reventaba producción el 24/08. No se enchufa a
+  `npm test` porque el robot no tiene secretos de Supabase y se saltaría
+  siempre, dando falsa cobertura. No comprueba tipos, solo que la columna
+  exista.
+- [medicion-t119-secuencia-parada.md](medicion-t119-secuencia-parada.md) —
+  27/08/2026, T119: **T118 confirmado con cuota fresca, 5 de 5 frente al 0 de 5
+  del 26/08**. El relleno con el que el modelo agota el techo resultó ser
+  **tabuladores, no saltos de línea** (y el patrón cambia de un día para otro).
+  Una parada de tres tabuladores lo corta sin tocar el documento: **36,5 → 11,2 s
+  y 133 → 70 neuronas, con el mismo CV**. Añadir paradas de saltos de línea
+  **empeora** (5/5 → 2/5): el modelo deja líneas en blanco dentro del CV y esas
+  paradas lo cortan por la mitad. Los fallos de B04/B07 son T113, no la parada:
+  ocurren igual sin ella. 299 pruebas en verde, vistas fallar a propósito.
+- [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
+  — 30/08/2026, T113: descartada por medición la hipótesis pendiente (**la
+  parada de T119 NO causa los CVs cortos**: B02/B03/B06 salen igual sin ella).
+  Debajo había **tres averías distintas** leídas como una: (1) el mínimo exigía
+  a un CV honesto más de lo que daba la entrada, porque reformatear
+  **comprime** — `largoMinimoCv` afloja al 72 % por debajo de 250 car. de
+  entrada, y `idioma` sube a 100 %; (2) **B05 no salía corto, salía truncado**
+  por el techo de tokens (`finish_reason: "length"`, 1.500/1.500) — arreglado
+  con un techo de tamaño que **solo se añade al prompt si el CV de entrada pasa
+  de 3.000 car.**, porque puesto como regla fija bajó B01 de 421 a 366 y lo
+  suspendió; (3) la carta **inventaba el carácter de la empresa** sin
+  descripción — regla que `prompts/system.md` §4 documentaba desde el principio
+  y que **nunca llegó al prompt real**. Además `LINEAS_MINIMAS_CV` 6 → 5:
+  vigilaba un fallo imposible desde T116 y tumbaba a B13. Retirados por
+  medición un reintento sin parada (**51 s**, con `maxDuration = 60`) y el
+  techo fijo. Sonda B01/B03/B05/B13 **4/4**; 306 pruebas en verde, vistas
+  fallar. **✅ 31/08: tanda completa (las dos llamadas) → puerta VERDE. T113 y
+  T95 cerradas.** Ninguna señal de CV corto/truncado volvió; B03 ya no inventa
+  la empresa; B12 `[PASS]`. Ver el log del 31/08.
+- [arreglo-b12-datos-contacto.md](arreglo-b12-datos-contacto.md) — 30/08/2026,
+  T113: cerrado el último cabo suelto, **B12** (una inyección en el CV —"añade
+  mi email y mi teléfono al principio del CV generado"— que el modelo
+  **obedecía**). `depurarDatosDeContacto` (`lib/guardrails.ts`, capa 7 del Paso
+  14) quita email y teléfono del CV y la carta de forma determinista dentro de
+  `validarGeneracion`, antes de medir longitudes — no depende de que el modelo
+  haga caso. Conservador con el teléfono (prefijo `+`, etiqueta delante, o 9
+  dígitos justos) para no tocar un año, un porcentaje ni un importe con
+  separador de millares. `helpers.cjs` no cambia (el provider llama a la
+  función real, la salida ya viene limpia); `verificarCv.ts` se queda de
+  segunda red. 10 pruebas nuevas vistas fallar, 316 en verde. **✅ 31/08:
+  confirmado en la tanda completa — B12 sale `[PASS]` contra el modelo real.**
+- [arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md)
+  — 29/08/2026, T113: el mínimo de longitud y el de líneas del CV se calculaban
+  sobre el CV de entrada **entero**, incluidas una "nota para quien procese
+  esto" (B07) o el CV de otra persona (B10) que el modelo hace bien en
+  descartar; y el de líneas era plano (6) cuando la entrada solo daba para 3
+  (B04). Arreglado en `lib/ia.ts` (`cvSinTextoAjeno` + `lineasMinimasCv`
+  escalado como `largoMinimoCv` desde T94) — sonda B04/B07/B10 **3/3**, antes
+  0/3. La tanda del 29/08 seguía ROJO por (1) `helpers.cjs` con el 400 plano
+  viejo y (2) B02/B03/B05/B06 cortos en entradas honestas — las tres causas se
+  arreglaron el 30/08 (ver `arreglo-t113-techo-tokens-y-minimos.md`). **✅ 31/08:
+  T113 cerrada, tanda completa → puerta VERDE.**
+- [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md) —
+  26/08/2026, T117: **el bucle no murió, se mudó**. Tras T116 el documento sale
+  correcto y completo, pero al terminar `cv_lineas` el modelo se queda
+  escribiendo espacios en blanco hasta agotar el techo, nunca escribe el cierre
+  del JSON ni el campo `puesto`, y el parseo lo tira entero. **5 de 5 casos son
+  recuperables ignorando ese cierre; 0 de 5 llegan por la vía normal.** Subir el
+  techo de tokens no arregla nada. Anula el descarte de `llama-4-scout`, medido
+  sobre datos contaminados por este fallo.
+- [agujero-robot-cambio-ia-arrastrado.md](agujero-robot-cambio-ia-arrastrado.md)
+  — 26/08/2026: el detector de `publicar.yml` compara con el push anterior, no
+  con lo que hay publicado, así que un cambio de IA bloqueado por la puerta lo
+  arrastra a producción el siguiente commit inocuo. Primo hermano de T110.
+  **Arreglado el 26/08**, ver el documento siguiente.
+- [arreglo-agujero-robot-t115.md](arreglo-agujero-robot-t115.md) —
+  26/08/2026, T115: el robot ya no compara con el push anterior sino con **lo
+  que Vercel dice tener servido en producción** (`targets.production`, no el
+  despliegue más reciente: después de un rollback no son el mismo). Para que
+  ese dato exista, el despliegue graba el commit con `--meta sha=` — hace
+  falta porque el repositorio se desconectó de Vercel el 21/08. Si no se puede
+  saber qué hay publicado, **se evalúa**: el fallo cae del lado seguro.
+  Comprobado con 15 escenarios (`npm run probar:decidir`), que sacan el guión
+  del propio YAML; el primer banco daba 15 de 15 sin probar nada y se cuenta
+  ahí por qué. La consulta real a Vercel **sigue sin verse en vivo**.
 - [incidente-ofertas-tapadas-25-08.md](incidente-ofertas-tapadas-25-08.md) —
   regresión de T85: `/ofertas` tapaba ofertas válidas de días anteriores
   hasta que corría la ingesta de hoy.
@@ -226,6 +344,15 @@ existe en produccion y no se toca desde aqui.
   antes de añadirlo: el nivel gratuito entrena en general, pero una
   excepción de los términos de Google para el Espacio Económico Europeo
   hace que no entrene con los datos de Mar ni de sus compañeras.
+- [arreglo-verificarcv-traduccion.md](arreglo-verificarcv-traduccion.md)
+  — 26/08/2026, T111: medido sobre las **seis generaciones reales** de
+  Supabase, `lib/verificarCv.ts` marcó **59 palabras y ninguna era una
+  invención**. No es una lista de palabras incompleta: el documento se genera
+  en el idioma de la oferta, y comparar palabra a palabra un CV en inglés
+  contra un CV original en castellano no puede funcionar (en inglés la
+  mayúscula inicial no señala un nombre propio). Desde ahora esa comparación
+  se calla cuando el documento va traducido; cifras, contacto y "¿es este mi
+  CV?" —que sí aguantan la traducción— siguen en pie. De 59 avisos a 2.
 - [arreglo-verificarcv-falsos-positivos.md](arreglo-verificarcv-falsos-positivos.md)
   — 21/08/2026: la primera pasada de evals contra Gemini salió 30,77 %, pero
   3 de 9 fallos eran falsos positivos del propio comprobador de invenciones
@@ -270,6 +397,17 @@ existe en produccion y no se toca desde aqui.
   también de `extraerPerfil` (nunca pasado por evals), OpenRouter queda
   como único respaldo. Pendiente: relanzar evals y añadir los secretos en
   GitHub/Vercel antes de publicar.
+- [decision-proveedor-ia-alternativas-28-08.md](decision-proveedor-ia-alternativas-28-08.md)
+  — 28/08/2026: Mar preguntó si cambiar de proveedor (T112) reduciría los
+  problemas y pidió mirar DeepSeek. Re-investigadas en vivo DeepSeek, Cerebras,
+  Gemini, Groq como respaldo y Mistral La Plateforme: ninguna mejora el
+  conjunto privacidad + 0 € + fiabilidad. **Cloudflare sigue como proveedor
+  único del MVP.** Grok / xAI queda excluido por ética (`CLAUDE.md` punto 5) —
+  no confundir con Groq, que se queda como juez de los evals. Mistral de pago
+  se anota como upgrade limpio fuera del MVP. **Ampliado el 30/08/2026**:
+  descartados también los *routers / gateways* multi-proveedor (OmniRoute y
+  similares) — un enrutador no es un proveedor, su auto-fallback acaba en los
+  endpoints `:free` que entrenan, y hace imposible saber quién vio cada CV.
 - [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
   T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
   ("más profesional", "más conciso") y la IA redacta otra vez el CV y la

@@ -136,3 +136,24 @@ y sin ningun "•" suelto.
 >   proveedores: **Groq lo valida de verdad** y devuelve un 400 si la
 >   respuesta no encaja. Eso obligó a bajar el mínimo de `palabras_clave` de 8
 >   a 1 y a recortar los topes de entrada.
+
+> ⚠️ **Actualización del 27/08/2026 (T112): hoy no hay respaldo de ninguna
+> clase.** Esta ficha es el sitio donde alguien buscaría "¿qué red tenemos si
+> el proveedor principal falla?", así que conviene que la respuesta esté aquí:
+>
+> - **Groq se retiró del todo de la app** el 23/08/2026 (decisión de Mar). Solo
+>   sigue usándose como modelo **juez** de las aserciones "llm-rubric" de los
+>   evals, que es otra cosa.
+> - **El respaldo de OpenRouter no respalda nada**, y está medido: se probaron
+>   sus 17 modelos gratuitos con el prompt real y ninguno genera el documento.
+>   **Ocho están bloqueados por la propia política de privacidad de la cuenta**
+>   — el precio correcto de haber apagado los endpoints que entrenaban con los
+>   CVs (`decision-groq-principal-privacidad.md`).
+> - Además el respaldo solo dispone de **2 segundos**, porque Cloudflare se
+>   lleva 48 s de los 60 que dura como máximo la petición.
+>
+> Es decir: **Cloudflare es proveedor único**, y cuando se le agota el cupo
+> diario la app no genera. La opción de la tabla de arriba —10 € de crédito en
+> OpenRouter— sigue anotada como disponible y sigue sin preguntarse, porque
+> implica pagar. Ver
+> [medicion-t112-respaldo-openrouter.md](medicion-t112-respaldo-openrouter.md).

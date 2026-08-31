@@ -70,8 +70,14 @@ Las instrucciones de qué clave se saca de dónde están dentro de
 
 ```bash
 npm run lint     # el código, según las normas del proyecto
-npm test         # 253 pruebas de la parte que no usa IA (segundos)
+npm test         # 316 pruebas de la parte que no usa IA (segundos)
 npm run evals    # los 25 casos de la parte de IA (~25 min, gasta cuota real)
+
+# Y dos comprobaciones sueltas, para cuando toques justo esa pieza:
+npm run medir:generacion   # ¿responde bien Cloudflare hoy? (5 casos, poca cuota)
+npm run probar:decidir     # ¿acierta el robot al decidir si hacen falta evals?
+npm run comprobar:esquema  # ¿le pide el código a Supabase algo que no existe?
+npm run medir:respaldo     # ¿sirve de algo el respaldo de OpenRouter? (hoy no)
 ```
 
 `npm run evals` llama de verdad a Cloudflare y a OpenRouter con tus claves
@@ -98,6 +104,10 @@ git checkout master && git merge lo-que-voy-a-cambiar && git push
 - `[sin evals]` en el mensaje del commit salta los evals a conciencia (lint y
   pruebas siguen corriendo). Para cuando necesitas la cuota de IA para otra
   cosa, no para esquivar un rojo.
+- Para decidir si el cambio toca la IA, el robot mira **lo que hay publicado**
+  en producción, no el último empujón. Así, algo que la puerta bloqueó sigue
+  contando como pendiente en vez de colarse con el commit siguiente. Si no
+  puede saberlo, evalúa por precaución.
 - **Si algo sale mal en producción**: [`docs/07-emergencia.md`](docs/07-emergencia.md)
   §1 — se deshace en 30 segundos desde el panel de Vercel.
 - Ese mismo documento tiene la lista de comprobación previa al lanzamiento y
@@ -111,6 +121,8 @@ git checkout master && git merge lo-que-voy-a-cambiar && git push
 | `components/` | Trozos de pantalla reutilizables |
 | `lib/` | Utilidades compartidas (Cloudflare, Supabase, PDF) |
 | `supabase/migrations/` | Historial de cambios de la base de datos |
+| `evals/` | El arnés de pruebas de la parte de IA (Paso 13) |
+| `scripts/` | Comprobaciones sueltas: la sonda de Cloudflare y el banco del robot |
 | `docs/` | Cómo se pensó el proyecto, paso a paso |
 | `knowledge/` | Las decisiones tomadas y por qué |
 | `CLAUDE.md` | Instrucciones para agentes de IA |

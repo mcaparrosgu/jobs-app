@@ -21,6 +21,8 @@
 // ("lideré la migración a la nube"). Contra eso solo hay revisión humana,
 // tal como advierte docs/05-ia.md §6.2.
 
+import { detectarIdioma } from '@/lib/idioma';
+
 // Nunca más de estos avisos: una lista de veinte cosas no se lee, y el
 // objetivo es que la usuaria mire de verdad las que salgan.
 const MAXIMO_AVISOS = 6;
@@ -58,7 +60,14 @@ function digitosDe(texto: string): string[] {
 // número casi nunca) y "cien/ciento" (colisiona con "por ciento"): admitirlos
 // convertiría cualquier CV en "cualquier cifra 1 o 100 vale", que es peor que
 // el falso positivo que se está arreglando.
-const PALABRAS_NUMERO: Record<string, string> = {
+//
+// Separados por idioma desde el 26/08/2026 (T111): juntos colisionan. "once"
+// es 11 en castellano y "una vez" en inglés, así que una carta en inglés
+// ("no lead is contacted more than once") producía un aviso por la cifra 11,
+// que evidentemente no estaba en el CV original. El idioma de cada texto se
+// detecta con lib/idioma.ts, que ya decide en qué idioma se genera el
+// documento.
+const PALABRAS_NUMERO_ES: Record<string, string> = {
   cero: '0',
   dos: '2', tres: '3', cuatro: '4', cinco: '5', seis: '6', siete: '7', ocho: '8', nueve: '9', diez: '10',
   once: '11', doce: '12', trece: '13', catorce: '14', quince: '15',
@@ -66,6 +75,9 @@ const PALABRAS_NUMERO: Record<string, string> = {
   veintiuno: '21', veintiun: '21', veintidos: '22', veintitres: '23', veinticuatro: '24', veinticinco: '25',
   veintiseis: '26', veintisiete: '27', veintiocho: '28', veintinueve: '29',
   treinta: '30', cuarenta: '40', cincuenta: '50', sesenta: '60', setenta: '70', ochenta: '80', noventa: '90',
+};
+
+const PALABRAS_NUMERO_EN: Record<string, string> = {
   zero: '0', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10',
   eleven: '11', twelve: '12', thirteen: '13', fourteen: '14', fifteen: '15',
   sixteen: '16', seventeen: '17', eighteen: '18', nineteen: '19', twenty: '20',
@@ -74,17 +86,40 @@ const PALABRAS_NUMERO: Record<string, string> = {
 
 function numerosEscritosDe(texto: string): string[] {
   const palabras = normalizar(texto).match(/\b[a-z]+\b/g) ?? [];
-  return palabras.map((palabra) => PALABRAS_NUMERO[palabra]).filter((numero): numero is string => Boolean(numero));
+  const diccionario = detectarIdioma(texto) === 'en' ? PALABRAS_NUMERO_EN : PALABRAS_NUMERO_ES;
+  return palabras.map((palabra) => diccionario[palabra]).filter((numero): numero is string => Boolean(numero));
 }
 
 function numerosDe(texto: string): string[] {
   return [...digitosDe(texto), ...numerosEscritosDe(texto)];
 }
 
+// Un teléfono escrito con espacios ("+34 670 293 436") es el MISMO dato que el
+// del CV original escrito seguido ("+34 670293436"), pero `digitosDe` lo trocea
+// en 670, 293 y 436, y los tres parecían cifras inventadas: tres avisos falsos
+// en 2 de las 6 generaciones reales (T111). Si los trozos forman un teléfono
+// cuyos dígitos sí están en el CV original, se excusan aquí — quien lo
+// comprueba de verdad es `verificarDatosDeContacto`, que compara los dígitos ya
+// sin separadores y por eso nunca se dejó engañar por esto.
+function digitosDeTelefonosPermitidos(generado: string, original: string): Set<string> {
+  const digitosPermitidos = original.replace(/\D/g, '');
+  const excusados = new Set<string>();
+
+  for (const candidato of generado.match(PATRON_TELEFONO) ?? []) {
+    const digitos = candidato.replace(/\D/g, '');
+    if (digitos.length < MINIMO_DIGITOS_TELEFONO) continue;
+    if (!digitosPermitidos.includes(digitos)) continue;
+    digitosDe(candidato).forEach((trozo) => excusados.add(trozo));
+  }
+
+  return excusados;
+}
+
 function verificarCifras(cvGenerado: string, cvOriginal: string): Aviso[] {
   const originales = new Set(numerosDe(cvOriginal));
+  const deTelefono = digitosDeTelefonosPermitidos(cvGenerado, cvOriginal);
   const inventadas = Array.from(new Set(numerosDe(cvGenerado))).filter(
-    (numero) => !originales.has(numero),
+    (numero) => !originales.has(numero) && !deTelefono.has(numero),
   );
 
   return inventadas.map((numero) => ({
@@ -118,6 +153,17 @@ const MAYUSCULAS_INOCENTES = new Set(
     'referencias', 'objetivo', 'competencias', 'aptitudes', 'logros',
     'responsabilidades', 'funciones', 'tareas', 'herramientas',
     'tecnologias', 'certificados', 'cursos',
+    // Añadidas el 26/08/2026 (T111): el documento se genera en el idioma de la
+    // oferta, así que en una oferta en inglés estas mismas etiquetas salen en
+    // inglés. Son las que aparecían en las generaciones reales de Mar.
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+    'september', 'october', 'november', 'december',
+    'english', 'spanish', 'catalan', 'basque', 'galician', 'french', 'german',
+    'italian', 'portuguese', 'native', 'bilingual', 'fluent',
+    'advanced', 'intermediate', 'beginner', 'proficient',
+    // "Dear Hiring Team" / "Dear Hiring Manager": el saludo de una carta en
+    // inglés, no el nombre de nadie.
+    'hiring', 'team', 'manager', 'sincerely', 'regards', 'dear',
   ].map(normalizar),
 );
 
@@ -197,7 +243,14 @@ function palabrasPropiasDe(texto: string): string[] {
       .split(/\s+/)
       .forEach((palabraSucia, indice) => {
         if (indice === 0) return; // primera palabra de la frase: no cuenta
-        const palabra = palabraSucia.replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '');
+        // El genitivo sajón se quita antes de comparar: “GitLab’s” es la misma
+        // empresa que “GitLab”, que sí está en el permitido, y sin esto el
+        // apóstrofo la convertía en una palabra distinta y sospechosa. Medido
+        // sobre las generaciones reales (T111): “GitLab’s”, “Anthropic’s” y
+        // “Ultradent’s” avisaban las tres, estando las tres permitidas.
+        const palabra = palabraSucia
+          .replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '')
+          .replace(/['’]s$/u, '');
         if (palabra.length < MINIMO_LETRAS) return;
         if (palabra === palabra.toUpperCase()) return;
         if (!/^\p{Lu}/u.test(palabra)) return;
@@ -253,6 +306,39 @@ function verificarDatosDeContacto(textoGenerado: string, permitido: string): Avi
   }
 
   return avisos;
+}
+
+// T111 · Esta comprobación NO aguanta la traducción.
+//
+// El documento se genera en el idioma de la oferta (lib/idioma.ts, T49), así
+// que una oferta en inglés produce un CV en inglés a partir de un CV original
+// en castellano. Entonces pasan dos cosas a la vez: ninguna palabra coincide
+// literalmente con el original, y en inglés los títulos y las listas van en
+// mayúscula inicial ("Process Mapping & Optimization", "English (C1
+// Advanced)", "March 2019"). Cada una de esas palabras parece un nombre propio
+// inventado.
+//
+// Medido el 26/08/2026 sobre las SEIS generaciones reales de Mar guardadas en
+// Supabase: 59 palabras marcadas, CERO invenciones de verdad. Las tres
+// generaciones en inglés aportaban 13, 21 y 23 avisos; las tres en castellano,
+// 1, 1 y 3. No es una lista de palabras incompleta —"Mapping",
+// "Optimization", "Automation", "Compliance", "Coordination"…— es que el
+// vocabulario de un CV no cabe en ninguna lista.
+//
+// Por eso, cuando el documento va traducido, esta comprobación se calla. Las
+// otras tres sí aguantan la traducción y siguen en pie:
+//   · las cifras no se traducen (y "tres"/"three" ya lo cubren los dos
+//     diccionarios PALABRAS_NUMERO_ES / _EN),
+//   · un email o un teléfono tampoco,
+//   · y los nombres de empresa tampoco — que es justo en lo que se apoya
+//     verificarQueEsElMismoCv, el aviso crítico contra el CV suplantado.
+//
+// Lo que se pierde: en un documento traducido, una empresa o titulación
+// inventada NUEVA ya no genera aviso. En la práctica hoy tampoco lo generaba,
+// porque quedaba enterrada bajo veinte falsos positivos y el tope de seis
+// avisos — el mismo efecto silenciador que ya documenta GRAVEDAD, más arriba.
+function documentoTraducido(generado: string, cvOriginal: string): boolean {
+  return detectarIdioma(generado) !== detectarIdioma(cvOriginal);
 }
 
 function verificarNombres(cvGenerado: string, permitido: string): Aviso[] {
@@ -366,10 +452,14 @@ export function verificarCv({
   // mismas reglas estrictas.
   const generadoCompleto = `${cvGenerado}\n${cartaGenerada}`;
 
+  const traducido = documentoTraducido(generadoCompleto, cvOriginal);
+
   const avisos: Aviso[] = [
     ...verificarQueEsElMismoCv(cvGenerado, empresasCv),
     ...verificarCifras(generadoCompleto, cvOriginal),
-    ...verificarNombres(generadoCompleto, permitidoNombres),
+    // Ver documentoTraducido: comparar palabra a palabra un documento
+    // traducido solo produce ruido, y el ruido esconde los avisos que importan.
+    ...(traducido ? [] : verificarNombres(generadoCompleto, permitidoNombres)),
     ...verificarDatosDeContacto(generadoCompleto, cvOriginal),
   ];
 

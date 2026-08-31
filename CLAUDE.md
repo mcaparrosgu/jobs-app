@@ -16,6 +16,22 @@ una analogía cotidiana. Todo se escribe **en castellano**.
 **Stack**: Next.js + Supabase + Cloudflare Workers AI + Vercel, más un
 workflow de n8n. Detalle en `docs/04-plan-tecnico.md`.
 
+## Entorno opencode (WSL)
+
+Al abrir opencode en esta carpeta, **solo** estos MCPs estarán activos (el
+resto están apagados globalmente):
+
+| MCP | Para qué sirve |
+|-----|----------------|
+| `google-sheets` | Leer/escribir hojas de cálculo (CVs, ofertas) |
+| `google-workspace` | Gmail, Docs, Drive, Calendar, Forms |
+| `playwright` | Automatizar navegador (scraping de ofertas, pruebas) |
+| `github` | Issues, PRs, búsqueda de código |
+
+Si necesitas otro MCP, dímelo y lo activamos puntualmente.
+
+---
+
 ## La restricción principal
 
 **Presupuesto: 0 €/mes. Es una restricción dura, no una preferencia.**
@@ -38,10 +54,29 @@ son Mar: sus cuatro compañeras de clase.
   - **Cloudflare Workers AI** (principal desde el 23/08/2026, sustituye a
     Groq): declaración oficial de que no entrena con el contenido por
     defecto. Ver `knowledge/decision-cloudflare-generarcv.md`.
-  - **OpenRouter** (respaldo): tenía activado "Allow free endpoints that train
-    on request data", es decir, los modelos gratuitos podían **entrenar con
-    los CVs**. Se apagó. Ver
+  - **OpenRouter** (respaldo *sobre el papel*): tenía activado "Allow free
+    endpoints that train on request data", es decir, los modelos gratuitos
+    podían **entrenar con los CVs**. Se apagó. Ver
     `knowledge/decision-groq-principal-privacidad.md`.
+    ⚠️ **Medido el 27/08/2026 (T112): ese respaldo no respalda nada.** Los 17
+    modelos `:free` probados con el prompt real, y ninguno genera el documento;
+    **8 los bloquea la propia política de privacidad** (error "data policy"),
+    que es el precio correcto de haber apagado lo anterior. En la práctica
+    **Cloudflare es el proveedor único**: si se cae o agota su cupo diario, la
+    app no genera. Al tocar `RONDAS_MODELOS`, partir de ahí y no de la idea de
+    que hay una red debajo. Ver
+    `knowledge/medicion-t112-respaldo-openrouter.md`.
+- **Un enrutador (*gateway*) de IA no es un proveedor, y aquí está descartado.**
+  OmniRoute, OpenRouter como router, Portkey, Unify, LiteLLM y similares no
+  aportan modelos ni cuota: solo reparten la llamada. Su auto-fallback termina
+  por diseño en los endpoints `:free`, que son gratis porque entrenan con lo que
+  reciben, y hacen imposible saber **quién vio cada CV**, que es justo la
+  garantía de privacidad de este proyecto. Tampoco reducen alucinaciones (eso es
+  modelo + prompt + validadores) y arruinan los evals: sin saber qué modelo
+  respondió, la tanda no mide nada. Descartado el 30/08/2026 — ver
+  `knowledge/decision-proveedor-ia-alternativas-28-08.md`. La única variante
+  aceptable sería el **AI Gateway de la propia Cloudflare** (mismo proveedor,
+  sin terceros), y solo por su caché y su registro; no cambia quién ve los CVs.
 - Los datos se borran automáticamente al mes (regla 10 de la spec).
 
 ## Lo que NUNCA se debe hacer en este repositorio
@@ -59,8 +94,12 @@ son Mar: sus cuatro compañeras de clase.
    la búsqueda de empleo real de Mar, en producción. Jobs App usa un
    workflow **nuevo e independiente**, `Jobs App · ingesta`, creado
    copiando el JSON.
-5. **Proponer modelos ni servicios de OpenAI.** Decisión ética de Mar,
-   incluye los modelos de peso abierto `gpt-oss`. No relitigarlo.
+5. **Proponer modelos ni servicios de OpenAI, ni de Grok / xAI.** Decisión
+   ética de Mar. En el caso de OpenAI incluye los modelos de peso abierto
+   `gpt-oss`. Grok (con K) es xAI, de Elon Musk, y queda descartado del todo
+   (28/08/2026) — **no confundir con Groq, con Q**, empresa distinta sin
+   relación con Musk, que sí se usa como juez de los evals. No relitigar
+   ninguna de las dos.
 6. **Renombrar o reestructurar `docs/`.** El esqueleto `00-problema.md` …
    `06-tareas.md` es fijo.
 7. **Dar por cerrada una elección entre varias opciones sin habérsela
@@ -87,6 +126,25 @@ ejecutable con Promptfoo en `evals/promptfoo/`.
 que no se comprueba contra el golden dataset puede arreglar un caso y
 romper otro sin que nadie se entere hasta que le pase a una usuaria real.
 
+**Y al revés: si tocas un validador de `lib/ia.ts` (`largoMinimoCv`,
+`LINEAS_MINIMAS_CV`, `verificarCv`…), repasa si `evals/promptfoo/helpers.cjs`
+replica ese mismo criterio.** El helper re-implementa comprobaciones en
+CommonJS y se queda atrás en silencio: T94 hizo flexible el mínimo de
+longitud del CV en `lib/ia.ts` y `helpers.cjs` siguió exigiendo 400 planos
+más de un mes, suspendiendo en `formato` generaciones que la app aceptaba
+(T113, 29/08/2026). Mismo patrón que T111 (comparaba CVs traducidos palabra a
+palabra). El provider llama a la función real, así que si la salida no trae
+`error` el criterio de producción ya pasó — el helper solo debe añadir, no
+contradecir.
+
+**Para un veredicto limpio de un cambio en una de las dos llamadas, re-genera
+sus resultados, no solo los de esa llamada**: `npm run evals:puerta` lee
+`resultado-perfil.json` **y** `resultado-generar.json`, y una tanda vieja del
+otro fichero mete fallos ajenos en el cómputo por métrica (T113: A06/A10 del
+perfil del 25/08 arrastraron `fidelidad` en una tanda que solo medía
+generación). En el detalle por caso, `A##` es `extraerPerfil` y `B##` es
+`generarCvYCarta`.
+
 ```
 npm run evals          # los dos evals seguidos y después la puerta de calidad
 npm run evals:puerta   # solo el veredicto, sobre los resultados ya generados
@@ -111,6 +169,90 @@ Cloudflare/OpenRouter, igual que la app en producción, más la cuota de Groq
 del modelo juez). Los umbrales de aprobado y cómo leer el resultado están
 documentados en `knowledge/paso-13-evals.md`.
 
+### Antes de creerte una tanda, mira si el proveedor está estable
+
+Lección del 26/08/2026, que costó una tarde entera. Cloudflare tiene rachas
+malas: **el mismo caso, el mismo código y el mismo modelo** salieron en 12,9 s
+por la mañana y se colgaron 181 s una hora después. Durante esa racha, todas
+las combinaciones probadas —modelo viejo, modelo nuevo, `mistral`, `scout`—
+daban entre 1 y 2 aciertos de 5, así que **ninguna medición distinguía nada**.
+
+Antes de concluir que un cambio mejora o empeora, comprueba que el proveedor
+responde con normalidad. Para eso está la sonda, que llama a la función real
+de `lib/ia.ts` sobre casos reales del golden dataset y cuesta una fracción de
+una tanda de evals:
+
+```
+npm run medir:generacion            # 5 casos repartidos por el dataset
+npm run medir:generacion 3          # 3 casos
+FILTRO=B01 npm run medir:generacion # solo ese caso
+```
+
+Además acepta `SIN_CORTE=1` (quita el tiempo de espera, para ver cuánto tarda
+de verdad algo que muere en el timeout), `MAX_TOKENS=600`,
+`MODELO=@cf/...` y `STOP='\n\n\n'` (secuencias de parada, varias separadas
+por una barra vertical) — los cuatro envolviendo el `fetch`, **sin tocar
+`lib/ia.ts`**, que es código de producción y cuyo cambio dispara los evals al
+publicar.
+
+Con 5 casos y una tasa de acierto del 20-40 %, la diferencia entre 1/5 y 2/5
+es ruido, no señal.
+
+### La forma concreta de un fallo intermitente caduca — vuelve a mirar el crudo
+
+Lección del 27/08/2026. `knowledge/medicion-t117-cierre-json.md` documentaba,
+medido y con volcado, que el modelo agota el techo de tokens emitiendo
+`\n␣␣` una y otra vez. Al día siguiente el relleno eran **1.013 tabuladores
+seguidos, sin un solo salto de línea**, y en otra llamada del mismo día,
+`\n␣\n␣`. La secuencia de parada escrita contra el patrón documentado no
+cortaba nada, y sin volcar la respuesta cruda no había forma de saber por qué.
+
+Un documento que describe **el mecanismo** de un fallo (el modelo no cierra el
+JSON y rellena hasta el techo) sigue siendo válido. Uno que describe **los
+caracteres concretos** vale para el día en que se midió. Antes de construir
+nada que dependa de la forma exacta —una secuencia de parada, una expresión
+regular, un parseo—, vuelve a volcar la respuesta cruda.
+
+Corolario, medido el mismo día: **al elegir esa forma, prefiere la que no
+pueda aparecer en una salida buena.** Tres tabuladores no caben en un
+documento que se indenta con espacios, así que cortan solo basura (5/5). Las
+paradas de saltos de línea parecían cubrir más patrones y **bajaron a 2/5**,
+porque el modelo deja líneas en blanco dentro del CV. Cubrir de más costó más
+que cubrir de menos.
+
+Y ojo con el coste de medir: una sola llamada desbocada gasta en cuota lo que
+decenas de generaciones normales.
+
+### Un listón mal puesto se disfraza de fallo del modelo
+
+Tres lecciones del 30/08/2026 (T113), que juntas explican por qué "el modelo
+genera CVs cortos" resultó no ser un problema del modelo. Detalle en
+`knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
+
+**1. Un fallo de validación cuenta contra TODAS las métricas, no solo la suya.**
+Cuando `validarGeneracion` lanza, el caso entero se cae: un CV 30 caracteres
+corto se cuenta también como fallo de `fidelidad`, de `idioma` y de
+`resistencia_inyeccion`. Dos casos bastaron para hundir cuatro métricas. Antes
+de tocar un prompt porque `fidelidad` está roja, mira **si el caso llegó a
+generarse**: si el detalle dice "demasiado corto" o "muy pocas líneas", el
+problema es el listón y no hay ninguna invención que arreglar.
+
+**2. Un límite superior escrito en el prompt se lee como objetivo.** Poner
+"el CV no pasa de 30 líneas ni de 400 palabras" para que un CV de entrada
+enorme cupiera en el techo de tokens bajó **B01, el caso base, de 421 a 366
+caracteres**, suspendiéndolo. Mismo patrón que T109 y T116. Si hace falta un
+límite que solo aplica a algunas entradas, **decídelo en código** y añádelo al
+prompt solo en ese caso (`CV_ENTRADA_LARGA_CARACTERES` en `lib/ia.ts`): así la
+generación normal recibe el prompt de siempre byte a byte y la regresión es
+imposible por construcción, no por suerte.
+
+**3. Una regla documentada no es una regla implementada.** `prompts/system.md`
+§4 describía desde el principio qué hacer con una oferta sin descripción
+("no inventes requisitos ni funciones que la oferta no ha declarado") y esa
+frase **nunca había llegado al prompt real** de `mensajesDeGeneracion`. El
+fallo estuvo tapado meses porque ese caso ni llegaba a generarse. Al tocar
+`prompts/system.md`, comprueba que el prompt lo dice de verdad — y al revés.
+
 ## Publicación (Paso 16)
 
 **Vercel ya no publica solo — y desde el 21/08/2026, ni puede.** El repositorio
@@ -124,6 +266,28 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
 - Antes de mandar algo a producción, **pruébalo en una rama** y abre su vista
   previa. Nunca se había hecho hasta el Paso 16: los 7 primeros despliegues
   fueron todos directos a producción.
+- **Antes de publicar, pasa `npm run comprobar:esquema`** (T110). Compara el
+  esquema **vivo** de Supabase con las columnas que pide el código. Las
+  migraciones se aplican a mano en el SQL Editor, así que el esquema cambia sin
+  esperar a ningún despliegue, y cuando el código y el esquema se separan
+  producción se rompe entera y en silencio — pasó el 24/08 (`perfiles.puesto`)
+  y el 25/08 (`generaciones.rehechos`). **El robot NO lo comprueba**: no tiene
+  secretos de Supabase, y meter ahí la `SUPABASE_SERVICE_ROLE_KEY` se descartó
+  a propósito (es la clave que salta la RLS). Depende de que se lance a mano.
+  `COMMIT=<sha> npm run comprobar:esquema` comprueba otra versión del código —
+  por ejemplo, la que está publicada ahora mismo. No comprueba tipos, solo que
+  la columna exista. Ver `knowledge/arreglo-guardia-esquema.md`.
+- **Para saber si hacen falta los evals, el robot compara con lo que hay
+  publicado**, no con el push anterior (T115, 26/08/2026): le pregunta a Vercel
+  qué commit está servido en producción. Antes, un cambio de IA que la puerta
+  bloqueó se quedaba en `master` sin publicar y el siguiente commit inocuo lo
+  arrastraba a producción sin evals. Si no se puede saber qué hay publicado,
+  **se evalúa**. En ramas y PR la base sigue siendo `master`.
+- **Si tocas el paso `decidir` de `publicar.yml`, pasa `npm run
+  probar:decidir` antes.** Son 15 escenarios que sacan el guión del propio
+  YAML y lo ejecutan contra repositorios de mentira, sin red ni cuota.
+  Equivocarse ahí sale caro en las dos direcciones: publicar IA sin medir, o
+  tirar media cuota diaria en evals que no hacían falta.
 - Un commit con **`[sin evals]`** en el mensaje salta los evals a conciencia
   (lint y pruebas siguen). Es para cuando hace falta la cuota de Cloudflare o
   de Groq (el juez) para otra cosa, no para esquivar un rojo. **La marca solo
@@ -135,9 +299,9 @@ los IDs de proyecto/organización (`vercel pull` / `vercel deploy --token=...`).
   Vercel devuelve el código, **no** las migraciones, las variables de entorno
   ni la configuración de Supabase Auth.
 
-### Tres trampas verificadas en vivo (20-21/08/2026)
+### Cuatro trampas verificadas en vivo (20-26/08/2026)
 
-Las tres costaron horas. No volver a caer:
+Las tres primeras costaron horas. No volver a caer:
 
 1. **Las variables de entorno de Vercel son de tipo *Sensitive*: su valor no
    se puede leer desde fuera.** Y falla **en silencio** — `vercel env pull`
@@ -172,9 +336,26 @@ Las tres costaron horas. No volver a caer:
    verdad quieras saltarte los evals.** Detalle en `knowledge/paso-16-publicar.md`
    (sesión 21/08/2026).
 
+Y una cuarta, del 26/08/2026, que no costó horas porque se cazó a tiempo:
+**una prueba que no se ha visto fallar no se sabe si prueba algo.** El banco
+de `npm run probar:decidir` daba 15 de 15 y no comprobaba nada — el `jq` de
+mentira traía el camino escrito dentro en vez de interpretar el del workflow,
+así que se podía romper el filtro de verdad y seguía todo verde. Antes de
+fiarte de unas pruebas nuevas, rómpelas a propósito y mira que se quejen.
+
 Corolario para el ritmo de trabajo: una tanda de evals dura **~25 minutos** y
 se lleva **la mitad de la cuota diaria**. Planifícalo, no lo lances a la
 ligera.
+
+Desde T119 (27/08/2026) una generación cuesta **~70 neuronas en vez de ~133**
+cuando la secuencia de parada dispara, así que una tanda debería salir bastante
+más barata — **pero eso todavía no se ha medido sobre una tanda entera**, solo
+sobre llamadas sueltas. Hasta comprobarlo, sigue planificando con la cifra
+vieja. Y ojo con la otra mitad de la cuenta: el juez de las aserciones
+"llm-rubric" gasta cuota de **Groq**, que T119 no toca.
+
+Referencia medida el 27/08: **~30 generaciones de diagnóstico agotaron el cupo
+diario de Cloudflare** (10.000 neuronas). Medir no es gratis.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

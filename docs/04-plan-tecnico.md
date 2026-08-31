@@ -144,8 +144,29 @@ del flujo original.
   principal (sustituye a Groq desde el 23/08/2026, ver aviso al principio
   del documento). Le mandas texto por internet y te devuelve texto. Es la
   pieza que lee el CV pegado y propone puesto y palabras clave, y la que
-  redacta el CV y la carta adaptados. **OpenRouter** se queda como
-  respaldo, por si Cloudflare falla o agota su cupo diario.
+  redacta el CV y la carta adaptados. **OpenRouter** figura como respaldo, por
+  si Cloudflare falla o agota su cupo diario, pero **hoy no respalda nada, y
+  eso está medido** (T112, 27/08/2026): se probaron los 17 modelos gratuitos
+  con el prompt real y **ninguno genera el documento**. Ocho de ellos los
+  bloquea la propia política de privacidad de la cuenta —el error dice
+  literalmente *"data policy"*—, que es la consecuencia correcta de haber
+  apagado los endpoints que entrenaban con los CVs; otros tres contestan `429`,
+  **incluidos los dos que están configurados**. Además el respaldo solo dispone
+  de **2 segundos**, porque Cloudflare se lleva 48 s de los 60 que dura como
+  máximo la petición: no salvaría una generación aunque hubiera modelo.
+  **En la práctica, Cloudflare es el único proveedor.** Ver
+  `knowledge/medicion-t112-respaldo-openrouter.md`.
+- **Cuánto tarda una generación.** Desde T118 se hace **un solo intento largo,
+  de 48 s**: los tres cortos de T116 (24 + 14 + 14 s) se calcularon cuando una
+  generación buena tardaba 13 s, y al medir el 26/08/2026 resultó que tardaba
+  de **32 a 41 s** — con aquellos cortes no se completaba ninguna. No caben dos
+  intentos porque la ruta declara `maxDuration = 60`.
+  Desde **T119** (27/08/2026) la mayoría baja a **11-14 s**: el modelo, al
+  terminar el documento, se quedaba escribiendo relleno hasta agotar su
+  presupuesto de palabras, y ahora se le manda una *secuencia de parada* que lo
+  corta en seco. Cuesta también la mitad (70 neuronas en vez de 133). Pero
+  **no siempre dispara** —algún caso sigue en 35 s—, así que el intento único
+  se mantiene. Ver `knowledge/medicion-t119-secuencia-parada.md`.
 - **Vercel** — donde vive la web publicada. Es el "local a pie de calle":
   el sitio con dirección pública al que entran tus compañeras.
 - **n8n** — un workflow **nuevo e independiente**, `Jobs App · ingesta`,
@@ -215,8 +236,16 @@ Regla mental: **`app/` es lo que se ve, `lib/` es lo que se reutiliza.**
 
 ### 3.4 Modelo de datos
 
-Cuatro cajones. Cada `id` es un código único automático, como el número de
-bastidor de un coche.
+Seis cajones y una ventanilla. Cada `id` es un código único automático, como
+el número de bastidor de un coche.
+
+> ⚠️ **Esta tabla se desincroniza sola, y cuando lo hace rompe producción.**
+> Las migraciones se aplican a mano en el SQL Editor de Supabase, así que la
+> base de datos cambia sin esperar a nadie. Pasó dos veces en dos días (24 y
+> 25/08/2026). Lo que aquí se describe está comprobado contra el esquema vivo
+> el **27/08/2026**; para volver a comprobarlo, `npm run comprobar:esquema`
+> (T110). Si algo de lo de abajo no cuadra con lo que dice ese comando, **el
+> que tiene razón es el comando**.
 
 **`perfiles`** — uno por usuaria (regla de negocio 4)
 
@@ -224,7 +253,8 @@ bastidor de un coche.
 | :---- | :---- | :---- |
 | `id` | identificador | clave de la ficha |
 | `user_id` | identificador, **único** | de quién es este perfil |
-| `puesto` | texto | propuesto por la IA, editable |
+| `nombre` | texto | el de la usuaria, para encabezar el CV |
+| `puestos` | lista de textos | propuestos por la IA, editables. **Era `puesto` (un solo texto) hasta la migración 0017**; ese cambio, con el código viejo aún publicado, es lo que rompió producción el 24/08 |
 | `palabras_clave` | lista de textos | propuestas por la IA, la usuaria añade/quita |
 | `cv_texto` | texto largo | el CV tal como lo pegó |
 | `usar_experiencia_cv` | sí/no | si se tiene en cuenta al emparejar (regla 3) |
@@ -262,8 +292,40 @@ bastidor de un coche.
 | `user_id` + `oferta_id` | juntos, **únicos** | un solo documento por oferta |
 | `estado` | texto | `generando` / `listo` / `error` — es lo que mueve el indicador de espera y el botón de descarga |
 | `cv_texto`, `carta_texto` | texto largo | el resultado, congelado en el momento en que se generó |
+| `puesto_texto` | texto | el titular del CV, decidido por código (`titularSeguro`) y no por la IA |
 | `error_mensaje` | texto | por si falla, para poder explicárselo (caso límite) |
+| `avisos` | lista de textos | lo que `verificarCv` marcó como dudoso para que la usuaria lo revise |
+| `intentos_fallidos` | número | cuántas veces se ha intentado generar esta y ha fallado |
+| `rehechos` | número | cuántas veces ha pulsado "Rehacer" (tiene tope) |
+| `creado_en`, `iniciado_en` | fecha y hora | cuándo se pidió y cuándo empezó de verdad |
+
+**`extracciones`** — una fila por cada vez que la IA lee un CV. Solo sirve
+para contar y no pasarse del cupo diario; no guarda el texto.
+
+| Campo | Tipo |
+| :---- | :---- |
+| `id`, `user_id` | identificadores |
+| `creado_en` | fecha y hora |
+
+**`metricas_ia`** — el cuaderno de bitácora de cada llamada a la IA
+(Paso 17). No guarda ni el CV ni lo generado: solo si salió bien, cuánto
+tardó, cuántas palabras costó y qué proveedor la atendió.
+
+| Campo | Tipo | Para qué |
+| :---- | :---- | :---- |
+| `id`, `user_id`, `oferta_id` | identificadores | |
+| `tipo` | texto | cuál de las dos llamadas fue |
+| `exito` | sí/no | |
+| `motivo_fallo`, `guardrail_saltado` | texto | qué falló y qué barrera saltó |
+| `escalado_humano` | sí/no | si hizo falta que mirase una persona |
+| `duracion_ms` | número | |
+| `tokens_entrada`, `tokens_salida` | número | lo que costó en "palabras" |
+| `proveedor` | texto | Cloudflare u OpenRouter |
 | `creado_en` | fecha y hora | |
+
+**`perfiles_con_email`** — no es un cajón, es una **ventanilla**: una vista
+que junta el perfil con el email de la usuaria (que vive en la parte de
+Supabase Auth) para poder mandarle el aviso diario. No guarda nada propio.
 
 **Relaciones, en una frase:** una usuaria tiene **un** perfil, marca
 **muchos** intereses, y cada interés puede tener **una** generación. Las
@@ -330,8 +392,9 @@ sola instrucción.
 > ⚠️ **Actualización (Paso 16, 2026-08-20)**: el punto 3 de arriba dejó de
 > ser cierto, y a propósito. **Vercel ya no publica solo.** Publica un
 > workflow de GitHub Actions (`.github/workflows/publicar.yml`), y solo si
-> pasan lint, las 253 pruebas y —cuando el cambio toca la IA— la puerta de
-> calidad de los evals del Paso 13. El motivo: hasta entonces, cada push a
+> pasan lint, las pruebas (299 a 27/08/2026) y —cuando el cambio toca la IA—
+> la puerta de calidad de los evals del Paso 13. El motivo: hasta entonces,
+> cada push a
 > `master` iba directo a la web que ven las cinco usuarias, sin ninguna
 > comprobación por el camino.
 >
@@ -342,6 +405,19 @@ sola instrucción.
 > [`knowledge/paso-16-publicar.md`](../knowledge/paso-16-publicar.md); cómo
 > deshacer una publicación mala, en
 > [`07-emergencia.md`](07-emergencia.md).
+
+> ⚠️ **Hay una comprobación que el robot NO hace y que toca lanzar a mano:
+> `npm run comprobar:esquema`** (T110, 27/08/2026). Compara lo que el código le
+> pide a Supabase con lo que Supabase tiene de verdad. Hace falta porque las
+> migraciones se aplican **a mano** en el SQL Editor, así que la base de datos
+> puede ir por delante o por detrás del código sin que nada avise — y cuando
+> eso pasa, producción se rompe entera y en silencio (24 y 25/08/2026).
+>
+> No está dentro del robot a propósito: haría falta meter en GitHub la clave
+> `SUPABASE_SERVICE_ROLE_KEY`, que es la que se salta todos los permisos y da
+> acceso a los CVs de tus compañeras. Se decidió que no compensa. El precio es
+> acordarse de lanzarlo. Detalle en
+> [`knowledge/arreglo-guardia-esquema.md`](../knowledge/arreglo-guardia-esquema.md).
 
 ### 3.8 Una regla que no es obvia: las variables *Sensitive* de Vercel
 

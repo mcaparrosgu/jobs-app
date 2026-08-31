@@ -518,3 +518,109 @@ aunque frustrante, al menos no dejaba pasar el contenido inyectado).
   si `verificarCv.ts`/`helpers.cjs` necesitan una comprobación adicional de
   "aparecen secciones enteras sin ningún solape con el CV original", no solo
   cifras.
+
+# Actualización del 29/08/2026 (T113) — el arnés de evals se había desincronizado de `lib/ia.ts`
+
+Primera tanda completa concluyente (13 casos, **0 errores**, veredicto real)
+desde que se cerraron T118 y T119. **Puerta: ROJO.** Detalle completo en
+[arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md);
+aquí lo que afecta al método de los evals.
+
+## Lección: un helper del eval puede quedarse midiendo con la regla vieja
+
+T94 (24/08) hizo que `largoMinimoCv` en `lib/ia.ts` **escalara** el mínimo de
+caracteres del CV con el tamaño del CV de entrada (un CV de 3 líneas no llega
+a 400 sin inventar). Pero `evals/promptfoo/helpers.cjs::formatoValidoGeneracion`
+**siguió exigiendo `cv_texto.length >= 400` planos**. Resultado: durante más
+de un mes el eval suspendía en `formato` generaciones que la app da por
+buenas — B04 (200 car.), B08 (330), B09 (194), B11 (267) —, y ese ruido hacía
+imposible que `formato` llegara al 95 %.
+
+Es el mismo patrón que ya pasó con T111 (el eval comparaba palabra a palabra
+CVs traducidos). **Regla que sale de aquí, además de la de "relanzar los
+evals cuando cambie el prompt/modelo": cuando cambie un validador de
+`lib/ia.ts` (`largoMinimoCv`, `LINEAS_MINIMAS_CV`, `verificarCv`, …), repasar
+si `helpers.cjs` replica ese mismo criterio.** El provider llama a la función
+real, así que si `output` no trae `error` la longitud ya pasó el criterio de
+producción; el helper solo debería añadir comprobaciones, no contradecirlo.
+
+Arreglado el 29/08: `formatoValidoGeneracion` replica ahora `largoMinimoCv`
+(`max(150, min(400, largo del CV de entrada))`) y recibe `context`.
+**Pendiente de confirmar en una tanda nueva** (no se re-lanzó: cuota).
+
+## El veredicto de la puerta mezcla dos tandas — ojo con `resultado-perfil.json`
+
+`npm run evals:puerta` lee **los dos** ficheros de resultados. El 29/08 solo
+se re-generó `resultado-generar.json`; `resultado-perfil.json` era del 25/08.
+Sus fallos (A06 "poeta", A10 "dos empresas") entraron en el cómputo de
+`fidelidad` y `resistencia_inyeccion` y los empujaron hacia abajo sin tener
+nada que ver con el cambio que se estaba midiendo. Para un veredicto limpio
+de un cambio en `generarCvYCarta`, o se re-lanza también `evals:perfil`, o se
+lee el detalle por caso separando prefijos `A##` (perfil) de `B##`
+(generación).
+
+## Lo que sigue siendo un problema de calidad real: el modelo se queda corto
+
+Quitando el ruido de arriba, quedan **B02, B03, B05, B06**: `generarCvYCarta`
+**lanza "demasiado corto"** de verdad, con el mínimo ya escalado y sin
+inyección de por medio. B05 es el peor: **215 caracteres de un CV de entrada
+enorme**. Cuando un caso lanza, caen todas sus aserciones (fidelidad, idioma,
+resistencia), así que estas cuatro explican casi todo el ROJO.
+
+Antes de tocar el prompt: **medir si la parada `\t\t\t` de T119 corta estos
+casos** (solo se validó sobre B01/B04/B07/B10/B13). `STOP=` vacío en la sonda
+sobre B02/B03/B05/B06. Después, decisión de Mar (parada / prompt / umbrales).
+
+# Actualización del 30/08/2026 (T113) — las tres averías de fondo, y B12 cerrado en código
+
+## Los CVs cortos no eran una avería, eran tres (y no era la parada)
+
+Medido con cuota fresca (`STOP=ninguna` en la sonda): la parada `\t\t\t` de
+T119 **no** causa los CVs cortos — B02 (177 vs 184), B03 (224 vs 221) y B06
+(130 vs 130) salen igual sin ella. Debajo había tres cosas distintas, todas
+arregladas (detalle en
+[arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)):
+
+1. **El listón, no el modelo.** Reformatear un CV **comprime** (funde el
+   encabezado, quita el "Experiencia:" de delante, une líneas), así que sobre
+   una entrada minúscula la salida honesta queda *por debajo* de ella.
+   `largoMinimoCv` afloja al 72 % por debajo de 250 car. de entrada, suelo
+   150 → 110. `helpers.cjs::minimoCvGeneracion` replicado.
+2. **B05 no salía corto, salía truncado.** `finish_reason: "length"`,
+   1.500/1.500 tokens: el modelo intenta recoger un CV de entrada enorme y se
+   queda sin techo a media faena. Arreglado con un límite de tamaño que
+   **solo se añade al prompt si la entrada pasa de 3.000 car.**
+   (`CV_ENTRADA_LARGA_CARACTERES`) — puesto como regla fija bajaba B01 de 421
+   a 366 y lo suspendía: el modelo lee un límite superior como objetivo.
+3. **La carta se inventaba el carácter de la empresa** sin descripción (B03).
+   La regla estaba en `prompts/system.md` §4 desde el principio y **nunca
+   había llegado al prompt real** de `mensajesDeGeneracion`.
+
+Más `LINEAS_MINIMAS_CV` 6 → 5: vigilaba un fallo imposible desde T116 (el
+esquema pide una lista) y tumbaba a B13, el caso fácil.
+
+## B12 (datos de contacto colados) — respondido, y no era ni el prompt ni el modelo
+
+La "Pendiente" del 23/08 preguntaba si blindar el prompt contra B07/B12. Para
+**B12** la respuesta del 30/08 es que el sitio correcto es un **guardrail
+determinista**, no el prompt: `depurarDatosDeContacto` (`lib/guardrails.ts`,
+capa 7) quita email y teléfono del CV y la carta dentro de
+`validarGeneracion`, antes de medir longitudes. Ya no depende de que el
+modelo obedezca la inyección. Conservador con el teléfono (prefijo `+`,
+etiqueta delante, o 9 dígitos justos) para no tocar un año, un porcentaje ni
+un importe. `helpers.cjs::sinDatosDeContacto` **no cambia**: el provider
+llama a la función real, así que la salida que ve ya viene limpia — el helper
+solo añade, no contradice. Detalle en
+[arreglo-b12-datos-contacto.md](arreglo-b12-datos-contacto.md).
+
+**B07** (cifras infladas) sigue siendo terreno de `fidelidad` /
+`sinCifrasInventadas` + el refuerzo del prompt de T94, no de esta capa.
+
+## Estado
+
+Sonda B01/B03/B05/B13 **4/4** con cuota fresca del 30/08; 316 pruebas en
+verde (10 nuevas de B12, vistas fallar). **Falta la tanda completa de las DOS
+llamadas** (`npm run evals`), que no cabía en la cuota del día (~27 de ~30
+gastadas). Esa tanda cierra **T113 y T95** y confirma B12 en vivo. Si sale
+NO CONCLUYENTE, es cuota o el juez de Groq sin responder: relanzar, no
+"arreglar".

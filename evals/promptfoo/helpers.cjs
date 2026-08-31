@@ -84,7 +84,11 @@ function palabrasPropiasDe(texto) {
       .split(/\s+/)
       .forEach((sucia, indice) => {
         if (indice === 0) return;
-        const palabra = sucia.replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '');
+        // Genitivo sajón fuera antes de comparar (“GitLab’s” → “GitLab”),
+        // mismo criterio que lib/verificarCv.ts (T111).
+        const palabra = sucia
+          .replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, '')
+          .replace(/['’]s$/u, '');
         if (palabra.length < 4) return;
         if (palabra === palabra.toUpperCase()) return;
         if (!/^\p{Lu}/u.test(palabra)) return;
@@ -107,6 +111,15 @@ const MAYUSCULAS_INOCENTES = new Set(
     'referencias', 'objetivo', 'competencias', 'aptitudes', 'logros',
     'responsabilidades', 'funciones', 'tareas', 'herramientas',
     'tecnologias', 'certificados', 'cursos',
+    // Añadidas el 26/08/2026 (T111), mismo criterio que lib/verificarCv.ts:
+    // el documento sale en el idioma de la oferta, así que estas mismas
+    // etiquetas aparecen en inglés cuando la oferta está en inglés.
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
+    'september', 'october', 'november', 'december',
+    'english', 'spanish', 'catalan', 'basque', 'galician', 'french', 'german',
+    'italian', 'portuguese', 'native', 'bilingual', 'fluent',
+    'advanced', 'intermediate', 'beginner', 'proficient',
+    'hiring', 'team', 'manager', 'sincerely', 'regards', 'dear',
   ].map(quitarAcentos),
 );
 
@@ -200,15 +213,42 @@ function formatoValidoPerfil(output) {
   return { pass: ok, score: ok ? 1 : 0, reason: ok ? 'Estructura correcta' : 'Faltan campos del esquema' };
 }
 
-function formatoValidoGeneracion(output) {
+// T113 (29/08/2026) · El mínimo de 400 caracteres fijo se quedó desfasado:
+// T94 hizo que `lib/ia.ts` (`largoMinimoCv`) escalara el mínimo con el
+// tamaño del CV de entrada —un CV de 3 líneas no llega a 400 sin inventar—,
+// pero este helper seguía exigiendo 400 planos, así que suspendía en
+// `formato` generaciones que la app da por buenas (B04, B08, B09, B11...).
+// Se replica aquí la misma forma.
+// La autoridad real sigue siendo `validarGeneracion` en `lib/ia.ts`, que ya
+// corrió dentro del provider; si `output` no trae `error`, la longitud ya
+// pasó su criterio. Este helper solo debe AÑADIR, nunca exigir más.
+//
+// T113 (30/08/2026) · `largoMinimoCv` se aflojó otra vez: por debajo de 250
+// car. de entrada se pide solo el 72% (un CV fiel comprime al reformatear) y
+// el suelo duro bajó de 150 a 110. Sigue sin descontar el texto ajeno
+// (B07/B10) que `cvSinTextoAjeno` quita en producción — no pasa nada, esos ya
+// pasan por la vía de arriba: la longitud la valida el provider, no esto.
+function minimoCvGeneracion(cvOriginal) {
+  const largo = String(cvOriginal ?? '').trim().length;
+  const base = Math.min(400, largo);
+  const minimo = largo < 250 ? base * 0.72 : base;
+  return Math.max(110, Math.round(minimo));
+}
+
+function formatoValidoGeneracion(output, context) {
   if (!output || output.error) return { pass: false, score: 0, reason: `Fallo controlado o formato roto: ${output?.mensaje ?? 'sin output'}` };
+  const minimoCv = minimoCvGeneracion(context?.vars?.cv_texto);
   const ok =
     typeof output.puesto === 'string' &&
     typeof output.cv_texto === 'string' &&
     typeof output.carta_texto === 'string' &&
-    output.cv_texto.length >= 400 &&
+    output.cv_texto.length >= minimoCv &&
     output.carta_texto.length >= 200;
-  return { pass: ok, score: ok ? 1 : 0, reason: ok ? 'Estructura y longitudes correctas' : 'Estructura o longitud fuera de rango' };
+  return {
+    pass: ok,
+    score: ok ? 1 : 0,
+    reason: ok ? 'Estructura y longitudes correctas' : `Estructura o longitud fuera de rango (CV ${output.cv_texto?.length ?? 0}, mínimo ${minimoCv})`,
+  };
 }
 
 function palabrasClaveConFormato(output) {
@@ -255,6 +295,15 @@ function soloEntidadesConocidas(output, context) {
   const oferta = vars.oferta ?? {};
   const permitido = [vars.cv_texto, oferta.titulo, oferta.empresa, oferta.descripcion].filter(Boolean).join('\n');
   const generado = `${output.cv_texto ?? ''}\n${output.carta_texto ?? ''}`;
+
+  // T111, mismo criterio que lib/verificarCv.ts: comparar palabra a palabra un
+  // documento traducido solo produce ruido (medido sobre las 6 generaciones de
+  // producción: 59 palabras marcadas, 0 invenciones reales). Los otros
+  // detectores —cifras, contacto, empresas— sí aguantan la traducción.
+  if (idiomaDe(generado) !== idiomaDe(vars.cv_texto ?? '')) {
+    return { pass: true, score: 1, reason: 'Documento traducido: los nombres no se comparan palabra a palabra (T111)' };
+  }
+
   const sospechosas = entidadesSospechosas(generado, permitido);
   return {
     pass: sospechosas.length === 0,
