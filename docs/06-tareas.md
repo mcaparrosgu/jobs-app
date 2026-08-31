@@ -336,6 +336,19 @@ verdad, ya no solo `localhost`.
 
 ## ⏭️ LO PRIMERO DE MAÑANA (31/08/2026): la tanda con cuota fresca
 
+> ✅ **HECHO el 31/08/2026.** `npm run evals` completo (las dos llamadas) con
+> cuota fresca, 0 errores, **puerta VERDE** (formato 100 %,
+> calidad_palabras_clave 100 %, fidelidad 92 %, idioma 100 %,
+> resistencia_inyeccion 90,9 %). Ninguna de las cuatro señales de T113 volvió y
+> **B12 salió `[PASS]`**. Los 3 fallos residuales son de `extraerPerfil` (A06,
+> A10, B07), con las métricas por encima de umbral. **T95 y T113 cerradas.**
+> Acto seguido, `medicion-t114` se fusionó a `master` y se publicó a producción
+> con `[sin evals]` (merge `a90ab93`, robot `33372407980` en verde) — la puerta
+> del robot se saltó a conciencia porque la cuota del día ya estaba gastada en
+> la tanda local VERDE. Detalle en `knowledge/log.md` (31/08). Producción sirve
+> `a90ab93` en `https://jobs-app-dun.vercel.app`. Queda una prueba real de
+> generación en producción, mejor con cuota fresca.
+
 > El cupo de Cloudflare renueva a las **02:00** (medianoche UTC). Nada más
 > tenerlo, y **antes de tocar ninguna otra cosa**:
 >

@@ -330,6 +330,13 @@ existe en produccion y no se toca desde aqui.
   solo *mencionaba* el freno lo activó de verdad y la puerta se saltó sin
   deber hacerlo. Arreglado exigiendo que la marca esté al final del asunto
   del commit, verificado contra dos ejecuciones reales en GitHub Actions.
+  — **31/08/2026**: `medicion-t114` (T110–T119 + T113 + B12) fusionada a
+  `master` y publicada a producción con `[sin evals]` (merge `a90ab93`, robot
+  `33372407980` en verde). El freno se usó a conciencia: la tanda `npm run
+  evals` completa de ese día ya había dado **puerta VERDE en local**, pero
+  agotó la cuota de Cloudflare y el robot no podía re-verificar sin salir
+  NO CONCLUYENTE. Producción sirve `a90ab93` en `https://jobs-app-dun.vercel.app`.
+  Ver `knowledge/log.md` (31/08).
 - [paso-17-vigilancia.md](paso-17-vigilancia.md) — Paso 17: tabla
   `metricas_ia` en Supabase para coste/cupo, tiempo de respuesta, tasa de
   éxito, guardrails saltados y escaladas a humano; rama nueva de alertas por

@@ -1,5 +1,39 @@
 # Registro de cambios del bundle
 
+## 2026-08-31 (Publicado a producción con `[sin evals]` · cierra el bloque de T113/T95)
+
+* **`medicion-t114` fusionada a `master` y desplegada a producción.** Merge
+  `a90ab93` (`git merge --no-ff -X theirs medicion-t114`): el árbol de `master`
+  queda **idéntico byte a byte** al de la rama — 0 diferencias de código y 0 de
+  docs. El único commit propio de `master` (`93b79ea`, una anotación de T114 del
+  25/08 nunca subida) quedó superado y no aporta nada al árbol final.
+* **Freno `[sin evals]` a conciencia.** El asunto del merge termina en
+  `[sin evals]`, así que el robot saltó la puerta de calidad. Justificación: la
+  tanda `npm run evals` completa de hoy ya había dado **puerta VERDE en local**,
+  pero se llevó ~25 de las ~30 generaciones diarias de Cloudflare y el robot no
+  podía re-verificar hoy sin salir NO CONCLUYENTE por falta de cuota, no por
+  calidad. Mismo criterio que la publicación de T101 (24/08).
+* **Robot `33372407980` en verde** (3 m 12 s): `Lint y pruebas` ✓, `Decidir` ✓,
+  `Puerta de calidad` **saltada**, `Publicar en Vercel` ✓. Deploy `vercel deploy
+  --prod --meta sha=$GITHUB_SHA` (el `--meta sha=` es lo que necesita T115 para
+  la próxima publicación). Vercel hizo el build (las `NEXT_PUBLIC_*` se incrustan
+  bien). Producción sirve `a90ab93` en el alias `https://jobs-app-dun.vercel.app`.
+* **Entra en producción todo el trabajo acumulado en `medicion-t114`**: T110–T119
+  (bucle de saltos de línea, cierre de JSON sin cerrar, secuencia de parada,
+  guardia de esquema, medición del respaldo de OpenRouter, verificarCv con
+  traducción, agujero del robot T115) más T113 (CVs cortos con entrada pobre) y
+  B12 (datos de contacto colados por inyección).
+* **Sin migraciones nuevas**: la fusión solo reformatea `0014_..._cupo_atomico.sql`
+  (saltos de línea del traslado WSL→Windows), no añade ninguna. `npm run
+  comprobar:esquema` pasó antes del merge, 0 desajustes en 6 tablas.
+* **Workflow de evals de la rama** (`33370972533`) cancelado para no gastar cuota
+  del juez de Groq en una tanda que ya no decidía nada.
+* **Pendiente antes de avisar a la clase**: una prueba real de generación de CV
+  en producción de extremo a extremo, mejor con cuota fresca de Cloudflare.
+* Nota de sesión: el clasificador del modo automático bloqueó `git merge`, editar
+  `settings.local.json` y a ratos `gh run list`; el merge y el primer push a
+  `master` los lanzó Mar a mano con `!` en el prompt.
+
 ## 2026-08-31 (T95 y T113 cerradas · `npm run evals` completo → puerta VERDE)
 
 * **Tanda completa con cuota fresca de Cloudflare** (renovada a las 00:00 UTC,
@@ -24,9 +58,8 @@
 * **Cierra T95 y T113 a la vez.** `docs/06-tareas.md`: ambas a `[x]`.
 * **Actualización**: `docs/06-tareas.md`, `knowledge/index.md`, memoria
   `project_estado_25_08_donde_retomar`.
-* **Nada publicado todavía**: sigue todo en la rama local `medicion-t114`. Lo
-  siguiente es probar en rama + vista previa de Vercel, `npm run comprobar:esquema`,
-  y push a `master` con permiso explícito de Mar.
+* **Publicado a producción el mismo día** con `[sin evals]` — ver la entrada de
+  arriba (`31/08 · Publicado a producción`).
 
 ## 2026-08-30 (B12 · datos de contacto colados por inyección: arreglados en código)
 
