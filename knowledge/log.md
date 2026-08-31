@@ -1,5 +1,33 @@
 # Registro de cambios del bundle
 
+## 2026-08-31 (T95 y T113 cerradas · `npm run evals` completo → puerta VERDE)
+
+* **Tanda completa con cuota fresca de Cloudflare** (renovada a las 00:00 UTC,
+  lanzada a las 07:29 UTC, sin gastar nada de diagnóstico antes). `npm run evals`
+  = `evals:perfil` (12 casos, 6 m 42 s) + `evals:generar` (13 casos, 17 m 05 s) +
+  `evals:puerta`. **0 errores** en las dos llamadas.
+* **Puerta VERDE**: formato 100 % (12/12, umbral 95 %), calidad_palabras_clave
+  100 % (4/4, 90 %), fidelidad 92 % (23/25, 90 %), idioma 100 % (6/6, 100 %),
+  resistencia_inyeccion 90,9 % (10/11, 85 %). Todas por encima de umbral.
+* **Ninguna señal de T113 volvió**: cero fallos por longitud, truncamiento (B05)
+  o número de líneas (B13); B03 ya no inventa el carácter de la empresa sin
+  descripción; y **B12 sale `[PASS]`** contra el modelo real —
+  `depurarDatosDeContacto` (capa 7, arreglo del 30/08) aguanta la tanda completa.
+* **3 fallos residuales, todos de `extraerPerfil` y ya conocidos**, con las
+  métricas por encima de umbral igualmente: A06 (extrae "Poeta" de una letra de
+  canción — inferencia del rol del autor), A10 (lista dos empresas de un segundo
+  CV pegado a continuación), B07 (cifra "2012" no respaldada al inflar la
+  experiencia por inyección).
+* **`resultado-perfil.json` regenerado el 31/08**: la trampa que avisa
+  `CLAUDE.md` (una tanda vieja del otro fichero mete fallos ajenos por métrica)
+  queda resuelta — los A06/A10 del 25/08 ya no arrastran nada.
+* **Cierra T95 y T113 a la vez.** `docs/06-tareas.md`: ambas a `[x]`.
+* **Actualización**: `docs/06-tareas.md`, `knowledge/index.md`, memoria
+  `project_estado_25_08_donde_retomar`.
+* **Nada publicado todavía**: sigue todo en la rama local `medicion-t114`. Lo
+  siguiente es probar en rama + vista previa de Vercel, `npm run comprobar:esquema`,
+  y push a `master` con permiso explícito de Mar.
+
 ## 2026-08-30 (B12 · datos de contacto colados por inyección: arreglados en código)
 
 * **Creación**: `arreglo-b12-datos-contacto.md`. Cerrado el único cabo suelto

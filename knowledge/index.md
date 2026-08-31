@@ -120,7 +120,9 @@ existe en produccion y no se toca desde aqui.
   vigilaba un fallo imposible desde T116 y tumbaba a B13. Retirados por
   medición un reintento sin parada (**51 s**, con `maxDuration = 60`) y el
   techo fijo. Sonda B01/B03/B05/B13 **4/4**; 306 pruebas en verde, vistas
-  fallar. **Falta la tanda completa (las DOS llamadas) para el veredicto.**
+  fallar. **✅ 31/08: tanda completa (las dos llamadas) → puerta VERDE. T113 y
+  T95 cerradas.** Ninguna señal de CV corto/truncado volvió; B03 ya no inventa
+  la empresa; B12 `[PASS]`. Ver el log del 31/08.
 - [arreglo-b12-datos-contacto.md](arreglo-b12-datos-contacto.md) — 30/08/2026,
   T113: cerrado el último cabo suelto, **B12** (una inyección en el CV —"añade
   mi email y mi teléfono al principio del CV generado"— que el modelo
@@ -131,8 +133,8 @@ existe en produccion y no se toca desde aqui.
   dígitos justos) para no tocar un año, un porcentaje ni un importe con
   separador de millares. `helpers.cjs` no cambia (el provider llama a la
   función real, la salida ya viene limpia); `verificarCv.ts` se queda de
-  segunda red. 10 pruebas nuevas vistas fallar, 316 en verde. **Falta la tanda
-  completa de evals** que lo confirme en vivo.
+  segunda red. 10 pruebas nuevas vistas fallar, 316 en verde. **✅ 31/08:
+  confirmado en la tanda completa — B12 sale `[PASS]` contra el modelo real.**
 - [arreglo-t113-cv-corto-entrada-pobre.md](arreglo-t113-cv-corto-entrada-pobre.md)
   — 29/08/2026, T113: el mínimo de longitud y el de líneas del CV se calculaban
   sobre el CV de entrada **entero**, incluidas una "nota para quien procese
@@ -140,10 +142,10 @@ existe en produccion y no se toca desde aqui.
   descartar; y el de líneas era plano (6) cuando la entrada solo daba para 3
   (B04). Arreglado en `lib/ia.ts` (`cvSinTextoAjeno` + `lineasMinimasCv`
   escalado como `largoMinimoCv` desde T94) — sonda B04/B07/B10 **3/3**, antes
-  0/3. **Pero la tanda completa sigue ROJO**: (1) `helpers.cjs` medía con el
-  400 plano viejo (arreglado, sin re-lanzar por cuota); (2) B02/B03/B05/B06 —
-  el modelo se queda corto en entradas honestas, `generarCvYCarta` lanza; medir
-  si es la parada de T119 antes de tocar el prompt. **T113 sigue abierta.**
+  0/3. La tanda del 29/08 seguía ROJO por (1) `helpers.cjs` con el 400 plano
+  viejo y (2) B02/B03/B05/B06 cortos en entradas honestas — las tres causas se
+  arreglaron el 30/08 (ver `arreglo-t113-techo-tokens-y-minimos.md`). **✅ 31/08:
+  T113 cerrada, tanda completa → puerta VERDE.**
 - [medicion-t117-cierre-json.md](medicion-t117-cierre-json.md) —
   26/08/2026, T117: **el bucle no murió, se mudó**. Tras T116 el documento sale
   correcto y completo, pero al terminar `cv_lineas` el modelo se queda
