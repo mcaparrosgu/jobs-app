@@ -451,11 +451,13 @@ existe en produccion y no se toca desde aqui.
   el MVP. Login, ofertas, "me interesa", generación (**limpia**, `avisos: []`)
   y descarga funcionan. Dos hallazgos: un **503 transitorio** en la primera
   descarga (cold start de Vercel, se recupera al reintentar) y un **PDF no
-  presentable**. Tres de sus defectos eran bugs de código en `lib/pdf.tsx`,
-  arreglados aquí (viñeta en mayúsculas tomada como cabecera; puesto
-  duplicado; carta sin nombre al final). El rediseño estético (letter-spacing,
-  fechas, paginación) queda para una pasada aparte con plantilla de
-  referencia.
+  presentable**. Tres bugs de código en `lib/pdf.tsx` arreglados (viñeta en
+  mayúsculas tomada como cabecera; puesto duplicado; carta sin nombre al
+  final), y un **rediseño de maquetación** (`interpretarCv`: empresa/centro en
+  negrita, cargo y periodo en gris, letter-spacing contenido). Las **fechas en
+  el prompt** se probaron y **se revirtieron**: la puerta salió ROJO (formato
+  75 %, fidelidad 80 %) porque el modelo inventó años y acortó CVs — la rama se
+  queda solo con `lib/pdf.tsx`, que no dispara evals. Fechas: tarea aparte.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

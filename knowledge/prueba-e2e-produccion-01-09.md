@@ -78,19 +78,61 @@ evals; `pdf.tsx` no está en el conjunto que los activa):
 (6/8 rojas). Suite completa 324 en verde, `tsc` y `lint` limpios,
 `comprobar:esquema` 0 desajustes.
 
-**Lo que queda para una pasada de rediseño aparte** (necesita una plantilla de
-referencia de Mar, como en T83 — hacerlo a ciegas repite el ciclo "lamentable"
-de T62):
+# Segunda pasada — el rediseño de maquetación (01/09, misma sesión)
 
-- **Letter-spacing de los títulos**: con `letterSpacing: 2`–`2.2` y
-  `.toUpperCase()`, el hueco entre palabras no se distingue del hueco entre
-  letras y "MARKETING OPERATIONS MANAGER" se lee como un borrón.
-- **Sin fechas** en experiencia ni formación (esto además toca
-  `prompts/system.md` y el esquema de `generarCvYCarta` → **dispara los
-  evals**).
-- **Página 2 casi vacía** antes de la carta (paginación).
-- **Separación irregular** entre entradas (empresa / rol / viñetas no forman
-  un grupo visual).
+Mar, tras ver los 3 bugs arreglados en la vista previa: *"faltan negritas,
+falta información en educación, sigue sin ser presentable"*. Decidido con ella:
+**reutilizar la referencia de T83** ("Minimal Resume Layout") y aplicarla
+mejor, **con fechas** aunque eso obligue a relanzar los evals.
+
+**`lib/pdf.tsx` — `interpretarCv()`**: dentro de las secciones de experiencia,
+formación y proyectos, un grupo de párrafo deja de ser prosa y pasa a ser la
+**cabecera de una entrada** — empresa o centro en **negrita** (`entradaPrincipal`),
+y debajo el cargo/titulación y el periodo en gris pequeño (`entradaMeta`).
+Fuera de esas secciones (PERFIL, un resumen en prosa) el párrafo sigue siendo
+texto corrido. Un nombre en mayúsculas que no está en el vocabulario
+`SECCION_CONOCIDA` (p. ej. `NEOLAND`, `IBM`) se reconoce como cabecera de
+entrada en vez de como título de sección. `letterSpacing` de los títulos
+2.2 → 1.5 y del puesto 2 → 1.4: con el tracking alto las palabras se fundían.
+
+Render local verificado con el CV real del 28/08 y una versión con fechas:
+empresas y centros en negrita, jerarquía visible, el puesto una sola vez, la
+carta cerrada con el nombre. 329 pruebas en verde (13 en `pdf.test.ts`),
+`tsc`/`lint` limpios, `comprobar:esquema` sin desajustes.
+
+## Las fechas en el prompt: probadas y REVERTIDAS (01/09)
+
+Se probó añadir a `prompts/system.md` §4 y a `mensajesDeGeneracion` una regla
+para que la generación incluyera el periodo en años de cada experiencia y
+formación, con un "si el CV no da el año, no lo inventes". `npm run evals`
+completo con esa regla → **puerta ROJO**:
+
+| Métrica | 31/08 (verde) | Con la regla de fechas | Umbral |
+| :-- | :-- | :-- | :-- |
+| formato | 100 % | **75 %** | 95 % |
+| fidelidad | 92 % | **80 %** | 90 % |
+
+- **B04** (`fidelidad`): "Cifras no respaldadas: **2020**" — con un CV corto y
+  genérico, el modelo se inventó un año. El "no lo inventes" no bastó.
+- **B13** (`formato` + `fidelidad`, caso fácil): CV de 367 caracteres (< 400).
+  La regla de fechas dejó la salida más corta.
+- **B05**: 262 caracteres (el export de LinkedIn, que el 31/08 pasaba).
+
+Los otros fallos (A06 "poeta", A10 dos empresas) son residuales conocidos de
+`extraerPerfil`, iguales que el 31/08. **Quitando la regla de fechas, la tanda
+volvería a verde.** Decisión: **revertir `lib/ia.ts` y `prompts/system.md` a
+`master` byte a byte** y quedarse solo con el rediseño de `lib/pdf.tsx`, que
+mejora la presentación con o sin fechas y **no dispara los evals**.
+`interpretarCv` ya sabe maquetar las fechas si algún día llegan.
+
+**Las fechas quedan como tarea aparte**: el prompt necesita una instrucción
+más fina ("incluye el periodo SOLO si los años aparecen literalmente en el CV
+original; nunca los estimes ni los infieras") y medirse sin gastar la misma
+tanda en dos cosas. Con cuota fresca.
+
+**Sigue pendiente, no bloquea**: la **página 2 medio vacía** cuando el CV
+desborda por poco — inherente a repartir un CV en páginas fijas de A4 con
+`<Page wrap>`, solo molesta justo en el límite.
 
 # Relacionado
 

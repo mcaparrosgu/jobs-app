@@ -254,15 +254,6 @@ ofertas que no ha elegido.
    muestra aparte, encima del documento (ver `docs/diseno-cv-pdf` / skill de
    diseño). Empieza directamente por la primera sección de contenido.
 
-   **Cada experiencia y cada formación lleva su periodo en años** (añadido el
-   01/09/2026, T83). Dentro de cada entrada, el orden es: empresa o centro
-   en un elemento, cargo o titulación en el siguiente, y el periodo en años
-   (p. ej. `2019–2023` o `2021–actualidad`) en un tercero — cada cosa en su
-   propia línea, antes de las viñetas de esa entrada. Si el CV original no
-   da el año de una entrada, **no lo inventes**: omite la fecha de esa
-   entrada (un año inventado es información falsa igual que una cifra
-   inventada, y lo caza `verificarCv`).
-
    **No se escriben saltos de línea dentro de ningún elemento**: el salto lo
    pone la lista, y el código une los elementos al recibirlos. Cambiado el
    26/08/2026 (T114). Antes se pedía un único texto y había que insistirle
