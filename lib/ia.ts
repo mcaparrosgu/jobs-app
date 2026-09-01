@@ -1465,6 +1465,11 @@ function mensajesDeGeneracion(
         'por "- " y ocupa también su propio elemento — nunca dos puntos, ni un punto ' +
         'y un título, dentro del mismo. Nada de markdown, tablas ni asteriscos. Un ' +
         'CV normal son entre 15 y 40 elementos.\n' +
+        '- FECHAS: en cada experiencia y en cada formación, escribe la empresa o el ' +
+        'centro en un elemento, el cargo o la titulación en el siguiente, y el ' +
+        'periodo en años (p. ej. "2019–2023" o "2021–actualidad") en un tercero — ' +
+        'cada cosa en su propia línea, antes de las viñetas de esa entrada. Si el CV ' +
+        'original no da el año de una entrada, NO lo inventes: omite esa fecha.\n' +
         '- EL CV NO EMPIEZA POR EL NOMBRE NI LOS DATOS DE CONTACTO: esta información ' +
         'ya se muestra aparte, encima del documento. Empieza directamente por la ' +
         'primera sección de contenido (perfil profesional, experiencia, etc.). No ' +
