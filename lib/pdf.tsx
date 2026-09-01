@@ -150,15 +150,23 @@ export const estilos = StyleSheet.create({
 
 // Une líneas sueltas en párrafos, listas de puntos y títulos de sección,
 // respetando el orden en que llegan.
-function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; contenido: string[] }[] {
+export function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; contenido: string[] }[] {
   const lineas = texto.split('\n').map((l) => l.trimEnd());
   const grupos: { tipo: 'titulo' | 'puntos' | 'parrafo'; contenido: string[] }[] = [];
 
+  const esPunto = (l: string) => l.trim().startsWith('- ');
+  // Un título de sección es una línea entera en mayúsculas. Se excluye la
+  // viñeta ("- NEOLAND" puede estar toda en mayúsculas sin ser un título) —
+  // por eso `esPunto` se comprueba antes en el bucle, y además aquí.
   const esTitulo = (l: string) => {
     const limpia = l.trim();
-    return limpia.length > 0 && limpia === limpia.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(limpia);
+    return (
+      limpia.length > 0 &&
+      !esPunto(limpia) &&
+      limpia === limpia.toUpperCase() &&
+      /[A-ZÁÉÍÓÚÑ]/.test(limpia)
+    );
   };
-  const esPunto = (l: string) => l.trim().startsWith('- ');
 
   // Una línea en blanco corta la continuidad: aunque la siguiente línea sea
   // del mismo tipo que la anterior, empieza un grupo nuevo en vez de
@@ -173,9 +181,7 @@ function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; 
       continue;
     }
 
-    if (esTitulo(limpia)) {
-      grupos.push({ tipo: 'titulo', contenido: [limpia] });
-    } else if (esPunto(limpia)) {
+    if (esPunto(limpia)) {
       const ultimo = grupos[grupos.length - 1];
       const texto = limpia.slice(2).trim();
       if (!anteriorEnBlanco && ultimo?.tipo === 'puntos') {
@@ -183,6 +189,8 @@ function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; 
       } else {
         grupos.push({ tipo: 'puntos', contenido: [texto] });
       }
+    } else if (esTitulo(limpia)) {
+      grupos.push({ tipo: 'titulo', contenido: [limpia] });
     } else {
       const ultimo = grupos[grupos.length - 1];
       if (!anteriorEnBlanco && ultimo?.tipo === 'parrafo') {
@@ -197,10 +205,36 @@ function agruparLineas(texto: string): { tipo: 'titulo' | 'puntos' | 'parrafo'; 
   return grupos;
 }
 
+// La carta que genera la IA (lib/ia.ts) suele terminar en la despedida
+// ("Atentamente", "Sincerely") sin el nombre debajo, y el documento queda
+// como cortado. Si el tramo final de la carta no menciona ya el nombre, se
+// añade en su propia línea.
+export function cartaConFirma(cartaTexto: string, nombre: string): string {
+  const nombreLimpio = nombre.trim();
+  if (nombreLimpio.length === 0) return cartaTexto;
+  const cola = cartaTexto.trimEnd().slice(-160).toLowerCase();
+  if (cola.includes(nombreLimpio.toLowerCase())) return cartaTexto;
+  return `${cartaTexto.trimEnd()}\n\n${nombreLimpio}`;
+}
+
 // Dibuja un bloque de texto plano (CV o carta) con la jerarquía elegante de
 // `estilos`. Se usa para las dos piezas del documento.
-export function bloqueTexto(texto: string) {
-  return agruparLineas(texto).map((grupo, i) => {
+//
+// `omitirTituloInicial`: el CV que devuelve la IA suele abrir con el puesto
+// en mayúsculas, que el masthead ya muestra bajo el nombre. Si el primer
+// grupo es un título igual a ese puesto se descarta, para no repetirlo. Solo
+// el primero y solo si coincide exactamente: las secciones legítimas
+// ("PERFIL", "EXPERIENCIA"…) no se tocan.
+export function bloqueTexto(texto: string, opciones: { omitirTituloInicial?: string } = {}) {
+  const grupos = agruparLineas(texto);
+  const omitir = opciones.omitirTituloInicial?.trim().toUpperCase();
+  const visibles =
+    omitir &&
+    grupos[0]?.tipo === 'titulo' &&
+    grupos[0].contenido[0].trim().toUpperCase() === omitir
+      ? grupos.slice(1)
+      : grupos;
+  return visibles.map((grupo, i) => {
     if (grupo.tipo === 'titulo') {
       return (
         <Text key={i} style={estilos.seccionTitulo}>
@@ -305,12 +339,12 @@ export function DocumentoGeneracion({
       <Page size="A4" style={estilos.pagina}>
         <View style={estilos.rayaVertical} fixed />
         <Masthead nombre={nombre} puesto={puesto} email={email} />
-        {bloqueTexto(cvTexto)}
+        {bloqueTexto(cvTexto, { omitirTituloInicial: puesto })}
       </Page>
       <Page size="A4" style={estilos.pagina}>
         <View style={estilos.rayaVertical} fixed />
         <Text style={estilos.etiquetaCarta}>{ETIQUETA_CARTA[idioma]}</Text>
-        {bloqueTexto(cartaTexto)}
+        {bloqueTexto(cartaConFirma(cartaTexto, nombre))}
       </Page>
     </Document>
   );

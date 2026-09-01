@@ -1,5 +1,36 @@
 # Registro de cambios del bundle
 
+## 2026-09-01 (Prueba E2E en producción · el recorrido funciona, el PDF no es presentable)
+
+* **Creación**: `prueba-e2e-produccion-01-09.md`. Primera prueba de extremo a
+  extremo en producción tras publicar el MVP el 31/08, con navegador
+  automatizado y Mar supervisando (aportó el enlace mágico). Cuota de
+  Cloudflare fresca.
+* **El recorrido funciona**: login por enlace mágico → `/ofertas` → "Me
+  interesa" en una oferta sin generar → generación en **~45 s** (estado
+  `listo`, **`avisos: []`**, generación limpia) → PDF válido (`%PDF-1.3`).
+* **Hallazgo 1 — 503 transitorio**: la primera pulsación de "Descargar" dio
+  `HTTP 503`; los reintentos, 200 con el PDF idéntico. Apunta a cold start de
+  la función de Vercel (`@react-pdf/renderer` + fuentes). Se recupera solo, no
+  bloquea; anotado por si reaparece.
+* **Hallazgo 2 — PDF no presentable** (Mar: "la estructura y la información no
+  están mal pero no son presentables"). **Tres bugs de código arreglados en
+  `lib/pdf.tsx`** (rama `arregla-pdf-bugs-01-09`; no dispara evals):
+  1. `agruparLineas` comprobaba `esTitulo` antes que `esPunto`, así que una
+     viñeta entera en mayúsculas (`- NEOLAND`) se renderizaba como cabecera de
+     sección. Ahora `esPunto` va primero y `esTitulo` excluye el prefijo `- `.
+  2. El puesto salía dos veces (masthead + primer título del CV, que la IA
+     abre así). `bloqueTexto(cvTexto, { omitirTituloInicial: puesto })`
+     descarta el primer grupo solo si es un título igual al puesto.
+  3. La carta terminaba en la despedida sin el nombre debajo. `cartaConFirma`
+     lo añade si el final de la carta no lo menciona ya.
+* `tests/lib/pdf.test.ts`: 8 pruebas nuevas, vistas fallar sin el arreglo.
+  Suite 324 en verde, `tsc`/`lint` limpios, `comprobar:esquema` 0 desajustes.
+* **Pendiente, pasada de rediseño aparte** (necesita plantilla de referencia de
+  Mar): letter-spacing de los títulos, fechas en experiencia/formación (toca
+  `prompts/system.md` → dispara evals), paginación de la página 2, separación
+  entre entradas.
+
 ## 2026-08-31 (Publicado a producción con `[sin evals]` · cierra el bloque de T113/T95)
 
 * **`medicion-t114` fusionada a `master` y desplegada a producción.** Merge
