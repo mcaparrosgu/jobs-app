@@ -548,7 +548,7 @@ verdad, ya no solo `localhost`.
 
 > **✅ T68 confirmada el 29/08/2026**: el aviso llega cada día a la bandeja de
 > Mar sobre las 13:03. Cerrada.
-| — | 10 · Opcional | Corregir el `comment on column` de `supabase/migrations/0015_metricas_ia.sql`, que sigue mencionando a Groq (no urgente, no bloquea nada; exige una migración nueva, no tocar la 0015) | migración nueva | El comentario en Supabase ya no menciona a Groq | — | [ ] |
+| — | 10 · Opcional | Corregir el `comment on column` de `supabase/migrations/0015_metricas_ia.sql`, que sigue mencionando a Groq (no urgente, no bloquea nada; exige una migración nueva, no tocar la 0015). **Migración `0019_comentario_metricas_sin_groq.sql`** (01/09/2026) — cambia solo el texto del comentario de `metricas_ia.tokens_entrada` a "cupo diario de neuronas de Cloudflare". **Aplicada por Mar en el SQL Editor de Supabase el 01/09/2026.** | `supabase/migrations/0019_comentario_metricas_sin_groq.sql` | El comentario en Supabase ya no menciona a Groq | — | [x] |
 
 > ⚠️ **T94 necesita tu decisión antes de tocar código** (regla de
 > `CLAUDE.md`: no cerrar una elección entre varias opciones sin habértela

@@ -1,5 +1,22 @@
 # Registro de cambios del bundle
 
+## 2026-09-01 (Migración 0019 · el comentario de `metricas_ia` deja de nombrar a Groq)
+
+* **Creación**: `supabase/migrations/0019_comentario_metricas_sin_groq.sql`. Única
+  tarea `[ ]` que quedaba en `docs/06-tareas.md` (prioridad 10, opcional). Cambia
+  **solo** el texto del `comment on column` de `metricas_ia.tokens_entrada`, que
+  desde la 0015 seguía diciendo "el de tokens por minuto de Groq" — cupo que dejó
+  de aplicar el 23/08/2026, cuando Cloudflare pasó a proveedor único (límite
+  diario de neuronas, no por minuto). No se toca la 0015: una migración aplicada
+  se corrige con otra nueva.
+* El esquema no cambia (`npm run comprobar:esquema` no se ve afectado).
+  **Aplicada por Mar en el SQL Editor de Supabase el mismo 01/09/2026.**
+  `docs/06-tareas.md` pasa la tarea 10 · Opcional a `[x]` — **no queda ninguna
+  casilla `[ ]` en el documento.**
+* `docs/08-rutina.md` §Coste ya describía bien el cupo (neuronas de Cloudflare),
+  así que no había nada más desfasado por este motivo.
+* **Actualización**: `docs/06-tareas.md` (fila de la tarea 10 · Opcional).
+
 ## 2026-09-01 (Prueba E2E en producción · el recorrido funciona, el PDF no es presentable)
 
 * **Creación**: `prueba-e2e-produccion-01-09.md`. Primera prueba de extremo a
