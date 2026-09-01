@@ -1,5 +1,52 @@
 # Registro de cambios del bundle
 
+## 2026-09-01 (Prueba E2E en producción · el recorrido funciona, el PDF no es presentable)
+
+* **Creación**: `prueba-e2e-produccion-01-09.md`. Primera prueba de extremo a
+  extremo en producción tras publicar el MVP el 31/08, con navegador
+  automatizado y Mar supervisando (aportó el enlace mágico). Cuota de
+  Cloudflare fresca.
+* **El recorrido funciona**: login por enlace mágico → `/ofertas` → "Me
+  interesa" en una oferta sin generar → generación en **~45 s** (estado
+  `listo`, **`avisos: []`**, generación limpia) → PDF válido (`%PDF-1.3`).
+* **Hallazgo 1 — 503 transitorio**: la primera pulsación de "Descargar" dio
+  `HTTP 503`; los reintentos, 200 con el PDF idéntico. Apunta a cold start de
+  la función de Vercel (`@react-pdf/renderer` + fuentes). Se recupera solo, no
+  bloquea; anotado por si reaparece.
+* **Hallazgo 2 — PDF no presentable** (Mar: "la estructura y la información no
+  están mal pero no son presentables"). **Tres bugs de código arreglados en
+  `lib/pdf.tsx`** (rama `arregla-pdf-bugs-01-09`; no dispara evals):
+  1. `agruparLineas` comprobaba `esTitulo` antes que `esPunto`, así que una
+     viñeta entera en mayúsculas (`- NEOLAND`) se renderizaba como cabecera de
+     sección. Ahora `esPunto` va primero y `esTitulo` excluye el prefijo `- `.
+  2. El puesto salía dos veces (masthead + primer título del CV, que la IA
+     abre así). `bloqueTexto(cvTexto, { omitirTituloInicial: puesto })`
+     descarta el primer grupo solo si es un título igual al puesto.
+  3. La carta terminaba en la despedida sin el nombre debajo. `cartaConFirma`
+     lo añade si el final de la carta no lo menciona ya.
+* `tests/lib/pdf.test.ts`: pruebas nuevas, vistas fallar sin el arreglo.
+* **Segunda pasada — rediseño de maquetación** (misma sesión, tras ver Mar los
+  3 bugs arreglados en la vista previa: *"faltan negritas, falta información en
+  educación"*). Decidido con ella: reutilizar la referencia de T83, con fechas.
+  * `lib/pdf.tsx` · `interpretarCv()`: dentro de EXPERIENCIA / FORMACIÓN /
+    PROYECTOS, un grupo de párrafo es la **cabecera de una entrada** — empresa
+    o centro en **negrita**, cargo y periodo debajo en gris. Un nombre en
+    mayúsculas fuera del vocabulario `SECCION_CONOCIDA` (`NEOLAND`, `IBM`) se
+    reconoce como cabecera de entrada, no como título de sección.
+    `letterSpacing` de los títulos 2.2 → 1.5 y del puesto 2 → 1.4.
+  * Render local verificado con el CV real. 329 pruebas en verde.
+* **Las fechas en el prompt: probadas y REVERTIDAS.** Se añadió a
+  `prompts/system.md` y a `mensajesDeGeneracion` una regla de "periodo en años
+  por entrada, sin inventar". `npm run evals` completo → **puerta ROJO**:
+  formato 100 % → 75 %, fidelidad 92 % → 80 %. B04 se inventó un año ("2020"),
+  B13 (caso fácil) y B05 salieron cortos. **Sin la regla, la tanda vuelve a
+  verde.** Revertidos `lib/ia.ts` y `prompts/system.md` a `master` byte a byte:
+  la rama solo cambia `lib/pdf.tsx` (+ tests + docs) y **no dispara evals**.
+  Las fechas quedan como tarea aparte, con una instrucción más fina y cuota
+  fresca.
+* **Pendiente, no bloquea**: la página 2 medio vacía cuando el CV desborda por
+  poco (inherente a `<Page wrap>` en A4).
+
 ## 2026-08-31 (Publicado a producción con `[sin evals]` · cierra el bloque de T113/T95)
 
 * **`medicion-t114` fusionada a `master` y desplegada a producción.** Merge
