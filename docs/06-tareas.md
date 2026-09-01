@@ -283,6 +283,26 @@ verdad, ya no solo `localhost`.
 | T82 | Añadir el nombre completo al perfil | `supabase/migrations/0009_perfiles_nombre.sql`, `components/FormularioPerfil.tsx`, `app/api/perfil/route.ts`, `app/perfil/page.tsx` | En `/perfil` escribes tu nombre completo, guardas, recargas la página y sigue ahí | T31 | [x] |
 | T83 | Rediseño elegante del PDF, a prueba de ATS | `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts`, `public/fonts/` | Descargas un CV: tu nombre arriba en una tipografía elegante, el puesto y tu email debajo, secciones en mayúsculas espaciadas con una línea fina, viñetas finas — todo en una sola columna de lectura (nada de texto girado ni columnas paralelas, para que un lector automático no lo desordene) | T82, T60 | [x] |
 
+> **01/09/2026 · Prueba E2E en producción + tercera pasada del PDF (T83).**
+> Primera prueba real de extremo a extremo en producción tras publicar el MVP:
+> login por enlace mágico → `/ofertas` → "me interesa" → generación limpia
+> (~45 s, `avisos: []`) → PDF. **El recorrido funciona.** Dos hallazgos:
+> - **503 transitorio** en la 1ª pulsación de "Descargar" (cold start de la
+>   función de Vercel); el reintento da 200. Se recupera solo, no bloquea.
+> - **El PDF no era presentable** con datos reales. Tercera pasada de T83, solo
+>   `lib/pdf.tsx`: empresa y centro de estudios en **negrita**, cargo y periodo
+>   debajo en gris (`interpretarCv`), tres bugs de maquetación
+>   (viñeta-en-mayúsculas tomada por cabecera, puesto duplicado, carta sin
+>   nombre) y `letterSpacing` de los títulos bajado. Fusionado a `master` con
+>   permiso de Mar (merge `c24c45d`); no dispara evals.
+>
+> Intento fallido: añadir las **fechas** (periodo en años por entrada) al
+> prompt sacó la puerta de evals a **ROJO** (formato 100→75 %, fidelidad
+> 92→80 %: el modelo se inventó un año, acortó CVs). Revertido byte a byte.
+> Las fechas quedan pendientes de una instrucción más fina y cuota fresca —
+> ver `knowledge/prueba-e2e-produccion-01-09.md` y `knowledge/paso-13-evals.md`
+> (01/09).
+
 ## Añadido el 23/08/2026 · Rediseño de perfil, sugerencias y caducidad de ofertas
 
 > A petición de Mar tras usar la app: el formulario de perfil pedía datos que

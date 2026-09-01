@@ -192,10 +192,82 @@ teléfono, enlace — los que tenga rellenos) a la línea de debajo, cada una
 con su propio ajuste de línea independiente. Verificado en vivo
 descargando un PDF de prueba con los tres datos de contacto rellenos.
 
+# Tercera pasada: la maquetación seguía sin ser presentable (01/09/2026)
+
+La primera prueba de extremo a extremo en producción (ver
+`prueba-e2e-produccion-01-09.md`) destapó que el PDF, con datos reales,
+**seguía sin ser presentable**. Mar, sobre el documento descargado: primero
+*"la estructura y la información no están mal pero no son presentables"*, y
+tras un primer arreglo, *"faltan negritas, falta información en educación,
+sigue sin ser presentable"*. Decidido con ella: reutilizar esta misma
+referencia de T83, aplicada mejor, **y con fechas** aunque obligue a relanzar
+los evals.
+
+## Tres bugs de código (arreglados)
+
+1. **Una viñeta entera en mayúsculas se dibujaba como cabecera de sección.**
+   `agruparLineas` comprobaba `esTitulo` antes que `esPunto`, y `esTitulo`
+   solo miraba "línea entera en mayúsculas". Una viñeta como `- NEOLAND`
+   (nombre de la escuela) lo cumplía. Arreglo: `esPunto` primero y `esTitulo`
+   excluye el prefijo `- `.
+2. **El puesto salía dos veces**: el masthead lo pinta bajo el nombre, y la IA
+   abre el `cv_texto` con el puesto en mayúsculas, que se tomaba como primer
+   título de sección. Arreglo: `bloqueTexto(cvTexto, { omitirTituloInicial:
+   puesto })` descarta el primer grupo si es un título igual al puesto.
+3. **La carta terminaba en la despedida sin el nombre debajo.**
+   `cartaConFirma(cartaTexto, nombre)` lo añade si el final no lo menciona ya.
+
+## El rediseño de maquetación: `interpretarCv()`
+
+`bloqueTexto` para el CV pasa por `interpretarCv()`, que interpreta los grupos
+planos de `agruparLineas` **según la sección**:
+
+- Dentro de EXPERIENCIA / FORMACIÓN / PROYECTOS (regex `SECCION_CON_ENTRADAS`),
+  un grupo de párrafo NO es prosa: es la **cabecera de una entrada**. Se dibuja
+  la empresa o el centro en **negrita** (`entradaPrincipal`) y, debajo, el
+  cargo/titulación y el periodo en gris más pequeño (`entradaMeta`). Es lo que
+  da jerarquía visible al CV — sin esto todo salía en el mismo peso.
+- Fuera de esas secciones (PERFIL, un resumen en prosa) un párrafo sigue
+  siendo texto corrido.
+- Un nombre en mayúsculas que **no** está en el vocabulario `SECCION_CONOCIDA`
+  (ES + EN: PERFIL, HABILIDADES, IDIOMAS, CERTIFICACIONES…) se reconoce como
+  cabecera de entrada, no como título de sección — así una empresa o escuela
+  con acrónimo (`NEOLAND`, `IBM`, `BBVA`) no se come el estilo de cabecera.
+- Una cabecera de una sola línea con separador (`Empresa — Cargo — 2019`) se
+  parte por `SEPARADOR_ENTRADA`.
+
+`letterSpacing` de los títulos de sección 2.2 → 1.5 y del puesto del masthead
+2 → 1.4: con el tracking alto el hueco entre palabras no se distinguía del
+hueco entre letras y "MARKETING OPERATIONS MANAGER" se leía como un borrón.
+
+Verificado con un render local del CV real (28/08) y una versión con fechas.
+`tests/lib/pdf.test.ts` cubre `agruparLineas`, `interpretarCv`, `bloqueTexto`
+estructurado y `cartaConFirma`. Fusionado a `master` con permiso de Mar
+(merge `c24c45d`); no dispara evals porque solo cambia `lib/pdf.tsx`.
+
+## Las fechas: probadas y REVERTIDAS
+
+Añadir al prompt una regla de "periodo en años por entrada, sin inventar" hizo
+que `npm run evals` diera **puerta ROJO** (formato 100→75 %, fidelidad
+92→80 %): B04 se inventó un año, B13 y B05 salieron cortos. Se revirtió
+`lib/ia.ts` y `prompts/system.md` a `master` byte a byte. `interpretarCv` ya
+sabe maquetar las fechas si algún día llegan; falta afinar la instrucción
+(*"solo si los años aparecen literalmente en el CV; nunca los estimes"*) y
+medirla con cuota fresca. Detalle en `paso-13-evals.md` (01/09) y
+`prueba-e2e-produccion-01-09.md`.
+
+## Pendiente, no bloquea
+
+La **página 2 medio vacía** cuando el CV desborda por poco — inherente a
+repartir un CV en páginas fijas de A4 con `<Page wrap>` de react-pdf; solo
+molesta justo en el límite. No se persiguió en esta pasada.
+
 # Relacionado
 
 - [`docs/06-tareas.md`](../docs/06-tareas.md) — T58-T62 (Hito 7) y T82-T83
   (añadidas durante el Hito 7).
 - [`docs/01-historias.md`](../docs/01-historias.md) — historia C4, el
   criterio de aceptación que este rediseño sigue cumpliendo.
+- [`prueba-e2e-produccion-01-09.md`](prueba-e2e-produccion-01-09.md) — la
+  prueba E2E que destapó la tercera pasada, y el 503 transitorio de la descarga.
 - `lib/pdf.tsx`, `app/api/descargar/[id]/route.ts` — la implementación.

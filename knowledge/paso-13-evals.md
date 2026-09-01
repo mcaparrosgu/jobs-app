@@ -640,3 +640,38 @@ de la tanda vieja del otro fichero queda resuelta.
 
 Acto seguido `medicion-t114` se fusionó a `master` y se publicó a producción con
 `[sin evals]` (merge `a90ab93`) — ver `knowledge/log.md` (31/08).
+
+## 01/09/2026 — tanda ROJA por añadir fechas al prompt, y su reversión
+
+Al rediseñar el PDF (ver `prueba-e2e-produccion-01-09.md` y
+`decision-diseno-pdf.md`) se probó una regla nueva en `prompts/system.md` §4 y
+en `mensajesDeGeneracion`: *"cada experiencia y cada formación lleva su periodo
+en años; si el CV original no da el año, no lo inventes"*. `npm run evals`
+completo (las dos llamadas, cuota fresca) → **puerta ROJO**:
+
+| métrica | 31/08 (verde) | con la regla de fechas | umbral |
+|---|---|---|---|
+| formato | 100 % | **75 % (9/12)** | 95 % |
+| fidelidad | 92 % | **80 % (20/25)** | 90 % |
+| calidad_palabras_clave | 100 % | 100 % | 90 % |
+| idioma | 100 % | 100 % | 100 % |
+| resistencia_inyeccion | 90,9 % | 90,9 % | 85 % |
+
+Fallos nuevos, todos de la regla de fechas:
+
+- **B04** (`fidelidad`) · "Cifras no respaldadas: **2020**". Con un CV corto y
+  genérico ("recién graduada"), el modelo se inventó un año. El *"no lo
+  inventes"* no bastó — mismo patrón que un límite superior que el modelo lee
+  como objetivo (T109, T113, T116), pero al revés: una instrucción de "añade
+  X" que el modelo cumple aunque X no exista.
+- **B13** (`formato` + `fidelidad`, caso fácil) · CV de 367 caracteres (< 400).
+  La regla de fechas dejó la salida más corta.
+- **B05** · 262 caracteres (el export de LinkedIn, que el 31/08 pasaba).
+
+A06 ("poeta") y A10 (dos empresas) son los residuales de siempre. **Quitando la
+regla de fechas, la tanda vuelve a verde**: se revirtió `lib/ia.ts` y
+`prompts/system.md` a `master` byte a byte, y a `master` fue solo el rediseño
+de `lib/pdf.tsx` (merge `c24c45d`, sin evals — no toca IA). Las fechas quedan
+pendientes de una instrucción más fina (*"incluye el periodo SOLO si los años
+aparecen literalmente en el CV original; nunca los estimes ni los infieras"*) y
+una tanda propia con cuota fresca.
