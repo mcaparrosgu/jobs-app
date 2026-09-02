@@ -81,7 +81,7 @@ antes de mandarle un CV, no basta con que sea barato.
 
 | Punto | Mistral, nivel de pago |
 | :-- | :-- |
-| **Entrenamiento** | El nivel de pago (pay-as-you-go) está **excluido del entrenamiento por defecto** (varios análisis de 2026 coinciden; el nivel gratuito "Experiment" es al revés, entrena salvo opt-out). El texto legal genérico menciona que existe un opt-out, así que la jugada segura es **dejar marcado explícitamente el opt-out** en Admin Console → Privacy. Pendiente de que Mar lo confirme en el panel. |
+| **Entrenamiento** | El nivel de pago (pay-as-you-go) está **excluido del entrenamiento por defecto** (varios análisis de 2026 coinciden; el nivel gratuito "Experiment" es al revés, entrena salvo opt-out). El texto legal genérico menciona que existe un opt-out, así que la jugada segura es dejar marcado explícitamente el opt-out en Admin Console → Privacy. **Hecho por Mar el 02/09/2026** — el opt-out queda marcado además del "por defecto". |
 | **Retención** | 30 días rodantes para vigilar abusos y después se borra (salvo que se active Zero Data Retention). Coincide con la regla 10 de la spec ("los datos se borran al mes"). |
 | **Jurisdicción** | Datos en la UE por defecto, empresa sujeta al RGPD de forma nativa. Mejor que Cloudflare (empresa de EE. UU.) en este punto. |
 
@@ -124,10 +124,31 @@ Verificado en vivo (02/09): con Cloudflare OK, `uso.proveedor` da "Cloudflare"
 "Mistral" (`mistral-small-2603`, 4,3 s, CV de 628 car.) — el respaldo recoge el
 testigo en vez de fallar.
 
-Clave nueva: `MISTRAL_API_KEY` en `.env.local` (ya puesta por Mar). Falta
-añadirla como **secreto de GitHub** (para el robot de evals) y como **variable
-de entorno en Vercel** (para producción), igual que se hizo con las de
-Cloudflare en T98/T99. Sin ellas, el respaldo no existe en producción.
+Clave nueva: `MISTRAL_API_KEY`, puesta por Mar en los tres sitios el 02/09:
+`.env.local` (local), **secreto de GitHub** (para el robot de evals) y
+**variable de entorno en Vercel** (Production/Preview/Development, para
+producción), igual que las de Cloudflare en T98/T99.
+
+# Publicado (02/09/2026)
+
+Commit `af45f3b` en `master`. Robot `publicar.yml` run **33641223572**, los
+cuatro pasos en verde:
+
+| Paso | Resultado |
+| :-- | :-- |
+| Decidir si hacen falta los evals | sí (el push toca `lib/ia.ts`) |
+| Lint y pruebas | ✅ 329/329 |
+| Puerta de calidad de la IA | ✅ **VEREDICTO: VERDE**, todas las métricas por encima de umbral (24 min) |
+| Publicar en Vercel | ✅ `https://jobs-app-dun.vercel.app` sirve `af45f3b` |
+
+Dentro de la tanda suspendieron **A06** ("Poeta" a partir de una letra de
+canción) y **A10** (dos personas en un CV pegado): son los fallos residuales
+ya conocidos de `extraerPerfil` (ver [[project_estado_25_08_donde_retomar]]),
+no regresiones de C1 — las métricas globales los absorben sin bajar de umbral.
+Coherente con que la ruta de Cloudflare no cambió ni un byte.
+
+Comprobaciones locales antes del push: `comprobar:esquema` OK (sin migraciones
+en C1), `tsc` OK, `lint` OK, 329 pruebas en verde.
 
 # Por qué acabó de respaldo y no de principal
 
@@ -171,13 +192,22 @@ cascada.
 
 # Pendiente
 
-1. **`MISTRAL_API_KEY`** como secreto de GitHub y como variable de entorno en
-   Vercel (T98/T99). Sin ellas, el respaldo no existe en producción.
-2. **Mar**: confirmar el opt-out de entrenamiento en Admin Console → Privacy
-   (y, opcional, activar Zero Data Retention).
-3. Retomar en algún momento la vía "Mistral de principal" si interesa
+Nada bloqueante. T112 queda cerrado con C1 publicado y la clave en los tres
+sitios; el opt-out de entrenamiento lo marcó Mar el 02/09.
+
+Abierto solo como mejora futura, sin prisa:
+
+1. Retomar en algún momento la vía "Mistral de principal" si interesa
    (`mistral-medium` reajustando longitudes, o Claude Haiku 4.5) — o revisar si
    Mistral vuelve a ofrecer una versión de `small` más fiel.
+2. Opcional: activar **Zero Data Retention** en la cuenta de Mistral, que
+   elimina incluso la ventana de retención de 30 días.
+3. Cuando la app lleve unos días de prueba con la clase, mirar en
+   `console.mistral.ai` el gasto real acumulado contra el tope de 10 € (debería
+   ser de céntimos: el respaldo casi no se llama).
+4. Sonda pendiente de siempre: una tanda de evals con `CLOUDFLARE_API_TOKEN`
+   roto a propósito, para medir la ruta de Mistral de punta a punta bajo el
+   arnés (hasta ahora solo verificada con llamadas sueltas).
 
 # Relacionado
 

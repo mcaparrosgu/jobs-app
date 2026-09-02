@@ -426,9 +426,11 @@ existe en produccion y no se toca desde aqui.
   re-evaluar) y Mistral entra como **respaldo**, segundo de la cascada, antes de
   OpenRouter. Cubre el hueco de T112 (sin esto, una mala racha de Cloudflare
   deja la app sin generar). Nivel de pago = no entrena por defecto, datos en la
-  UE (verificado el 02/09). Pendiente: `MISTRAL_API_KEY` en GitHub/Vercel,
-  opt-out de entrenamiento en el panel de Mistral. `extraerPerfil` con el modelo
-  de Mistral dio 12/12 en evals — mejor que el 31/08.
+  UE (verificado el 02/09); Mar marcó además el opt-out explícito en el panel de
+  Mistral el 02/09. `extraerPerfil` con el modelo de Mistral dio 12/12 en evals
+  — mejor que el 31/08. **PUBLICADO el 02/09/2026**: commit `af45f3b` en
+  `master`, `MISTRAL_API_KEY` en `.env.local` + GitHub + Vercel, robot
+  `33641223572` con **puerta VERDE**, producción sirve `af45f3b`. T112 cerrado.
 - [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
   T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
   ("más profesional", "más conciso") y la IA redacta otra vez el CV y la

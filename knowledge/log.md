@@ -1,6 +1,6 @@
 # Registro de cambios del bundle
 
-## 2026-09-02 (Mistral de pago entra como RESPALDO de IA — opción C1 · parcialmente cierra T112)
+## 2026-09-02 (Mistral de pago entra como RESPALDO de IA — opción C1 · cierra T112 · PUBLICADO)
 
 * **Creación**: `decision-mistral-pago.md`. Mar abrió el presupuesto 0 €/mes
   **solo para la IA** (lo permite `CLAUDE.md`, "salvo que Mar lo pida
@@ -26,16 +26,23 @@
   revirtieron a `master` byte a byte.
 * **Política de datos** (verificado el 02/09): nivel de pago = no entrena con el
   contenido por defecto; retención 30 días rodantes (regla 10); datos en la UE.
-  Pendiente que Mar marque el opt-out en Admin Console → Privacy.
+  **Mar marcó además el opt-out explícito en Admin Console → Privacy el 02/09.**
 * **Verificado en vivo**: lint + `tsc` + **329 pruebas** en verde;
   `comprobar:esquema` sin cambios; sonda `medir:generacion` — con Cloudflare OK
   responde Cloudflare (14 s); con `CLOUDFLARE_API_TOKEN` roto a propósito,
   responde **Mistral** (`mistral-small-2603`, 4,3 s) en vez de fallar.
-* **Pendiente**: `MISTRAL_API_KEY` como secreto de GitHub y variable de Vercel
-  (sin esto el respaldo no existe en producción); opt-out de entrenamiento en el
-  panel de Mistral.
+* **Publicado**: commit `af45f3b` en `master`. `MISTRAL_API_KEY` puesta por Mar
+  en `.env.local`, secreto de GitHub y variable de Vercel. Robot `publicar.yml`
+  run **33641223572** — los cuatro pasos en verde, **puerta de calidad VERDE**
+  (métricas por encima de umbral; A06 "Poeta" y A10 dos personas son los fallos
+  residuales conocidos de `extraerPerfil`, no regresiones). Producción sirve
+  `af45f3b` en `https://jobs-app-dun.vercel.app`.
+* **T112 cerrado.** Abierto solo como mejora futura sin prisa: retomar "Mistral
+  de principal" (`mistral-medium` reajustando longitudes, o Claude Haiku 4.5);
+  Zero Data Retention en Mistral; revisar el gasto real contra el tope de 10 €
+  tras unos días de prueba; sonda de evals con Cloudflare roto de punta a punta.
 * **Actualización**: `lib/ia.ts`, `CLAUDE.md`, `.env.example`,
-  `knowledge/index.md`.
+  `knowledge/index.md`, `knowledge/decision-mistral-pago.md`.
 
 ## 2026-09-01 (Migración 0019 · el comentario de `metricas_ia` deja de nombrar a Groq)
 

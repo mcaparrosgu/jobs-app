@@ -67,11 +67,12 @@ son Mar: sus cuatro compañeras de clase.
   - **Mistral La Plateforme, nivel de pago** (respaldo desde el 02/09/2026,
     opción C1 — ver `knowledge/decision-mistral-pago.md`): segundo de la
     cascada, solo se llama si Cloudflare falla. El nivel de pago está excluido
-    del entrenamiento por defecto; retención 30 días rodantes (regla 10 de la
-    spec); datos en la UE, RGPD nativo. Pendiente que Mar marque el opt-out
-    explícito en Admin Console → Privacy. `MODELO_MISTRAL = 'mistral-small-2603'`
+    del entrenamiento por defecto (y Mar marcó además el opt-out explícito en
+    Admin Console → Privacy el 02/09/2026); retención 30 días rodantes (regla 10
+    de la spec); datos en la UE, RGPD nativo. `MODELO_MISTRAL = 'mistral-small-2603'`
     (el pequeño; tiende a inventar "X años de experiencia", que `verificarCv`
-    marca como aviso — aceptable en una vía de último recurso).
+    marca como aviso — aceptable en una vía de último recurso). Publicado a
+    `master` el 02/09/2026 (commit `af45f3b`, puerta VERDE).
   - **OpenRouter** (respaldo *sobre el papel*): tenía activado "Allow free
     endpoints that train on request data", es decir, los modelos gratuitos
     podían **entrenar con los CVs**. Se apagó. Ver

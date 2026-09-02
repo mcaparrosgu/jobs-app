@@ -472,6 +472,16 @@ verdad, ya no solo `localhost`.
 > fusionada a `master` y publicada a producción con `[sin evals]` (merge
 > `a90ab93`). Ver `knowledge/log.md` (31/08).** Sigue abierto solo lo de T112:
 > qué hacer con Cloudflare como proveedor único — decisión de Mar.
+>
+> ✅ **02/09/2026: T112 cerrada del todo.** Mar abrió el presupuesto solo para la
+> IA y contrató **Mistral La Plateforme de pago** (tope de 10 €). Opción C1:
+> Cloudflare sigue de principal (ruta intacta, puerta VERDE del 31/08 sin
+> re-evaluar) y **Mistral entra como respaldo de pago**, segundo de la cascada
+> (Cloudflare → Mistral → OpenRouter). Publicado a `master` (commit `af45f3b`),
+> robot `33641223572` con puerta VERDE, `MISTRAL_API_KEY` en GitHub y Vercel,
+> opt-out de entrenamiento marcado por Mar. Ya hay un respaldo real cuando
+> Cloudflare tiene una mala racha. Ver `knowledge/decision-mistral-pago.md` y
+> `knowledge/log.md` (02/09).
 
 > **29/08/2026 · Primer arreglo de T113, y la tanda completa destapa más.**
 > Ver `knowledge/arreglo-t113-cv-corto-entrada-pobre.md`.
