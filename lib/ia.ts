@@ -1,10 +1,23 @@
 // Llamadas al modelo de IA, en un solo sitio (docs/04-plan-tecnico.md §3.3).
 //
 // Proveedor principal desde el 23/08/2026: **Cloudflare Workers AI**, para
-// las dos llamadas, con OpenRouter como único respaldo detrás. Groq se ha
-// retirado del todo del proyecto (decisión de Mar, 23/08/2026) — ya no queda
-// ninguna llamada a `api.groq.com` ni ninguna lectura de `GROQ_API_KEY` en
-// este fichero.
+// las dos llamadas. Detrás, como respaldo y en este orden: **Mistral La
+// Plateforme** (de pago, añadido el 02/09/2026) y luego **OpenRouter**. Groq
+// se ha retirado del todo del proyecto (decisión de Mar, 23/08/2026) — ya no
+// queda ninguna llamada a `api.groq.com` ni ninguna lectura de `GROQ_API_KEY`
+// en este fichero.
+//
+// Por qué Mistral es RESPALDO y no principal (opción C1, 02/09/2026): Mar
+// abrió presupuesto y contrató Mistral de pago para dejar de depender solo de
+// Cloudflare (inestable, con tope diario y sin respaldo real — OpenRouter
+// devuelve 429 al instante, T112). Pero Mistral ya no sirve por API el
+// `mistral-small-3.1` contra el que se afinó todo este fichero; sus modelos
+// actuales (`mistral-small-2603`, `mistral-medium-2604`) no pasan la puerta de
+// evals como principales (el pequeño inventa años de experiencia; el mediano
+// saca CVs demasiado escuetos). Así que Cloudflare sigue de principal —con la
+// puerta VERDE del 31/08 intacta, este fichero no cambia en su ruta— y Mistral
+// entra solo cuando Cloudflare falla, que es justo el hueco que no estaba
+// cubierto. Detalle en `knowledge/decision-mistral-pago.md`.
 //
 // ⚠️ Las dos llamadas vuelven a usar el MISMO modelo de Cloudflare
 // (`mistral-small-3.1-24b-instruct`) desde T109 (25/08/2026), pero siguen
@@ -199,6 +212,45 @@ const MODELO_CLOUDFLARE = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 // antes de producir una sola señal de contenido. Relanzar los evals de
 // `generarCvYCarta` es obligatorio antes de dar esto por bueno (CLAUDE.md).
 const MODELO_CLOUDFLARE_GENERACION = '@cf/mistralai/mistral-small-3.1-24b-instruct';
+
+// ---------------------------------------------------------------------------
+// Mistral La Plateforme · RESPALDO de pago desde el 02/09/2026 (opción C1).
+// ---------------------------------------------------------------------------
+// Segundo de la cascada, entre Cloudflare (principal) y OpenRouter (último).
+// Solo se llama cuando Cloudflare falla o agota su corte — en un día normal no
+// se toca, así que su gasto (pay-as-you-go, tope de 10 € en la cuenta) es de
+// céntimos al mes. Cubre el hueco que dejaba T112: sin esto, una mala racha de
+// Cloudflare deja a la app sin generar (OpenRouter contesta 429 en 0,4 s).
+//
+// `mistral-small-2603` (no `-latest`, que en esta cuenta enruta raro): es el
+// más barato, y aunque tiende a inventar un total de años de experiencia
+// ("más de X años") que el CV no escribe, `lib/verificarCv.ts` lo marca como
+// aviso a la usuaria. En una vía de último recurso, un CV con un aviso vale
+// más que un error. `temperature: 0.2` (en `PROVEEDOR_MISTRAL`) para acortar
+// la varianza de longitud — la API de Mistral usa un valor por defecto alto.
+//
+// API compatible con OpenAI (`response_format: json_schema` estricto), así que
+// entra en `llamarModelo` como un proveedor más, sin función ni esquema aparte.
+const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
+const MODELO_MISTRAL = 'mistral-small-2603';
+
+// Cortes de espera de Mistral, dimensionados como RESPALDO: corren después de
+// que Cloudflare haya agotado el suyo, y todo tiene que caber en el
+// `maxDuration = 60` de la ruta que llama.
+//   perfil:     26 (Cloudflare) + 10 (Mistral) + 12 + 12 (OpenRouter) = 60 s
+//   generación: 48 (Cloudflare) +  8 (Mistral) +  2 +  2 (OpenRouter) = 60 s
+// En la práctica el tramo de OpenRouter es ~0,8 s (429 inmediato), así que la
+// cola real es de ~37 s / ~57 s. Mistral responde en 2-6 s medidos, así que 8
+// y 10 s le bastan de sobra en la vía de respaldo.
+const TIMEOUT_MISTRAL_MS = 10_000;
+const TIMEOUTS_MISTRAL_GENERACION_MS = [8_000] as const;
+
+// Techos de tokens de salida de Mistral. Sin secuencia de parada: el bucle de
+// relleno hasta el techo es una patología del endpoint de Cloudflare, no de
+// este. `MAX_TOKENS_MISTRAL_GENERACION` un poco por encima del de Cloudflare
+// (1.500) porque aquí no hay parada que corte antes.
+const MAX_TOKENS_MISTRAL_PERFIL = 1_100;
+const MAX_TOKENS_MISTRAL_GENERACION = 2_000;
 
 // Tiempo máximo de espera por ronda. Todo el presupuesto (Cloudflare MÁS las
 // dos rondas de OpenRouter) tiene que caber holgadamente en los 60 s que
@@ -503,17 +555,29 @@ const PROVEEDOR_CLOUDFLARE = {
   apiKey: process.env.CLOUDFLARE_API_TOKEN,
 };
 
-// Primero Cloudflare, después OpenRouter. Groq se retiró del todo el
-// 23/08/2026 (decisión de Mar, ver la nota de cabecera del fichero).
+// 02/09/2026 · Respaldo de pago, segundo de la cascada. `temperature: 0.2`
+// FIJADA a propósito: el código nunca mandaba `temperature` y la API de
+// Mistral usa un valor por defecto alto que disparaba la varianza de longitud
+// (medido el 02/09). Se pasa por `extra`, que `llamarModelo` esparce en el
+// cuerpo. Ver el bloque de constantes MISTRAL_* y knowledge/decision-mistral-pago.md.
+const PROVEEDOR_MISTRAL = {
+  nombre: 'Mistral',
+  url: MISTRAL_URL,
+  apiKey: process.env.MISTRAL_API_KEY,
+  extra: { temperature: 0.2 },
+};
+
+// Cascada: Cloudflare (principal) → Mistral (respaldo de pago, 02/09/2026) →
+// OpenRouter (último). Groq se retiró del todo el 23/08/2026 (decisión de Mar,
+// ver la nota de cabecera del fichero).
 //
-// OpenRouter es seguro como respaldo desde que se apagó "Allow free endpoints
-// that train on request data" en su cuenta (red team, 20/08/2026,
+// Los tres son aceptables para el CV de una persona real que no es Mar:
+// Cloudflare declara no entrenar por defecto; Mistral de pago tampoco entrena
+// por defecto y guarda los datos en la UE (knowledge/decision-mistral-pago.md);
+// y OpenRouter es seguro desde que se apagó "Allow free endpoints that train on
+// request data" en su cuenta (red team, 20/08/2026,
 // knowledge/decision-groq-principal-privacidad.md): esa opción permitía que
-// los modelos `:free` retuvieran los CVs y entrenaran con ellos, y lo que
-// viaja en cada petición es el CV entero de una persona real que no es Mar.
-// Al apagarla, OpenRouter deja de enrutar a esos endpoints gratuitos — así
-// que usarlo de respaldo ya no es un riesgo de privacidad distinto al de
-// Cloudflare.
+// los modelos `:free` retuvieran los CVs y entrenaran con ellos.
 async function llamarAlModelo(
   mensajes: Mensaje[],
   esquema: Esquema,
@@ -527,6 +591,11 @@ async function llamarAlModelo(
     // T119 · Secuencias de parada, solo para Cloudflare. Ver
     // PARADAS_CLOUDFLARE_GENERACION.
     paradasCloudflare?: readonly string[];
+    // 02/09/2026 · Mistral, respaldo. `generarCvYCarta` pasa sus propios cortes
+    // y techo; `extraerPerfil` usa los de por defecto.
+    timeoutMistralMs?: number;
+    timeoutsMistralMs?: readonly number[];
+    maxTokensMistral?: number;
     timeoutOpenRouterMs?: number;
     maxTokens?: number;
     // T93 · Permite que `generarCvYCarta` use un modelo de Cloudflare distinto
@@ -540,6 +609,9 @@ async function llamarAlModelo(
     timeoutsCloudflareMs,
     maxTokensCloudflare = MAX_TOKENS_CLOUDFLARE_PERFIL,
     paradasCloudflare,
+    timeoutMistralMs = TIMEOUT_MISTRAL_MS,
+    timeoutsMistralMs,
+    maxTokensMistral = MAX_TOKENS_MISTRAL_PERFIL,
     timeoutOpenRouterMs = TIMEOUT_OPENROUTER_MS,
     maxTokens,
     modeloCloudflare = MODELO_CLOUDFLARE,
@@ -561,6 +633,26 @@ async function llamarAlModelo(
         maxTokensCloudflare,
         AbortSignal.timeout(corte),
         paradasCloudflare,
+      );
+    } catch (error) {
+      fallos.push(error);
+    }
+  }
+
+  // Mistral, respaldo de pago (02/09/2026, opción C1). Solo llega aquí si
+  // Cloudflare ha fallado. Mismo patrón de "uno o varios intentos". Sin
+  // secuencia de parada: el bucle de relleno es cosa del endpoint de Cloudflare.
+  const cortesMistral = timeoutsMistralMs ?? [timeoutMistralMs];
+
+  for (const corte of cortesMistral) {
+    try {
+      return await llamarModelo(
+        PROVEEDOR_MISTRAL,
+        MODELO_MISTRAL,
+        mensajes,
+        esquema,
+        maxTokensMistral,
+        AbortSignal.timeout(corte),
       );
     } catch (error) {
       fallos.push(error);
@@ -1665,6 +1757,8 @@ export async function generarCvYCarta(
     maxTokensCloudflare: MAX_TOKENS_CLOUDFLARE_GENERACION,
     paradasCloudflare: PARADAS_CLOUDFLARE_GENERACION,
     modeloCloudflare: MODELO_CLOUDFLARE_GENERACION,
+    timeoutsMistralMs: TIMEOUTS_MISTRAL_GENERACION_MS,
+    maxTokensMistral: MAX_TOKENS_MISTRAL_GENERACION,
     timeoutOpenRouterMs: TIMEOUT_OPENROUTER_GENERACION_MS,
     maxTokens: 6_000,
   });

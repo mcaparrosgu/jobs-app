@@ -41,6 +41,15 @@ IA de pago, un servicio con tarjeta— está descartada salvo que Mar lo pida
 expresamente. Si una solución técnica solo funciona pagando, dilo
 claramente en vez de proponerla como si fuera gratis.
 
+**Única excepción autorizada (02/09/2026): el proveedor de IA.** Mar contrató
+**Mistral La Plateforme** en pay-as-you-go con un **tope de gasto de 10 €**
+configurado en la consola. El plan era usarlo de principal, pero sus modelos de
+API actuales no pasan la puerta de evals (ver `knowledge/decision-mistral-pago.md`):
+Mar eligió la **opción C1**, Mistral como **respaldo de pago** (segundo de la
+cascada, detrás de Cloudflare y delante de OpenRouter). Cubre el hueco de T112.
+No es una apertura general del presupuesto: todo lo demás sigue a 0 €/mes. No
+proponer subir el tope ni contratar nada más de pago sin pedírselo.
+
 ## Datos sensibles
 
 Se manejan **CVs, emails y datos de contacto de personas reales** que no
@@ -50,10 +59,19 @@ son Mar: sus cuatro compañeras de clase.
   fila lleva su dueña grabada), no con lógica en el código.
 - El texto de los CVs sale hacia el proveedor de IA. **Antes de cambiar de
   proveedor o de añadir uno nuevo, hay que comprobar su política de datos** —
-  no basta con que sea gratis. Estado verificado el 23/08/2026:
-  - **Cloudflare Workers AI** (principal desde el 23/08/2026, sustituye a
-    Groq): declaración oficial de que no entrena con el contenido por
-    defecto. Ver `knowledge/decision-cloudflare-generarcv.md`.
+  no basta con que sea gratis. Estado verificado el 02/09/2026. Cascada:
+  Cloudflare → Mistral → OpenRouter.
+  - **Cloudflare Workers AI** (principal desde el 23/08/2026): declaración
+    oficial de que no entrena con el contenido por defecto. Ver
+    `knowledge/decision-cloudflare-generarcv.md`.
+  - **Mistral La Plateforme, nivel de pago** (respaldo desde el 02/09/2026,
+    opción C1 — ver `knowledge/decision-mistral-pago.md`): segundo de la
+    cascada, solo se llama si Cloudflare falla. El nivel de pago está excluido
+    del entrenamiento por defecto; retención 30 días rodantes (regla 10 de la
+    spec); datos en la UE, RGPD nativo. Pendiente que Mar marque el opt-out
+    explícito en Admin Console → Privacy. `MODELO_MISTRAL = 'mistral-small-2603'`
+    (el pequeño; tiende a inventar "X años de experiencia", que `verificarCv`
+    marca como aviso — aceptable en una vía de último recurso).
   - **OpenRouter** (respaldo *sobre el papel*): tenía activado "Allow free
     endpoints that train on request data", es decir, los modelos gratuitos
     podían **entrenar con los CVs**. Se apagó. Ver
@@ -61,11 +79,12 @@ son Mar: sus cuatro compañeras de clase.
     ⚠️ **Medido el 27/08/2026 (T112): ese respaldo no respalda nada.** Los 17
     modelos `:free` probados con el prompt real, y ninguno genera el documento;
     **8 los bloquea la propia política de privacidad** (error "data policy"),
-    que es el precio correcto de haber apagado lo anterior. En la práctica
-    **Cloudflare es el proveedor único**: si se cae o agota su cupo diario, la
-    app no genera. Al tocar `RONDAS_MODELOS`, partir de ahí y no de la idea de
-    que hay una red debajo. Ver
-    `knowledge/medicion-t112-respaldo-openrouter.md`.
+    que es el precio correcto de haber apagado lo anterior. Al tocar
+    `RONDAS_MODELOS`, partir de ahí y no de la idea de que hay una red debajo.
+    Ver `knowledge/medicion-t112-respaldo-openrouter.md`.
+    **Actualización 02/09/2026**: el respaldo real de verdad es ahora
+    **Mistral de pago** (segundo en la cascada, delante de OpenRouter);
+    OpenRouter sigue siendo el tercero y sigue sin respaldar nada.
 - **Un enrutador (*gateway*) de IA no es un proveedor, y aquí está descartado.**
   OmniRoute, OpenRouter como router, Portkey, Unify, LiteLLM y similares no
   aportan modelos ni cuota: solo reparten la llamada. Su auto-fallback termina
@@ -121,10 +140,13 @@ son Mar: sus cuatro compañeras de clase.
 ejecutable con Promptfoo en `evals/promptfoo/`.
 
 **Relanza los evals siempre que cambie el prompt (`lib/ia.ts`,
-`prompts/system.md`), el modelo (`MODELO_CLOUDFLARE` / `RONDAS_MODELOS` en
-`lib/ia.ts`), o el formato de los datos de entrada o salida.** Un cambio
-que no se comprueba contra el golden dataset puede arreglar un caso y
-romper otro sin que nadie se entere hasta que le pase a una usuaria real.
+`prompts/system.md`), el modelo (`MODELO_CLOUDFLARE` / `MODELO_CLOUDFLARE_GENERACION`,
+el principal; `MODELO_MISTRAL` / `RONDAS_MODELOS`, de respaldo — en `lib/ia.ts`),
+o el formato de los datos de entrada o salida.** Un cambio que no se comprueba
+contra el golden dataset puede arreglar un caso y romper otro sin que nadie se
+entere hasta que le pase a una usuaria real. (Los evals miden la ruta
+principal, así que un cambio SOLO en la parte de Mistral —respaldo— no obliga a
+relanzarlos, aunque conviene una sonda con `CLOUDFLARE_API_TOKEN` roto.)
 
 **Y al revés: si tocas un validador de `lib/ia.ts` (`largoMinimoCv`,
 `LINEAS_MINIMAS_CV`, `verificarCv`…), repasa si `evals/promptfoo/helpers.cjs`
@@ -164,10 +186,12 @@ minuto — ver `knowledge/decision-cloudflare-generarcv.md`), pero el juez de
 las aserciones "llm-rubric" **sigue llamando a Groq** y sigue sujeto al mismo
 límite, así que `-j 1` y las pausas no se han tocado.
 
-Ambos llaman a las funciones reales de `lib/ia.ts` (consumen cuota gratis de
-Cloudflare/OpenRouter, igual que la app en producción, más la cuota de Groq
-del modelo juez). Los umbrales de aprobado y cómo leer el resultado están
-documentados en `knowledge/paso-13-evals.md`.
+Ambos llaman a las funciones reales de `lib/ia.ts`, igual que la app en
+producción: consumen cuota gratis de Cloudflare (el principal), más la cuota
+gratis de Groq del modelo juez. Solo tocarían el tope de 10 € de Mistral si
+Cloudflare fallara durante la tanda y la generación cayera al respaldo. Los
+umbrales de aprobado y cómo leer el resultado están documentados en
+`knowledge/paso-13-evals.md`.
 
 ### Antes de creerte una tanda, mira si el proveedor está estable
 

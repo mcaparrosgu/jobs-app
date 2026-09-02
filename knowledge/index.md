@@ -415,6 +415,20 @@ existe en produccion y no se toca desde aqui.
   descartados también los *routers / gateways* multi-proveedor (OmniRoute y
   similares) — un enrutador no es un proveedor, su auto-fallback acaba en los
   endpoints `:free` que entrenan, y hace imposible saber quién vio cada CV.
+- [decision-mistral-pago.md](decision-mistral-pago.md) — 02/09/2026: Mar abre
+  el presupuesto 0 €/mes **solo para la IA** y contrata **Mistral La Plateforme
+  de pago** (pay-as-you-go, tope de 10 €). El plan era Mistral de principal,
+  pero Mistral ya no sirve por API el `mistral-small-3.1` contra el que se afinó
+  el pipeline; sus modelos actuales (`mistral-small-2603`, `mistral-medium-2604`)
+  no pasan la puerta de evals como principales (el pequeño inventa "X años de
+  experiencia"; el mediano saca CVs vacíos). Decisión de Mar: **opción C1** —
+  Cloudflare sigue de principal (ruta intacta, puerta VERDE del 31/08 sin
+  re-evaluar) y Mistral entra como **respaldo**, segundo de la cascada, antes de
+  OpenRouter. Cubre el hueco de T112 (sin esto, una mala racha de Cloudflare
+  deja la app sin generar). Nivel de pago = no entrena por defecto, datos en la
+  UE (verificado el 02/09). Pendiente: `MISTRAL_API_KEY` en GitHub/Vercel,
+  opt-out de entrenamiento en el panel de Mistral. `extraerPerfil` con el modelo
+  de Mistral dio 12/12 en evals — mejor que el 31/08.
 - [decision-rehacer-cv-carta.md](decision-rehacer-cv-carta.md) — 23/08/2026,
   T93: botón "Rehacer" junto a "Descargar" — la usuaria escribe qué cambiar
   ("más profesional", "más conciso") y la IA redacta otra vez el CV y la

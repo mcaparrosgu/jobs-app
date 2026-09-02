@@ -1,5 +1,42 @@
 # Registro de cambios del bundle
 
+## 2026-09-02 (Mistral de pago entra como RESPALDO de IA — opción C1 · parcialmente cierra T112)
+
+* **Creación**: `decision-mistral-pago.md`. Mar abrió el presupuesto 0 €/mes
+  **solo para la IA** (lo permite `CLAUDE.md`, "salvo que Mar lo pida
+  expresamente") y contrató **Mistral La Plateforme** en pay-as-you-go con un
+  tope de gasto de 10 €. Elegido explícitamente entre cuatro opciones.
+* **El plan era Mistral de principal. No salió**: Mistral ya no sirve por API el
+  `mistral-small-3.1` contra el que se afinó `lib/ia.ts` durante semanas. Dos
+  tandas de evals con `mistral-small-2603` de principal → ROJO (`fidelidad`
+  76 %): el modelo abre el CV/carta con "más de X años de experiencia" que el CV
+  no escribe, y en un caso inventó un año ("2019"). Ni la regla del prompt ni
+  `temperature: 0.2` lo contienen. `mistral-medium-2604` respeta la fidelidad
+  pero saca CVs vacíos/escuetos (formato). `extraerPerfil` sí mejoró: 12/12.
+* **Decisión de Mar (opción C1)**: Cloudflare sigue de **principal** — su ruta
+  en `lib/ia.ts`, su prompt y la puerta VERDE del 31/08 quedan **intactos**, sin
+  re-evaluar. Mistral entra como **respaldo**, segundo de la cascada
+  (Cloudflare → Mistral → OpenRouter). Solo corre si Cloudflare falla, que es el
+  hueco de T112 (OpenRouter devuelve 429 en 0,4 s).
+* **Qué cambia en `lib/ia.ts`** (todo aditivo, la ruta de Cloudflare sin tocar):
+  constantes `MISTRAL_*` (`MODELO_MISTRAL = 'mistral-small-2603'`,
+  `PROVEEDOR_MISTRAL` con `temperature: 0.2`, timeouts de respaldo 10 s / 8 s,
+  techos 1.100 / 2.000), y un bucle de Mistral entre el de Cloudflare y el de
+  OpenRouter. El prompt (`prompts/system.md`) y los dos ficheros de tests se
+  revirtieron a `master` byte a byte.
+* **Política de datos** (verificado el 02/09): nivel de pago = no entrena con el
+  contenido por defecto; retención 30 días rodantes (regla 10); datos en la UE.
+  Pendiente que Mar marque el opt-out en Admin Console → Privacy.
+* **Verificado en vivo**: lint + `tsc` + **329 pruebas** en verde;
+  `comprobar:esquema` sin cambios; sonda `medir:generacion` — con Cloudflare OK
+  responde Cloudflare (14 s); con `CLOUDFLARE_API_TOKEN` roto a propósito,
+  responde **Mistral** (`mistral-small-2603`, 4,3 s) en vez de fallar.
+* **Pendiente**: `MISTRAL_API_KEY` como secreto de GitHub y variable de Vercel
+  (sin esto el respaldo no existe en producción); opt-out de entrenamiento en el
+  panel de Mistral.
+* **Actualización**: `lib/ia.ts`, `CLAUDE.md`, `.env.example`,
+  `knowledge/index.md`.
+
 ## 2026-09-01 (Migración 0019 · el comentario de `metricas_ia` deja de nombrar a Groq)
 
 * **Creación**: `supabase/migrations/0019_comentario_metricas_sin_groq.sql`. Única
