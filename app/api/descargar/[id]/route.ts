@@ -13,6 +13,13 @@ import { DocumentoGeneracion } from '@/lib/pdf';
 import { detectarIdioma } from '@/lib/idioma';
 import { createClient } from '@/lib/supabase/server';
 
+// El PDF se dibuja en el momento de la petición con `@react-pdf/renderer` y las
+// fuentes de `public/fonts/`. En un arranque en frío de la función en Vercel
+// eso puede tardar bastante más que el límite por defecto, y el navegador se
+// come un 503 (visto en la prueba E2E del 01/09). Se le da el mismo margen que
+// a las rutas de IA para que el primer intento del día no muera por tiempo.
+export const maxDuration = 60;
+
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: ofertaId } = await params;
 

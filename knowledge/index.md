@@ -474,6 +474,17 @@ existe en produccion y no se toca desde aqui.
   el prompt** se probaron y **se revirtieron**: la puerta salió ROJO (formato
   75 %, fidelidad 80 %) porque el modelo inventó años y acortó CVs — la rama se
   queda solo con `lib/pdf.tsx`, que no dispara evals. Fechas: tarea aparte.
+- [robustez-demo-frente-1.md](robustez-demo-frente-1.md) — 02/09/2026: pasada
+  de robustez del frontend antes de la prueba con la clase (no toca IA, no
+  dispara evals). Barreras de error de Next 16 (`app/error.tsx`,
+  `app/global-error.tsx`) y 404 propia (`app/not-found.tsx`) para que un fallo
+  no enseñe la pantalla cruda de Next. La descarga del PDF deja de ser un
+  enlace a pelo: `fetch` con reintento ante el **503 de arranque en frío** de
+  Vercel (hallazgo de la E2E del 01/09), con "Descargando…" y aviso claro;
+  `app/api/descargar` añade `maxDuration = 60`. Limpieza de restos de
+  create-next-app: favicon y SVG sin usar fuera, `app/icon.svg` propio, y el
+  `body` usa la fuente Geist que ya cargaba el layout. 339 pruebas (10 nuevas),
+  build y `comprobar:esquema` en verde.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

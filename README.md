@@ -70,7 +70,7 @@ Las instrucciones de qué clave se saca de dónde están dentro de
 
 ```bash
 npm run lint     # el código, según las normas del proyecto
-npm test         # 316 pruebas de la parte que no usa IA (segundos)
+npm test         # 339 pruebas de la parte que no usa IA (segundos)
 npm run evals    # los 25 casos de la parte de IA (~25 min, gasta cuota real)
 
 # Y dos comprobaciones sueltas, para cuando toques justo esa pieza:

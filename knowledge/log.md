@@ -1,5 +1,47 @@
 # Registro de cambios del bundle
 
+## 2026-09-02 (Frente 1 · robustez del frontend para la demo con la clase — SIN publicar)
+
+* **Creación**: `robustez-demo-frente-1.md`. Pasada de robustez del frontend
+  web antes de la prueba con la clase (skill `prueba-usuarios`). **No toca
+  `lib/ia.ts`, `prompts/system.md`, `lib/guardrails.ts`, `lib/verificarCv.ts`
+  ni `evals/`**, así que no dispara los evals al publicar.
+* **Barreras de error, que no existían**: `app/error.tsx` (cliente, recoge
+  fallos de render en `/`, `/perfil`, `/ofertas`; botón `retry()` — prop
+  estable de Next 16.3), `app/global-error.tsx` (último recurso si falla el
+  layout raíz; trae sus propias `<html>/<body>` y estilos en línea) y
+  `app/not-found.tsx` (404 propia, servidor). Sin ellas, un fallo en la demo
+  enseñaba la pantalla cruda de Next o una página en blanco.
+* **Descarga del PDF robusta ante el arranque en frío** (hallazgo 1 de la E2E
+  del 01/09): `components/TarjetaOferta.tsx` sigue con un `<a href>` (clic con
+  modificador cae al enlace normal), pero el clic primario va por `fetch` con
+  reintento ante 5xx (esperas `[1500, 4000] ms`); un 404 no se reintenta.
+  Estado "Descargando…" con spinner, aviso `role="alert"` si no se despeja.
+  El PDF se baja como blob. `app/api/descargar/[id]/route.ts` añade
+  `export const maxDuration = 60` (mismo margen que las rutas de IA).
+* **Restos de create-next-app**: fuera `app/favicon.ico` y
+  `public/{next,vercel,file,globe,window}.svg` (sin referencias). Nuevo
+  `app/icon.svg` (maletín monocromo) → Next emite `<link rel="icon">`.
+  `app/globals.css`: `body` pasa de `Arial` a `var(--font-sans), Arial…` — la
+  fuente Geist ya la cargaba el layout; ahora también la usa el texto suelto
+  (modal de "Rehacer"). Cambio de una línea, sin rediseño.
+* **Verificado**: `npm run lint` y `tsc --noEmit` limpios; **`npx vitest run`
+  339 pruebas en verde** (329 antes; +5 en `tests/components/pantallas-error.test.tsx`
+  y +5 en `tests/components/TarjetaOferta-descarga.test.tsx` —ambos nuevos, sin
+  tocar `TarjetaOferta.test.tsx`—, vistas pasar; mocks de
+  `URL.createObjectURL`/`revokeObjectURL` y `HTMLAnchorElement.click` porque
+  jsdom no los trae; el archivo de descarga va aparte porque sus esperas de
+  reintento son reales y mezcladas volvían intermitente a otra prueba).
+  **`npx next build` en verde** (`/icon.svg` estático, `/_not-found` presente);
+  `npm run comprobar:esquema` sin desajustes. Dev server en vivo: 404 real en
+  una URL inventada, `<link rel="icon">` en el `<head>`, `/api/descargar/x`
+  sigue 401 sin sesión.
+* **Sin publicar**: queda a decisión de Mar (rama + vista previa antes de
+  `master`, regla de `CLAUDE.md`). Frente 2 (prueba con la clase) y la
+  supervisión operativa (gasto de Mistral, alta de las 5 invitadas, cuota de
+  Cloudflare) siguen pendientes.
+* **Actualización**: `knowledge/index.md`.
+
 ## 2026-09-02 (Mistral de pago entra como RESPALDO de IA — opción C1 · cierra T112 · PUBLICADO)
 
 * **Creación**: `decision-mistral-pago.md`. Mar abrió el presupuesto 0 €/mes
