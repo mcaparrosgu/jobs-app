@@ -12,6 +12,7 @@ type PerfilGuardado = {
   titulos_cv: string[];
   cv_texto: string | null;
   usar_experiencia_cv: boolean;
+  salario_minimo: number | null;
 };
 
 export default function FormularioPerfil({ perfilInicial }: { perfilInicial: PerfilGuardado | null }) {
@@ -34,6 +35,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
   const [empresasCv, setEmpresasCv] = useState<string[]>(perfilInicial?.empresas_cv ?? []);
   const [titulosCv, setTitulosCv] = useState<string[]>(perfilInicial?.titulos_cv ?? []);
   const [usarExperienciaCv, setUsarExperienciaCv] = useState(perfilInicial?.usar_experiencia_cv ?? false);
+  const [salarioMinimo, setSalarioMinimo] = useState(perfilInicial?.salario_minimo?.toString() ?? '');
   const [nuevaPalabra, setNuevaPalabra] = useState('');
   const [avisoPalabra, setAvisoPalabra] = useState<string | null>(null);
 
@@ -155,6 +157,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
           titulos_cv: titulosCv,
           cv_texto: cvTexto,
           usar_experiencia_cv: usarExperienciaCv,
+          salario_minimo: salarioMinimo.trim() === '' ? null : Number(salarioMinimo),
         }),
       });
       const datos = await respuesta.json();
@@ -321,6 +324,24 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         />
         Tener en cuenta la experiencia de mi CV al buscar ofertas
       </label>
+
+      <label htmlFor="salario-minimo" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        Salario mínimo deseado (€/año, opcional)
+      </label>
+      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        Si lo dejas en blanco, no filtramos las ofertas por salario.
+      </p>
+      <input
+        id="salario-minimo"
+        type="number"
+        min="0"
+        step="1000"
+        inputMode="numeric"
+        value={salarioMinimo}
+        onChange={(evento) => setSalarioMinimo(evento.target.value)}
+        placeholder="Por ejemplo, 30000"
+        className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+      />
 
       {mensaje && (
         <p

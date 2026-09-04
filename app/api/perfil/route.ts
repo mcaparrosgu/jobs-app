@@ -37,7 +37,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('perfiles')
-    .select('nombre, puestos, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('nombre, puestos, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv, salario_minimo')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -60,7 +60,8 @@ export async function POST(request: Request) {
   }
 
   const cuerpo = await request.json();
-  const { nombre, puestos, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv } = cuerpo;
+  const { nombre, puestos, palabras_clave, cv_texto, usar_experiencia_cv, empresas_cv, titulos_cv, salario_minimo } =
+    cuerpo;
 
   if (typeof nombre !== 'string' || nombre.trim().length === 0) {
     return NextResponse.json({ error: 'Falta tu nombre completo' }, { status: 400 });
@@ -85,6 +86,21 @@ export async function POST(request: Request) {
     }
   }
 
+  // Salario mínimo: opcional, vacío = sin filtro. Se valida como entero
+  // igual o mayor que cero cuando llega algo; nunca se guarda un valor no
+  // numérico.
+  let salarioMinimoLimpio: number | null = null;
+  if (salario_minimo !== null && salario_minimo !== undefined && salario_minimo !== '') {
+    const numero = Number(salario_minimo);
+    if (!Number.isFinite(numero) || numero < 0) {
+      return NextResponse.json(
+        { error: 'El salario mínimo debe ser un número igual o mayor que cero, o déjalo vacío.' },
+        { status: 400 },
+      );
+    }
+    salarioMinimoLimpio = Math.trunc(numero);
+  }
+
   const { error } = await supabase.from('perfiles').upsert(
     {
       user_id: user.id,
@@ -95,6 +111,7 @@ export async function POST(request: Request) {
       usar_experiencia_cv: Boolean(usar_experiencia_cv),
       empresas_cv: listaAncladaAlCv(empresas_cv, cvGuardado),
       titulos_cv: listaAncladaAlCv(titulos_cv, cvGuardado),
+      salario_minimo: salarioMinimoLimpio,
       actualizado_en: new Date().toISOString(),
     },
     { onConflict: 'user_id' },

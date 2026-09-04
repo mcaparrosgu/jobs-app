@@ -492,6 +492,24 @@ existe en produccion y no se toca desde aqui.
   clase/externas, guion de 3 tareas, reglas de la sesión y plan de datos.
   Pendiente: que Mar aporte los 5 nombres/emails.
 
+- [filtros-ingesta-a-perfil-04-09.md](filtros-ingesta-a-perfil-04-09.md) —
+  04/09/2026: los filtros de **salario** (33000€ fijo) y **cualificación**
+  (lista de profesiones) de `Jobs App · ingesta` en n8n eran globales y
+  calibrados al perfil de Mar — descartaban ofertas para todas las usuarias,
+  no solo para ella. `Filtro cualificación` eliminado (el encaje por perfil
+  ya lo resuelve `app/api/ofertas/route.ts`); `Filtro salario` pasa a
+  enriquecer (`salario_eur`) sin descartar, y el filtro se mueve al perfil
+  de cada usuaria (`salario_minimo`, opcional). **Verificado en producción
+  real**: dos ejecuciones, 0 errores, ofertas técnicas que antes se
+  descartaban ya llegan a Supabase.
+
+- [marco-passe-partout-04-09.md](marco-passe-partout-04-09.md) — 04/09/2026:
+  primera identidad visual de Jobs App, la skill `/frontend` (marco Passe-
+  Partout: coral `#F87C63` + ámbar `#F5B027`). Se probó y se revirtió un
+  cambio de arquitectura de scroll (contenedor interno vs. scroll de página)
+  que arreglaba un solape del marco con el texto — Mar prefirió el scroll
+  nativo. La solución al solape queda documentada por si se retoma.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

@@ -1,5 +1,78 @@
 # Registro de cambios del bundle
 
+## 2026-09-04 (Marco Passe-Partout — primera identidad visual de Jobs App)
+
+* Invocada la skill `/frontend`. Sin logo ni identidad visual previa, se
+  preguntó a Mar en vez de inventar: propuesta con vista previa en vivo
+  (artifact, mockup real de la pantalla de acceso, verde+dorado) rechazada
+  a favor de dos colores concretos que dio ella: **coral `#F87C63`**
+  (regla exterior) y **ámbar `#F5B027`** (regla interior).
+* **Aplicado**: `app/globals.css` (bloque `passe-partout.css` del skill,
+  forma sin tocar) + `<div class="pp">` en `app/layout.tsx`.
+  `global-error.tsx` (barrera de último recurso, aislada a propósito de
+  `globals.css`) se dejó sin tocar.
+* **Bug de UX encontrado por Mar probando en vivo**: el marco (`position:
+  fixed`) tapaba el texto durante el scroll en páginas largas — el
+  `padding` del body solo protege el principio/final de la página, no cada
+  punto intermedio del scroll.
+* **Arreglo probado y verificado** (contenedor interno con `position: fixed`
+  + `overflow-y: auto` en vez de scroll de página): confirmado en vivo que
+  el texto ya no pasa por debajo del marco en ningún punto del scroll.
+* **Revertido a petición de Mar**: prefiere el scroll nativo de la página al
+  cambio de comportamiento, aceptando el solape como imperfección conocida.
+  La solución queda documentada en `marco-passe-partout-04-09.md` por si se
+  retoma.
+* Lint y `tsc --noEmit` limpios. Verificado en vivo (navegación real de
+  Mar) en `/` y `/perfil`.
+* **Creación**: `marco-passe-partout-04-09.md`. **Actualización**:
+  `knowledge/index.md`.
+
+## 2026-09-04 (Filtros de ingesta en n8n pasan de globales a por perfil)
+
+* **Pregunta de Mar**: "si no desactivamos el filtro de salario, mis compis
+  verán solo las ofertas filtradas por mi salario deseado, mis capacidades,
+  etc." — pensando en la prueba con sus 4 compañeras de clase.
+* **Hallazgo**: investigando `Jobs App · ingesta` (n8n, id
+  `Rw4dTNjQa5tR3Eo4`) se encontró un segundo filtro, más grave, además del de
+  salario: `Filtro cualificación`, calibrado al perfil de Mar
+  (operaciones/automatización/IA), que descartaba en la ingesta cualquier
+  título de `developer`/`data scientist`/`ml engineer`/etc. — justo los
+  perfiles típicos de un bootcamp de AI Engineering. Ambos corrían antes de
+  Supabase, globalmente para todas las usuarias.
+* **Decisión con Mar** (preguntada explícitamente, `CLAUDE.md` punto 7):
+  `Filtro cualificación` se elimina del todo (el encaje por perfil ya lo
+  resuelve `app/api/ofertas/route.ts`); `Filtro salario` se quita de n8n y se
+  mueve al perfil de cada usuaria (`salario_minimo`, opcional).
+* **n8n**: `Filtro salario` → `Enriquecer con salario_eur` (mismo
+  `parseSalario`, ahora `.map()` en vez de `.filter()`, deja pasar el 100%);
+  `Filtro cualificación` eliminado y reconectado. `Supabase Insertar oferta`
+  mapea `salario_eur`. Verificado con `get_workflow_details`.
+* **Creación**: `supabase/migrations/0020_salario_eur_y_minimo.sql`
+  (`ofertas.salario_eur`, `perfiles.salario_minimo`, ambas enteras y
+  nullable). **Pendiente que Mar la aplique a mano en el SQL Editor.**
+* **Código**: `app/api/ofertas/route.ts` (filtro condicional por
+  `salario_minimo`, sin dato → pasa), `app/api/perfil/route.ts` (validación
+  opcional), `app/perfil/page.tsx`, `components/FormularioPerfil.tsx` (campo
+  nuevo). Tests nuevos en `tests/api/perfil.test.ts` y
+  `tests/api/ofertas.test.ts`. 345/345 pruebas verdes, lint limpio, `tsc
+  --noEmit` limpio. `npm run comprobar:esquema` confirma los 5 desajustes
+  esperados hasta que se aplique la migración.
+* **Creación**: `filtros-ingesta-a-perfil-04-09.md`.
+* **Actualización**: `knowledge/index.md`.
+* **Migración aplicada**: Mar pegó `0020` en el SQL Editor de Supabase;
+  `npm run comprobar:esquema` pasó a "Todo lo que el código pide existe en
+  Supabase."
+* **Verificado en producción real** (dos ejecuciones con permiso de Mar):
+  ejecución 759 (290 ofertas, 0 errores, incluye títulos técnicos que antes
+  `Filtro cualificación` descartaba, `salario_eur` calculado bien) y
+  ejecución 763 (289 ofertas, 0 errores, 27 nuevas + 262 duplicadas
+  esperadas). Detalle completo en `filtros-ingesta-a-perfil-04-09.md`.
+* **Fricción de herramienta anotada**: `get_execution` (n8n-mcp) da
+  `status: "running"` obsoleto para ejecuciones ya terminadas, y `data: null`
+  para una ejecución todavía en curso — `search_executions` es la fuente
+  fiable de estado. Causó una falsa alarma de "workflow colgado" y dos
+  ejecuciones de más disparadas por API antes de detectarlo.
+
 ## 2026-09-04 (Frente 2 · prueba de usabilidad — PREPARACIÓN, sin sesiones aún)
 
 * **Creación**: `prueba-usuarios-frente-2-prep.md`. Arranca el frente 2

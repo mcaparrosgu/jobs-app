@@ -103,6 +103,7 @@ describe('FormularioPerfil — B2: propuesta automática de puestos y palabras c
           titulos_cv: [],
           cv_texto: 'CV',
           usar_experiencia_cv: false,
+          salario_minimo: null,
         }}
       />,
     );
@@ -124,6 +125,7 @@ describe('FormularioPerfil — B2: propuesta automática de puestos y palabras c
           titulos_cv: [],
           cv_texto: 'CV',
           usar_experiencia_cv: false,
+          salario_minimo: null,
         }}
       />,
     );
@@ -146,6 +148,7 @@ describe('FormularioPerfil — B2: propuesta automática de puestos y palabras c
           titulos_cv: [],
           cv_texto: 'CV',
           usar_experiencia_cv: false,
+          salario_minimo: null,
         }}
       />,
     );
@@ -167,6 +170,7 @@ describe('FormularioPerfil — B2: propuesta automática de puestos y palabras c
           titulos_cv: [],
           cv_texto: 'CV',
           usar_experiencia_cv: false,
+          salario_minimo: null,
         }}
       />,
     );
@@ -190,6 +194,7 @@ describe('FormularioPerfil — B2: propuesta automática de puestos y palabras c
           titulos_cv: [],
           cv_texto: 'CV',
           usar_experiencia_cv: false,
+          salario_minimo: null,
         }}
       />,
     );
@@ -242,6 +247,7 @@ describe('FormularioPerfil — guardar el perfil', () => {
       titulos_cv: [],
       cv_texto: 'Texto del CV',
       usar_experiencia_cv: false,
+      salario_minimo: null,
     };
   }
 

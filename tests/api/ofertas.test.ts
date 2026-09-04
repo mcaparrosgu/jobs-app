@@ -267,6 +267,44 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     expect(new Date(llamadaGte?.args[1] as string).toString()).not.toBe('Invalid Date');
   });
 
+  it('aplica el filtro de salario_minimo del perfil (sin dato en la oferta -> pasa igual)', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'], salario_minimo: 30000 }, error: null }],
+        ofertas: [
+          { count: 5, error: null },
+          { data: [], error: null },
+        ],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await GET();
+
+    const llamadasOr = llamadasPorTabla.ofertas[1].filter((l) => l.metodo === 'or');
+    expect(llamadasOr.some((l) => l.args[0] === 'salario_eur.is.null,salario_eur.gte.30000')).toBe(true);
+  });
+
+  it('no aplica filtro de salario si la usuaria no ha puesto salario_minimo', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
+        ofertas: [
+          { count: 5, error: null },
+          { data: [], error: null },
+        ],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await GET();
+
+    const llamadasOr = llamadasPorTabla.ofertas[1].filter((l) => l.metodo === 'or');
+    expect(llamadasOr.length).toBe(1); // solo el .or() de puestos/palabras clave
+  });
+
   it('marca limiteAlcanzado cuando la usuaria ya gastó su cupo diario', async () => {
     const { cliente } = crearClienteFalso({
       user: USUARIA,

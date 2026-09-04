@@ -185,6 +185,34 @@ describe('POST /api/perfil — guardado y permisos', () => {
 
     expect(respuesta.status).toBe(500);
   });
+
+  it('guarda salario_minimo como null cuando no se manda (opcional, sin filtro)', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: { perfiles: [{ data: null, error: null }] },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await POST(peticionPost(BODY_VALIDO));
+
+    const llamadaUpsert = llamadasPorTabla.perfiles[0].find((l) => l.metodo === 'upsert');
+    const fila = llamadaUpsert?.args[0] as Record<string, unknown>;
+    expect(fila.salario_minimo).toBeNull();
+  });
+
+  it('guarda salario_minimo como entero cuando se manda', async () => {
+    const { cliente, llamadasPorTabla } = crearClienteFalso({
+      user: USUARIA,
+      tablas: { perfiles: [{ data: null, error: null }] },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    await POST(peticionPost({ ...BODY_VALIDO, salario_minimo: 30000.7 }));
+
+    const llamadaUpsert = llamadasPorTabla.perfiles[0].find((l) => l.metodo === 'upsert');
+    const fila = llamadaUpsert?.args[0] as Record<string, unknown>;
+    expect(fila.salario_minimo).toBe(30000);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -218,6 +246,25 @@ describe('POST /api/perfil — empresas y titulaciones ancladas al CV', () => {
       empresas_cv: ['Bar Manolo'],
       titulos_cv: ['Grado Superior en Hostelería'],
     });
+  });
+
+  it('rechaza un salario_minimo negativo', async () => {
+    const { cliente } = crearClienteFalso({ user: USUARIA });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const respuesta = await POST(peticionPost({ ...BODY_VALIDO, salario_minimo: -1000 }));
+
+    expect(respuesta.status).toBe(400);
+    expect((await respuesta.json()).error).toMatch(/salario/i);
+  });
+
+  it('rechaza un salario_minimo que no es un número', async () => {
+    const { cliente } = crearClienteFalso({ user: USUARIA });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const respuesta = await POST(peticionPost({ ...BODY_VALIDO, salario_minimo: 'mucho' }));
+
+    expect(respuesta.status).toBe(400);
   });
 
   it('rechaza un cv_texto que no pasa la capa de relevancia', async () => {

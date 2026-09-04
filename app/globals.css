@@ -3,6 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Passe-Partout (skill /frontend) — sello visual común a todos los
+     productos del usuario: marco de doble regla fijo a la ventana. La
+     FORMA es fija (no se toca sin pasar por el banco de pruebas del
+     skill); los COLORES son la identidad visual de Jobs App (decidida el
+     04/09/2026): coral en la regla exterior, ámbar en la interior. */
+  --pp-linea-ext: #f87c63;
+  --pp-linea-int: #f5b027;
+  --pp-grosor: 2.5px;
+  --pp-margen: 7px;
+  --pp-hueco: 4px;
+  --pp-radio: 16px;
 }
 
 @theme inline {
@@ -19,6 +31,15 @@
   }
 }
 
+/* Pantallas muy pequeñas: el marco se estrecha un poco para no agobiar,
+   nunca desaparece (regla del skill /frontend). */
+@media (max-width: 380px) {
+  :root {
+    --pp-margen: 5px;
+    --pp-radio: 12px;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -26,4 +47,55 @@ body {
      los contenedores con la clase `font-sans`: así el texto suelto (por
      ejemplo el del modal de "Rehacer") no se queda en Arial. */
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* Deja aire para que la regla interior del marco no tape el contenido al
+     principio y al final de la página. Ojo: durante el scroll intermedio
+     el texto puede pasar un instante por debajo de la regla superior o
+     inferior — se probó a corregirlo (contenido con scroll propio dentro
+     del marco) y Mar prefirió el scroll nativo de la página a ese cambio
+     de comportamiento. Decisión, 04/09/2026. */
+  padding: calc(var(--pp-margen) + var(--pp-grosor) + var(--pp-hueco) + 8px);
+}
+
+/* Marco decorativo: nunca intercepta clics ni lo lee un lector de pantalla
+   (pointer-events: none + aria-hidden en el <div class="pp"> de layout.tsx). */
+.pp,
+.pp::before,
+.pp::after {
+  box-sizing: border-box;
+}
+
+.pp {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+
+.pp::before,
+.pp::after {
+  content: "";
+  position: fixed;
+  padding: var(--pp-grosor);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.pp::before {
+  /* regla exterior */
+  inset: var(--pp-margen);
+  border-radius: var(--pp-radio);
+  background: var(--pp-linea-ext);
+}
+
+.pp::after {
+  /* regla interior */
+  inset: calc(var(--pp-margen) + var(--pp-grosor) + var(--pp-hueco));
+  border-radius: max(0px, calc(var(--pp-radio) - var(--pp-grosor) - var(--pp-hueco)));
+  background: var(--pp-linea-int);
 }
