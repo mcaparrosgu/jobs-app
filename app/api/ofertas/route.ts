@@ -27,7 +27,7 @@ export async function GET() {
 
   const { data: perfil, error: errorPerfil } = await supabase
     .from('perfiles')
-    .select('puestos, palabras_clave, usar_experiencia_cv, empresas_cv, titulos_cv')
+    .select('puestos, palabras_clave, usar_experiencia_cv, empresas_cv, titulos_cv, salario_minimo')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -73,13 +73,24 @@ export async function GET() {
 
   const filtro = terminos.map((t) => `titulo.ilike.*${t}*,descripcion.ilike.*${t}*`).join(',');
 
-  const { data: ofertas, error: errorOfertas } = await supabase
+  let consultaOfertas = supabase
     .from('ofertas')
-    .select('id, titulo, empresa, enlace, ingerida_en')
+    .select('id, titulo, empresa, enlace, salario_eur, ingerida_en')
     .gte('ingerida_en', haceDiasEnMadridISO(DIAS_CADUCIDAD_OFERTAS))
     .or(filtro)
     .order('ingerida_en', { ascending: false })
     .limit(50);
+
+  // Salario mínimo, opcional y por usuaria (antes era un umbral fijo en la
+  // ingesta de n8n, calibrado al perfil de Mar, y aplicaba a todo el mundo).
+  // Sin dato conocido en la oferta -> pasa igual, mismo criterio que tenía
+  // el filtro viejo.
+  if (Number.isFinite(perfil.salario_minimo)) {
+    const minimo = Math.trunc(perfil.salario_minimo as number);
+    consultaOfertas = consultaOfertas.or(`salario_eur.is.null,salario_eur.gte.${minimo}`);
+  }
+
+  const { data: ofertas, error: errorOfertas } = await consultaOfertas;
 
   if (errorOfertas) {
     console.error('Error consultando ofertas:', errorOfertas);

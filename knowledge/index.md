@@ -492,6 +492,17 @@ existe en produccion y no se toca desde aqui.
   clase/externas, guion de 3 tareas, reglas de la sesión y plan de datos.
   Pendiente: que Mar aporte los 5 nombres/emails.
 
+- [filtros-ingesta-a-perfil-04-09.md](filtros-ingesta-a-perfil-04-09.md) —
+  04/09/2026: los filtros de **salario** (33000€ fijo) y **cualificación**
+  (lista de profesiones) de `Jobs App · ingesta` en n8n eran globales y
+  calibrados al perfil de Mar — descartaban ofertas para todas las usuarias,
+  no solo para ella. `Filtro cualificación` eliminado (el encaje por perfil
+  ya lo resuelve `app/api/ofertas/route.ts`); `Filtro salario` pasa a
+  enriquecer (`salario_eur`) sin descartar, y el filtro se mueve al perfil
+  de cada usuaria (`salario_minimo`, opcional). **Pendiente**: aplicar la
+  migración `0020` en el SQL Editor de Supabase, y confirmar con Mar antes de
+  la siguiente ejecución real de ingesta.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

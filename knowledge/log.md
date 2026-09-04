@@ -1,5 +1,41 @@
 # Registro de cambios del bundle
 
+## 2026-09-04 (Filtros de ingesta en n8n pasan de globales a por perfil)
+
+* **Pregunta de Mar**: "si no desactivamos el filtro de salario, mis compis
+  verán solo las ofertas filtradas por mi salario deseado, mis capacidades,
+  etc." — pensando en la prueba con sus 4 compañeras de clase.
+* **Hallazgo**: investigando `Jobs App · ingesta` (n8n, id
+  `Rw4dTNjQa5tR3Eo4`) se encontró un segundo filtro, más grave, además del de
+  salario: `Filtro cualificación`, calibrado al perfil de Mar
+  (operaciones/automatización/IA), que descartaba en la ingesta cualquier
+  título de `developer`/`data scientist`/`ml engineer`/etc. — justo los
+  perfiles típicos de un bootcamp de AI Engineering. Ambos corrían antes de
+  Supabase, globalmente para todas las usuarias.
+* **Decisión con Mar** (preguntada explícitamente, `CLAUDE.md` punto 7):
+  `Filtro cualificación` se elimina del todo (el encaje por perfil ya lo
+  resuelve `app/api/ofertas/route.ts`); `Filtro salario` se quita de n8n y se
+  mueve al perfil de cada usuaria (`salario_minimo`, opcional).
+* **n8n**: `Filtro salario` → `Enriquecer con salario_eur` (mismo
+  `parseSalario`, ahora `.map()` en vez de `.filter()`, deja pasar el 100%);
+  `Filtro cualificación` eliminado y reconectado. `Supabase Insertar oferta`
+  mapea `salario_eur`. Verificado con `get_workflow_details`.
+* **Creación**: `supabase/migrations/0020_salario_eur_y_minimo.sql`
+  (`ofertas.salario_eur`, `perfiles.salario_minimo`, ambas enteras y
+  nullable). **Pendiente que Mar la aplique a mano en el SQL Editor.**
+* **Código**: `app/api/ofertas/route.ts` (filtro condicional por
+  `salario_minimo`, sin dato → pasa), `app/api/perfil/route.ts` (validación
+  opcional), `app/perfil/page.tsx`, `components/FormularioPerfil.tsx` (campo
+  nuevo). Tests nuevos en `tests/api/perfil.test.ts` y
+  `tests/api/ofertas.test.ts`. 345/345 pruebas verdes, lint limpio, `tsc
+  --noEmit` limpio. `npm run comprobar:esquema` confirma los 5 desajustes
+  esperados hasta que se aplique la migración.
+* **Creación**: `filtros-ingesta-a-perfil-04-09.md`.
+* **Actualización**: `knowledge/index.md`.
+* **Pendiente**: migración en Supabase; confirmar con Mar antes de la
+  siguiente ejecución real de `Jobs App · ingesta` (escribe en Supabase de
+  verdad).
+
 ## 2026-09-04 (Frente 2 · prueba de usabilidad — PREPARACIÓN, sin sesiones aún)
 
 * **Creación**: `prueba-usuarios-frente-2-prep.md`. Arranca el frente 2
