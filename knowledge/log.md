@@ -1,5 +1,22 @@
 # Registro de cambios del bundle
 
+## 2026-09-04 (Frente 2 · prueba de usabilidad — PREPARACIÓN, sin sesiones aún)
+
+* **Creación**: `prueba-usuarios-frente-2-prep.md`. Arranca el frente 2
+  (skill `prueba-usuarios`, entre el Paso 16 y el Paso 17).
+* **Decisión con Mar**: reclutar una **mezcla** para las 5 sesiones — 2 de
+  la clase + 3 externas (propuesto por defecto) — en vez de las 5 de la
+  clase, porque son también las usuarias del criterio de éxito de
+  `docs/00-problema.md` y usarlas de testers solaparía las dos mediciones.
+* **Preparado**: guion de 3 tareas del recorrido crítico (formuladas como
+  objetivo, no como instrucción), las reglas de la sesión (no ayudar, no
+  explicar, pensar en voz alta, anotar palabras textuales) y el plan de
+  datos (CV real u opcional de muestra, aviso previo, notas anonimizadas).
+* **Pendiente, bloquea el arranque**: que Mar traiga los 5 nombres/emails;
+  darlos de alta en Supabase Auth (`shouldCreateUser: false`); agendar las
+  sesiones.
+* **Actualización**: `knowledge/index.md`.
+
 ## 2026-09-04 (Frente 1 · publicado a `master`)
 
 * **Publicación**: la rama `robustez-demo-frente-1` se fusiona a `master`

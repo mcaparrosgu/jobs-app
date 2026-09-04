@@ -486,6 +486,12 @@ existe en produccion y no se toca desde aqui.
   `body` usa la fuente Geist que ya cargaba el layout. 339 pruebas (10 nuevas),
   build y `comprobar:esquema` en verde.
 
+- [prueba-usuarios-frente-2-prep.md](prueba-usuarios-frente-2-prep.md) —
+  **EN CURSO**: preparación del frente 2 (prueba de usabilidad con 5
+  personas) antes del Paso 17. Perfil a reclutar, decisión de mezcla
+  clase/externas, guion de 3 tareas, reglas de la sesión y plan de datos.
+  Pendiente: que Mar aporte los 5 nombres/emails.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
