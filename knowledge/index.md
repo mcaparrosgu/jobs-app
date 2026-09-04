@@ -499,9 +499,9 @@ existe en produccion y no se toca desde aqui.
   no solo para ella. `Filtro cualificación` eliminado (el encaje por perfil
   ya lo resuelve `app/api/ofertas/route.ts`); `Filtro salario` pasa a
   enriquecer (`salario_eur`) sin descartar, y el filtro se mueve al perfil
-  de cada usuaria (`salario_minimo`, opcional). **Pendiente**: aplicar la
-  migración `0020` en el SQL Editor de Supabase, y confirmar con Mar antes de
-  la siguiente ejecución real de ingesta.
+  de cada usuaria (`salario_minimo`, opcional). **Verificado en producción
+  real**: dos ejecuciones, 0 errores, ofertas técnicas que antes se
+  descartaban ya llegan a Supabase.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

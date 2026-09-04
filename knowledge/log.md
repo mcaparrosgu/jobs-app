@@ -32,9 +32,19 @@
   esperados hasta que se aplique la migración.
 * **Creación**: `filtros-ingesta-a-perfil-04-09.md`.
 * **Actualización**: `knowledge/index.md`.
-* **Pendiente**: migración en Supabase; confirmar con Mar antes de la
-  siguiente ejecución real de `Jobs App · ingesta` (escribe en Supabase de
-  verdad).
+* **Migración aplicada**: Mar pegó `0020` en el SQL Editor de Supabase;
+  `npm run comprobar:esquema` pasó a "Todo lo que el código pide existe en
+  Supabase."
+* **Verificado en producción real** (dos ejecuciones con permiso de Mar):
+  ejecución 759 (290 ofertas, 0 errores, incluye títulos técnicos que antes
+  `Filtro cualificación` descartaba, `salario_eur` calculado bien) y
+  ejecución 763 (289 ofertas, 0 errores, 27 nuevas + 262 duplicadas
+  esperadas). Detalle completo en `filtros-ingesta-a-perfil-04-09.md`.
+* **Fricción de herramienta anotada**: `get_execution` (n8n-mcp) da
+  `status: "running"` obsoleto para ejecuciones ya terminadas, y `data: null`
+  para una ejecución todavía en curso — `search_executions` es la fuente
+  fiable de estado. Causó una falsa alarma de "workflow colgado" y dos
+  ejecuciones de más disparadas por API antes de detectarlo.
 
 ## 2026-09-04 (Frente 2 · prueba de usabilidad — PREPARACIÓN, sin sesiones aún)
 

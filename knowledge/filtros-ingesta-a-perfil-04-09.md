@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: Filtro de salario y filtro de cualificación pasan de n8n (global) a perfil (por usuaria)
-description: 04/09/2026 — Mar detectó que sus compañeras del bootcamp solo verían ofertas filtradas por su propio salario y perfil. Se encontraron dos filtros globales en n8n calibrados a Mar; se eliminan y se mueve el control al perfil de cada usuaria.
+description: 04/09/2026 — Mar detectó que sus compañeras del bootcamp solo verían ofertas filtradas por su propio salario y perfil. Se encontraron dos filtros globales en n8n calibrados a Mar; se eliminan y se mueve el control al perfil de cada usuaria. VERIFICADO en producción real (dos ejecuciones, 0 errores).
 tags: [jobs-app, n8n, ingesta, perfil, ofertas, supabase]
 okf_version: "0.2"
 timestamp: 2026-09-04T19:00:00Z
@@ -58,11 +58,10 @@ colgantes, sin referencias sueltas al nodo eliminado.
 
 **Supabase**: migración `supabase/migrations/0020_salario_eur_y_minimo.sql`
 — `ofertas.salario_eur integer null`, `perfiles.salario_minimo integer
-null`. Sin tocar RLS (columnas nuevas en tablas que ya la tienen). **Pendiente
-de aplicar a mano en el SQL Editor** — confirmado con `npm run
-comprobar:esquema` tras el cambio de código: marca 5 desajustes, todos
-`ofertas.salario_eur`/`perfiles.salario_minimo`, exactamente lo esperado
-hasta que se pegue la migración.
+null`. Sin tocar RLS (columnas nuevas en tablas que ya la tienen). Aplicada
+a mano por Mar en el SQL Editor el mismo día; `npm run comprobar:esquema`
+pasó de marcar 5 desajustes a "Todo lo que el código pide existe en
+Supabase."
 
 **Código**: `app/api/ofertas/route.ts` (filtro `.or('salario_eur.is.null,
 salario_eur.gte.N')` cuando el perfil trae `salario_minimo`, mismo criterio
@@ -74,13 +73,35 @@ opcional)"). Tests nuevos en `tests/api/perfil.test.ts` y `tests/api/
 ofertas.test.ts` cubriendo la validación y el filtro condicional. Suite
 completa: 345/345 verdes, lint limpio, `tsc --noEmit` limpio.
 
-# Pendiente
+# Verificación en producción real (04/09/2026, mismo día)
 
-- Mar tiene que pegar la migración `0020` en el SQL Editor de Supabase
-  (truco de siempre: en una sola línea).
-- Antes de la siguiente ejecución real de `Jobs App · ingesta`, confirmar con
-  Mar — dispara escritura real en Supabase.
-- Tras la siguiente ingesta real: comprobar en el Table Editor que
-  `ofertas.salario_eur` se rellena cuando corresponde, y que llegan ofertas
-  de perfiles técnicos que antes `Filtro cualificación` descartaba (developer,
-  data scientist...) — es el comportamiento nuevo esperado, no un bug.
+Dos ejecuciones reales de `Jobs App · ingesta`, con permiso explícito de Mar
+(escriben en Supabase de verdad):
+
+- **Ejecución 759** (17:44–17:47, 3 min): 290 ofertas procesadas por
+  `Enriquecer con salario_eur → Generar id_externo → Supabase Insertar
+  oferta`, **0 errores**. Entre los títulos insertados: *"AWS Engineer"*,
+  *"Test Engineer"*, *"BIM Coordinator"*, *"Technical Recruiter"* — exactamente
+  el tipo de puesto que `Filtro cualificación` habría descartado antes de
+  llegar a Supabase. Una oferta de *"Product Manager | Remote"* quedó con
+  `salario_eur: 48000`; el resto, sin salario explícito en el texto original,
+  quedó en `null` (no descartada, solo sin ese dato).
+- **Ejecución 763** (18:13–18:43, 30 min): 289 ofertas procesadas, **0
+  errores**. De esas, 27 nuevas se insertaron y 262 ya existían de la 759
+  (rechazadas por el `unique(fuente, id_externo)`, comportamiento esperado,
+  no un fallo). Los 30 minutos se explican por el volumen — antes pasaban 15
+  ofertas de cientos, ahora pasan cientos, y `Supabase Insertar oferta` las
+  escribe una a una.
+
+**Fricción de la herramienta encontrada de camino**: `get_execution` (n8n-mcp)
+sin `includeData` devolvía `status: "running"` para la ejecución 759 mucho
+después de que ya hubiera terminado (`search_executions` sí tenía el estado
+correcto, `success`, con `stoppedAt`). Y con `includeData: true` sobre una
+ejecución **todavía en curso**, devuelve `data: null` — no hay forma de ver
+progreso parcial de una ejecución en vivo con este servidor, solo una vez
+termina. Para diagnosticar iban dos ejecuciones de más lanzadas por API
+(`execute_workflow` sobre un workflow con `Schedule Trigger`, que tampoco
+avanzaba visiblemente) antes de descubrir que el problema era el propio
+tooling, no el workflow. Lección: ante un "sigue corriendo" sospechoso de
+este MCP, contrastar siempre con `search_executions` (más fiable) antes de
+asumir que algo está colgado.
