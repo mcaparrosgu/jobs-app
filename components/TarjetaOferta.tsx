@@ -37,6 +37,53 @@ function enlaceSeguro(enlace: string): string | undefined {
   }
 }
 
+// "Descargar" pide el PDF con fetch (en vez de dejar que el navegador siga el
+// enlace a pelo) para poder reintentar ante el 503 de arranque en frío de la
+// función de Vercel: la primera descarga del día lo dispara y falla, y un
+// segundo intento ya va (prueba E2E del 01/09). Esperas cortas y crecientes;
+// un 404 significa "el documento aún no está listo" y no se reintenta.
+const ESPERAS_DESCARGA_MS = [1_500, 4_000];
+
+class ErrorDescarga extends Error {
+  constructor(readonly estado: number) {
+    super(`la descarga falló con estado ${estado}`);
+    this.name = 'ErrorDescarga';
+  }
+}
+
+async function pedirPdfConReintento(url: string): Promise<Blob> {
+  for (let intento = 0; intento <= ESPERAS_DESCARGA_MS.length; intento++) {
+    const respuesta = await fetch(url);
+    if (respuesta.ok) return respuesta.blob();
+
+    const reintentable = respuesta.status >= 500 && intento < ESPERAS_DESCARGA_MS.length;
+    if (!reintentable) throw new ErrorDescarga(respuesta.status);
+
+    await new Promise((listo) => setTimeout(listo, ESPERAS_DESCARGA_MS[intento]));
+  }
+  // Inalcanzable: la última vuelta del bucle o devuelve el blob o lanza.
+  throw new ErrorDescarga(0);
+}
+
+// Mismo criterio que el servidor (app/api/descargar/[id]/route.ts): quita solo
+// los caracteres que romperían el nombre de archivo en algún sistema operativo.
+function nombreArchivoPdf(tituloOferta: string): string {
+  const base = tituloOferta ? `CV y carta - ${tituloOferta}` : 'CV y carta';
+  return `${base.replace(/[\\/:*?"<>|]/g, '')}.pdf`;
+}
+
+function dispararDescargaDeBlob(blob: Blob, nombre: string): void {
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = nombre;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  // Se libera con margen para no cortar una descarga que acaba de arrancar.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 type Oferta = {
   id: string;
   titulo: string;
@@ -64,6 +111,11 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
   const [instruccionesRehacer, setInstruccionesRehacer] = useState('');
   const [rehaciendo, setRehaciendo] = useState(false);
   const [errorRehacer, setErrorRehacer] = useState<string | null>(null);
+
+  // Estado del botón "Descargar": si hay una descarga en curso y su error, si
+  // lo hay. Como el de rehacer, solo vive mientras dura la interacción.
+  const [descargando, setDescargando] = useState(false);
+  const [errorDescarga, setErrorDescarga] = useState<string | null>(null);
 
   // Pide al servidor que prepare el CV y la carta. Va por la cola: si hay
   // varias ofertas marcadas, se preparan de una en una (lib/cola.ts).
@@ -170,6 +222,40 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
     setLimite(null);
     setGeneracion({ estado: 'generando', avisos: [], error: null, rehechos: 0 });
     prepararDocumentos();
+  }
+
+  // Clic primario en "Descargar": lo gestionamos con fetch para reintentar el
+  // arranque en frío. Un clic con modificador, botón central o "abrir en
+  // pestaña nueva" deja que el navegador siga el href tal cual.
+  async function descargar(evento: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      evento.defaultPrevented ||
+      evento.button !== 0 ||
+      evento.metaKey ||
+      evento.ctrlKey ||
+      evento.shiftKey ||
+      evento.altKey
+    ) {
+      return;
+    }
+    evento.preventDefault();
+    if (descargando) return;
+
+    setErrorDescarga(null);
+    setDescargando(true);
+    try {
+      const blob = await pedirPdfConReintento(`/api/descargar/${oferta.id}`);
+      dispararDescargaDeBlob(blob, nombreArchivoPdf(oferta.titulo));
+    } catch (error) {
+      const aunNoListo = error instanceof ErrorDescarga && error.estado === 404;
+      setErrorDescarga(
+        aunNoListo
+          ? 'El documento todavía no está listo. Espera unos segundos y vuelve a intentarlo.'
+          : 'No se pudo descargar el PDF. Espera unos segundos y vuelve a intentarlo.',
+      );
+    } finally {
+      setDescargando(false);
+    }
   }
 
   // T93 · Botón "Rehacer": abre el modal que pregunta qué cambiar.
@@ -290,9 +376,19 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
           {generacion.estado === 'listo' && !rehaciendo ? (
             <a
               href={`/api/descargar/${oferta.id}`}
-              className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200"
+              onClick={descargar}
+              aria-busy={descargando}
+              className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200${
+                descargando ? ' pointer-events-none opacity-60' : ''
+              }`}
             >
-              Descargar
+              {descargando && (
+                <span
+                  aria-hidden
+                  className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent"
+                />
+              )}
+              {descargando ? 'Descargando…' : 'Descargar'}
             </a>
           ) : (
             <button
@@ -318,6 +414,12 @@ export default function TarjetaOferta({ oferta }: { oferta: Oferta }) {
             </button>
           )}
         </div>
+      )}
+
+      {errorDescarga && (
+        <p className="mt-2 text-sm text-red-700 dark:text-red-400" role="alert">
+          {errorDescarga}
+        </p>
       )}
 
       {generacion?.estado === 'listo' && yaAgotoRehechos && (

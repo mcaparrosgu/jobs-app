@@ -303,6 +303,23 @@ verdad, ya no solo `localhost`.
 > ver `knowledge/prueba-e2e-produccion-01-09.md` y `knowledge/paso-13-evals.md`
 > (01/09).
 
+> **02/09/2026 · Frente 1 · robustez del frontend para la demo con la clase.**
+> Rama `robustez-demo-frente-1` (vista previa desplegada, **sin fusionar a
+> `master`**). No toca IA → el robot no lanza los evals. Ver
+> `knowledge/robustez-demo-frente-1.md`.
+> - **El 503 de la 1ª descarga** ya no lo ve la usuaria: "Descargar" pide el
+>   PDF con `fetch` y **reintenta ante un 5xx** (1,5 s + 4 s), con estado
+>   "Descargando…" y aviso claro si no se despeja. La causa (cold start) sigue
+>   ahí; el arreglo la tapa de cara a la demo. `app/api/descargar` añade
+>   `maxDuration = 60`.
+> - **Barreras de error que no existían**: `app/error.tsx`,
+>   `app/global-error.tsx` y `app/not-found.tsx` — un fallo en la demo ya no
+>   enseña la pantalla cruda de Next.
+> - **Restos de create-next-app** fuera (favicon por defecto, `public/*.svg`
+>   sin usar); icono propio `app/icon.svg`; el `body` usa la fuente Geist que
+>   ya cargaba el layout. 339 pruebas (10 nuevas), `next build` y
+>   `comprobar:esquema` en verde.
+
 ## Añadido el 23/08/2026 · Rediseño de perfil, sugerencias y caducidad de ofertas
 
 > A petición de Mar tras usar la app: el formulario de perfil pedía datos que
