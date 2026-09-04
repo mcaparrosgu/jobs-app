@@ -1,6 +1,17 @@
 # Registro de cambios del bundle
 
-## 2026-09-02 (Frente 1 · robustez del frontend para la demo con la clase — SIN publicar)
+## 2026-09-04 (Frente 1 · publicado a `master`)
+
+* **Publicación**: la rama `robustez-demo-frente-1` se fusiona a `master`
+  (merge `36a6110`, `--no-ff`) con permiso explícito de Mar. Robot
+  `33872638032` en verde: lint + 339 pruebas OK, **puerta de calidad SALTADA**
+  (no toca IA), `vercel deploy --prod` OK. Producción sirve `36a6110` en
+  `https://jobs-app-dun.vercel.app`. Verificado en vivo: `/` 200, `/icon.svg`
+  200, URL inventada → 404 propia, `/favicon.ico` → 404 (ahora se usa el
+  `<link rel="icon">` del `<head>`). Entra también `578b7cd` (docs de cierre
+  de T112, que estaba en local sin publicar).
+
+## 2026-09-02 (Frente 1 · robustez del frontend para la demo con la clase)
 
 * **Creación**: `robustez-demo-frente-1.md`. Pasada de robustez del frontend
   web antes de la prueba con la clase (skill `prueba-usuarios`). **No toca
@@ -36,10 +47,9 @@
   `npm run comprobar:esquema` sin desajustes. Dev server en vivo: 404 real en
   una URL inventada, `<link rel="icon">` en el `<head>`, `/api/descargar/x`
   sigue 401 sin sesión.
-* **Sin publicar**: queda a decisión de Mar (rama + vista previa antes de
-  `master`, regla de `CLAUDE.md`). Frente 2 (prueba con la clase) y la
-  supervisión operativa (gasto de Mistral, alta de las 5 invitadas, cuota de
-  Cloudflare) siguen pendientes.
+* **Publicado el 04/09/2026** (ver entrada de esa fecha, arriba). Frente 2
+  (prueba con la clase) y la supervisión operativa (gasto de Mistral, alta de
+  las 5 invitadas, cuota de Cloudflare) siguen pendientes.
 * **Actualización**: `knowledge/index.md`.
 
 ## 2026-09-02 (Mistral de pago entra como RESPALDO de IA — opción C1 · cierra T112 · PUBLICADO)
