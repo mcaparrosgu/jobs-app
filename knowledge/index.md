@@ -503,6 +503,13 @@ existe en produccion y no se toca desde aqui.
   real**: dos ejecuciones, 0 errores, ofertas técnicas que antes se
   descartaban ya llegan a Supabase.
 
+- [marco-passe-partout-04-09.md](marco-passe-partout-04-09.md) — 04/09/2026:
+  primera identidad visual de Jobs App, la skill `/frontend` (marco Passe-
+  Partout: coral `#F87C63` + ámbar `#F5B027`). Se probó y se revirtió un
+  cambio de arquitectura de scroll (contenedor interno vs. scroll de página)
+  que arreglaba un solape del marco con el texto — Mar prefirió el scroll
+  nativo. La solución al solape queda documentada por si se retoma.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

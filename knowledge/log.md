@@ -1,5 +1,32 @@
 # Registro de cambios del bundle
 
+## 2026-09-04 (Marco Passe-Partout — primera identidad visual de Jobs App)
+
+* Invocada la skill `/frontend`. Sin logo ni identidad visual previa, se
+  preguntó a Mar en vez de inventar: propuesta con vista previa en vivo
+  (artifact, mockup real de la pantalla de acceso, verde+dorado) rechazada
+  a favor de dos colores concretos que dio ella: **coral `#F87C63`**
+  (regla exterior) y **ámbar `#F5B027`** (regla interior).
+* **Aplicado**: `app/globals.css` (bloque `passe-partout.css` del skill,
+  forma sin tocar) + `<div class="pp">` en `app/layout.tsx`.
+  `global-error.tsx` (barrera de último recurso, aislada a propósito de
+  `globals.css`) se dejó sin tocar.
+* **Bug de UX encontrado por Mar probando en vivo**: el marco (`position:
+  fixed`) tapaba el texto durante el scroll en páginas largas — el
+  `padding` del body solo protege el principio/final de la página, no cada
+  punto intermedio del scroll.
+* **Arreglo probado y verificado** (contenedor interno con `position: fixed`
+  + `overflow-y: auto` en vez de scroll de página): confirmado en vivo que
+  el texto ya no pasa por debajo del marco en ningún punto del scroll.
+* **Revertido a petición de Mar**: prefiere el scroll nativo de la página al
+  cambio de comportamiento, aceptando el solape como imperfección conocida.
+  La solución queda documentada en `marco-passe-partout-04-09.md` por si se
+  retoma.
+* Lint y `tsc --noEmit` limpios. Verificado en vivo (navegación real de
+  Mar) en `/` y `/perfil`.
+* **Creación**: `marco-passe-partout-04-09.md`. **Actualización**:
+  `knowledge/index.md`.
+
 ## 2026-09-04 (Filtros de ingesta en n8n pasan de globales a por perfil)
 
 * **Pregunta de Mar**: "si no desactivamos el filtro de salario, mis compis

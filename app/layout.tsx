@@ -38,6 +38,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Passe-Partout (skill /frontend): marco decorativo fijo a la
+            ventana, sello visual común a todos los productos. Debe ser el
+            primer hijo de <body> para pintarse por encima de todo. */}
+        <div className="pp" aria-hidden="true"></div>
         {user && <MenuNavegacion email={user.email ?? ""} />}
         {children}
       </body>
