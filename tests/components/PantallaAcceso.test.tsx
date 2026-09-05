@@ -6,12 +6,16 @@
 // Cubre los dos cambios del Paso 16 — que un email no invitado recibe un
 // mensaje honesto en vez de uno genérico, y que la app ya no crea usuarias
 // nuevas por su cuenta (shouldCreateUser: false).
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const parametrosFalsos = new URLSearchParams();
-vi.mock('next/navigation', () => ({ useSearchParams: () => parametrosFalsos }));
+const refreshFalso = vi.fn();
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => parametrosFalsos,
+  useRouter: () => ({ refresh: refreshFalso }),
+}));
 
 const signInWithOtpFalso = vi.fn();
 vi.mock('@/lib/supabase/client', () => ({
@@ -30,6 +34,7 @@ describe('Pantalla de acceso — entrada solo por invitación (Paso 16)', () => 
   beforeEach(() => {
     parametrosFalsos.delete('error');
     signInWithOtpFalso.mockReset();
+    refreshFalso.mockReset();
   });
 
   it('no deja que Supabase cree una usuaria nueva al pedir el enlace', async () => {
@@ -79,5 +84,48 @@ describe('Pantalla de acceso — entrada solo por invitación (Paso 16)', () => 
     render(<FormularioAcceso />);
 
     expect(screen.getByText(/ese enlace ya no es válido/i)).toBeInTheDocument();
+  });
+
+  describe('autosincronización tras entrar desde la otra pestaña', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('comprueba la sesión periódicamente mientras espera el enlace', async () => {
+      signInWithOtpFalso.mockResolvedValue({ error: null });
+      await pedirAcceso();
+
+      expect(refreshFalso).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(refreshFalso).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(refreshFalso).toHaveBeenCalledTimes(2);
+    });
+
+    it('comprueba también al recuperar el foco de la pestaña', async () => {
+      signInWithOtpFalso.mockResolvedValue({ error: null });
+      await pedirAcceso();
+
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(refreshFalso).toHaveBeenCalledTimes(1);
+    });
+
+    it('deja de comprobar una vez que ya no está esperando (no queda la comprobación colgada)', async () => {
+      signInWithOtpFalso.mockResolvedValue({ error: null });
+      const { unmount } = render(<FormularioAcceso />);
+      await userEvent.type(screen.getByLabelText('Tu email'), 'ana@example.com');
+      await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+      unmount();
+      await vi.advanceTimersByTimeAsync(8000);
+
+      expect(refreshFalso).not.toHaveBeenCalled();
+    });
   });
 });

@@ -141,7 +141,14 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         ofertas: [
           { count: 5, error: null },
           {
-            data: [{ id: 'oferta-1', titulo: 'PM en Acme', empresa: 'Acme', enlace: 'https://x', ingerida_en: '2026-01-01' }],
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Project Manager en Acme',
+              descripcion: 'Buscamos perfil con experiencia en SAP',
+              empresa: 'Acme',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
             error: null,
           },
         ],
@@ -166,7 +173,7 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     expect(cuerpo.ofertas).toEqual([
       {
         id: 'oferta-1',
-        titulo: 'PM en Acme',
+        titulo: 'Project Manager en Acme',
         empresa: 'Acme',
         enlace: 'https://x',
         ingerida_en: '2026-01-01',
@@ -184,7 +191,14 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         ofertas: [
           { count: 5, error: null },
           {
-            data: [{ id: 'oferta-1', titulo: 'PM en Acme', empresa: 'Acme', enlace: 'https://x', ingerida_en: '2026-01-01' }],
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Project Manager en Acme',
+              descripcion: 'Buscamos perfil con experiencia en SAP',
+              empresa: 'Acme',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
             error: null,
           },
         ],
@@ -207,7 +221,17 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
-          { data: [{ id: 'oferta-1', titulo: 'PM', empresa: 'Acme', enlace: 'x', ingerida_en: '2026-01-01' }], error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Project Manager',
+              descripcion: 'Con SAP',
+              empresa: 'Acme',
+              enlace: 'x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
         ],
         intereses: [{ data: [], error: null }],
         generaciones: [{ data: [], error: null }, { count: 0, error: null }],
@@ -230,7 +254,17 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
         perfiles: [{ data: { puestos: ['Project Manager'], palabras_clave: ['SAP'] }, error: null }],
         ofertas: [
           { count: 5, error: null },
-          { data: [{ id: 'oferta-1', titulo: 'PM', empresa: 'Acme', enlace: 'x', ingerida_en: '2026-01-01' }], error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Project Manager',
+              descripcion: 'Con SAP',
+              empresa: 'Acme',
+              enlace: 'x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
         ],
         intereses: [{ data: null, error: new Error('conexión perdida') }],
         generaciones: [{ data: null, error: new Error('conexión perdida') }, { count: 0, error: null }],
@@ -322,5 +356,106 @@ describe('GET /api/ofertas — resultado y cupo diario (G1)', () => {
     const cuerpo = await (await GET()).json();
 
     expect(cuerpo.limiteAlcanzado).toBe(true);
+  });
+});
+
+describe('GET /api/ofertas — coincidencia mínima de 2 términos (falsos positivos por palabra genérica)', () => {
+  it('descarta una oferta que solo coincide en 1 término, aunque sea de un puesto totalmente distinto', async () => {
+    // Perfil de operaciones con una palabra clave de herramienta genérica
+    // (Docker) que también aparece en ofertas de ingeniería no relacionadas
+    // — el caso real reportado: "Senior Full-Stack"/"Network Engineer" colando
+    // por mencionar Docker, sin que nada más del perfil encaje.
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{
+          data: { puestos: ['Especialista en Operaciones'], palabras_clave: ['Docker', 'n8n'] },
+          error: null,
+        }],
+        ofertas: [
+          { count: 5, error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Senior Full-Stack Engineer',
+              descripcion: 'Buscamos experiencia con Docker y Kubernetes en producción',
+              empresa: 'TechCorp',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
+        ],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const cuerpo = await (await GET()).json();
+
+    expect(cuerpo.ofertas).toEqual([]);
+  });
+
+  it('muestra una oferta que coincide en 2 términos distintos del perfil', async () => {
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{
+          data: { puestos: ['Especialista en Operaciones'], palabras_clave: ['Docker', 'n8n'] },
+          error: null,
+        }],
+        ofertas: [
+          { count: 5, error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Especialista en Operaciones',
+              descripcion: 'Automatizamos procesos con n8n',
+              empresa: 'Acme',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
+        ],
+        intereses: [{ data: [], error: null }],
+        generaciones: [{ data: [], error: null }, { count: 0, error: null }],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const cuerpo = await (await GET()).json();
+
+    expect(cuerpo.ofertas).toHaveLength(1);
+    expect(cuerpo.ofertas[0].id).toBe('oferta-1');
+  });
+
+  it('con un perfil de un único término, 1 sola coincidencia basta (no deja la lista vacía siempre)', async () => {
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{ data: { puestos: ['Traductora'], palabras_clave: [] }, error: null }],
+        ofertas: [
+          { count: 5, error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Traductora de inglés a español',
+              descripcion: 'Puesto remoto',
+              empresa: 'Acme',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
+        ],
+        intereses: [{ data: [], error: null }],
+        generaciones: [{ data: [], error: null }, { count: 0, error: null }],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const cuerpo = await (await GET()).json();
+
+    expect(cuerpo.ofertas).toHaveLength(1);
   });
 });

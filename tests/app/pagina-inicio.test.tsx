@@ -10,6 +10,7 @@ import { render, screen } from '@testing-library/react';
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
   useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ refresh: vi.fn() }),
 }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
 vi.mock('@/lib/perfil', () => ({ tienePerfilGuardado: vi.fn() }));

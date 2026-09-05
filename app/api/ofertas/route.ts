@@ -1,8 +1,21 @@
 import { NextResponse } from 'next/server';
 import { haceDiasEnMadridISO, inicioDeHoyEnMadridISO } from '@/lib/fechas';
 import { contarGeneracionesDeHoy, LIMITE_DIARIO } from '@/lib/generaciones';
-import { normalizarPalabrasClave } from '@/lib/palabras-clave';
+import { normalizarPalabrasClave, paraComparar } from '@/lib/palabras-clave';
 import { createClient } from '@/lib/supabase/server';
+
+// Con una sola palabra clave coincidiendo bastaba para enseñar la oferta, y
+// un perfil con términos de herramienta genéricos (Docker, Python, CRUD...)
+// hace que cualquier oferta técnica no relacionada cuele con solo uno de
+// ellos. Exigir 2 coincidencias distintas (puesto o palabra clave, donde
+// sea) reduce mucho esos falsos positivos sin dejar de encontrar nada para
+// un perfil con muy pocos términos propios.
+const MINIMO_TERMINOS_COINCIDENTES = 2;
+
+function contarTerminosCoincidentes(texto: string, terminos: string[]): number {
+  const comparable = paraComparar(texto);
+  return terminos.filter((t) => comparable.includes(paraComparar(t))).length;
+}
 
 // Añadido el 23/08/2026 (T85), a petición de Mar: una oferta se queda
 // visible 15 días desde que se encontró, aunque siga coincidiendo con el
@@ -75,11 +88,15 @@ export async function GET() {
 
   let consultaOfertas = supabase
     .from('ofertas')
-    .select('id, titulo, empresa, enlace, salario_eur, ingerida_en')
+    .select('id, titulo, descripcion, empresa, enlace, salario_eur, ingerida_en')
     .gte('ingerida_en', haceDiasEnMadridISO(DIAS_CADUCIDAD_OFERTAS))
     .or(filtro)
     .order('ingerida_en', { ascending: false })
-    .limit(50);
+    // Más candidatas de las que se van a enseñar: el filtro de arriba solo
+    // exige 1 coincidencia (es lo más permisivo que sabe hacer `.or()` en
+    // SQL sin una consulta gigante); el umbral de verdad se aplica después,
+    // en JS, sobre este conjunto más amplio.
+    .limit(150);
 
   // Salario mínimo, opcional y por usuaria (antes era un umbral fijo en la
   // ingesta de n8n, calibrado al perfil de Mar, y aplicaba a todo el mundo).
@@ -97,7 +114,14 @@ export async function GET() {
     return NextResponse.json({ error: 'No se pudieron consultar las ofertas.' }, { status: 500 });
   }
 
-  const ids = (ofertas ?? []).map((o) => o.id);
+  // Con un perfil de un único término (p. ej. solo un puesto marcado, sin
+  // palabras clave) exigir 2 coincidencias dejaría siempre la lista vacía.
+  const umbral = Math.min(MINIMO_TERMINOS_COINCIDENTES, terminos.length);
+  const ofertasRelevantes = (ofertas ?? []).filter(
+    (o) => contarTerminosCoincidentes(`${o.titulo} ${o.descripcion ?? ''}`, terminos) >= umbral,
+  );
+
+  const ids = ofertasRelevantes.map((o) => o.id);
   let idsConInteres = new Set<string>();
   // Estado de preparación del CV y la carta de cada oferta (Hito 6): es lo que
   // mueve el indicador de "preparando…" y, más adelante, el botón de descarga.
@@ -139,7 +163,7 @@ export async function GET() {
     }
   }
 
-  const resultado = (ofertas ?? []).map((o) => ({
+  const resultado = ofertasRelevantes.map((o) => ({
     id: o.id,
     titulo: o.titulo,
     empresa: o.empresa,

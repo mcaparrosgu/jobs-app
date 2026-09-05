@@ -1,9 +1,19 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import GuiaPasos from '@/components/GuiaPasos';
+
+// El enlace del correo siempre abre una pestaña nueva (lo decide el cliente
+// de email, no esta web: no hay forma de evitarlo). Mientras esta pestaña se
+// queda esperando, comprobamos cada pocos segundos y al recuperar el foco si
+// la sesión ya se ha completado en esa otra pestaña — las cookies de sesión
+// son del navegador entero, no de una pestaña, así que en cuanto exista,
+// `router.refresh()` vuelve a ejecutar el guard de app/page.tsx (Server
+// Component) y esta pestaña se lleva sola a donde toque, sin que haya que
+// cerrarla ni tocarla a mano.
+const INTERVALO_COMPROBACION_MS = 4000;
 
 type Estado = 'inicial' | 'enviando' | 'enviado' | 'error';
 
@@ -28,6 +38,7 @@ export default function FormularioAcceso() {
 }
 
 function FormularioEmail() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   // El estado inicial se calcula aquí, no en un useEffect: el efecto solo
   // servía para llamar a setState en el primer render, que es justo lo que
@@ -69,6 +80,28 @@ function FormularioEmail() {
     setEstado('enviado');
   }
 
+  useEffect(() => {
+    if (estado !== 'enviado') return;
+
+    function comprobarSiYaHaySesion() {
+      router.refresh();
+    }
+
+    function alRecuperarFoco() {
+      if (document.visibilityState === 'visible') comprobarSiYaHaySesion();
+    }
+
+    const intervalo = setInterval(comprobarSiYaHaySesion, INTERVALO_COMPROBACION_MS);
+    document.addEventListener('visibilitychange', alRecuperarFoco);
+    window.addEventListener('focus', comprobarSiYaHaySesion);
+
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', alRecuperarFoco);
+      window.removeEventListener('focus', comprobarSiYaHaySesion);
+    };
+  }, [estado, router]);
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-6 font-sans dark:bg-black">
       <main className="w-full max-w-xl text-center">
@@ -84,7 +117,9 @@ function FormularioEmail() {
         {estado === 'enviado' ? (
           <p className="mt-10 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
             Te hemos enviado un enlace a <strong>{email}</strong>. Ábrelo
-            desde ese mismo correo para entrar.
+            desde ese mismo correo para entrar — se abrirá en una pestaña
+            nueva, y esta se actualizará sola en cuanto detecte que ya has
+            entrado.
           </p>
         ) : (
           <>
