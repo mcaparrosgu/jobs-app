@@ -1,5 +1,52 @@
 # Registro de cambios del bundle
 
+## 2026-09-05 (Guard de sesión en / + guía de 3 pasos + formulario en secciones)
+
+* **Mar probó la web ella misma** antes de pasársela a la clase y la vio poco
+  intuitiva, desordenada y con explicaciones insuficientes — no quiso lanzar
+  la prueba de usabilidad hasta arreglarlo. Tres quejas: "si ya estoy
+  logueada veo el email otra vez", "falta información, desordenada", "el
+  proceso tiene que explicarse mejor".
+* **Investigado antes de tocar código** (exploración de solo lectura): el
+  primer punto era un **bug real**, no percepción — `app/page.tsx` (client
+  component) nunca comprobaba la sesión, así que quien ya estaba logueada
+  volvía a ver el formulario de email al visitar `/` directamente, con
+  `MenuNavegacion` pintándose encima por añadidura (contradice
+  `docs/03-spec.md` §3.1). La guía de pasos (`GuiaPasos.tsx`) tenía 2 pasos y
+  nunca se mostraba en `/ofertas` pese a admitirlo. `FormularioPerfil.tsx`
+  pesaba igual lo obligatorio (CV) que lo opcional (salario mínimo).
+* **Preguntado explícitamente a Mar** (dos decisiones, `CLAUDE.md` punto 7):
+  extender la guía existente a 3 pasos en vez de rediseñar como landing
+  nueva, y sí reestructurar el formulario de perfil en esta misma ronda.
+* **Arreglado**: `lib/perfil.ts` (nuevo) centraliza "¿tiene perfil
+  guardado?", reutilizado por `app/auth/callback/route.ts` y el nuevo guard
+  de `app/page.tsx` (ahora Server Component, redirige a `/ofertas` o
+  `/perfil` según sesión y perfil). `components/FormularioAcceso.tsx`
+  (nuevo) recoge el formulario de email que antes vivía en `app/page.tsx`.
+  `GuiaPasos.tsx` pasa a 3 pasos ("Pide acceso" / "Pega tu CV" / "Mira tus
+  ofertas"), visible en `/`, `/perfil` y — por primera vez — `/ofertas`, con
+  un subtítulo de orientación nuevo ahí. `FormularioPerfil.tsx` se
+  reestructura en 3 secciones numeradas más un bloque "Opcional" atenuado
+  (checkbox de experiencia + salario mínimo), sin tocar su lógica.
+* **Verificación**: 352 pruebas en verde (8 nuevas/reescritas), lint y
+  `tsc --noEmit` limpios, `next build` compila. Verificado en vivo con la
+  sesión real de Mar: `/` redirige sin mostrar el formulario ni el menú
+  superpuesto; `/ofertas` y `/perfil` muestran la guía y las secciones
+  nuevas correctamente, sin errores de consola. No toca `lib/ia.ts` ni el
+  esquema de datos: no dispara evals ni `comprobar:esquema`.
+* **`docs/03-spec.md` §3.1 actualizado**: "en qué paso de los dos está" →
+  "en qué paso de los tres está", para que siga describiendo el
+  comportamiento real (corrección de contenido, no reestructuración).
+* **Publicado en rama** `mejora-usabilidad-onboarding-05-09` (commit
+  `83c0f62`), con permiso explícito de Mar. Robot de publicación en verde
+  (evals saltados, "el cambio no toca la IA"). Vista previa:
+  `https://jobs-21egjth4a-mcaparrosgu-4812s-projects.vercel.app`. **Sin
+  fusionar a `master`** — pendiente de que Mar decida si esto ya desbloquea
+  el arranque de la prueba de usabilidad (frente 2) o si quiere pulir algo
+  más.
+* **Creación**: `mejora-onboarding-guard-sesion-05-09.md`. **Actualización**:
+  `knowledge/index.md`.
+
 ## 2026-09-04 (Marco Passe-Partout — primera identidad visual de Jobs App)
 
 * Invocada la skill `/frontend`. Sin logo ni identidad visual previa, se

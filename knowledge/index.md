@@ -510,6 +510,17 @@ existe en produccion y no se toca desde aqui.
   que arreglaba un solape del marco con el texto — Mar prefirió el scroll
   nativo. La solución al solape queda documentada por si se retoma.
 
+- [mejora-onboarding-guard-sesion-05-09.md](mejora-onboarding-guard-sesion-05-09.md)
+  — 05/09/2026: Mar probó la web antes de la prueba con la clase y la vio
+  poco intuitiva. Bug real confirmado: `app/page.tsx` nunca comprobaba la
+  sesión, así que quien ya estaba logueada volvía a ver el formulario de
+  email en `/` (con el menú superpuesto). Arreglado con `/` como Server
+  Component que redirige según sesión y perfil (`lib/perfil.ts`).
+  `GuiaPasos` pasa de 2 a 3 pasos y acompaña las 3 pantallas reales;
+  `FormularioPerfil` se reestructura en secciones numeradas con el bloque
+  opcional atenuado. No toca IA: no dispara evals. 352 pruebas, verificado
+  en vivo. Publicado en rama (vista previa), sin fusionar a `master`.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
