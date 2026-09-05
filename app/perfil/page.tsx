@@ -22,7 +22,7 @@ export default async function Perfil() {
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-10 font-sans dark:bg-black">
       <main className="w-full max-w-3xl">
-        {!perfilGuardado && <GuiaPasos pasoActual={1} />}
+        {!perfilGuardado && <GuiaPasos pasoActual={2} />}
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Cuéntanos tu perfil
         </h1>

@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 //
-// Pantalla de inicio (app/page.tsx): pedir el enlace de acceso.
+// Formulario de acceso (components/FormularioAcceso.tsx): pedir el enlace de
+// acceso. app/page.tsx solo decide si renderizarlo (sin sesión) o redirigir
+// (con sesión) — ver tests/app/pagina-inicio.test.tsx para ese guard.
 // Cubre los dos cambios del Paso 16 — que un email no invitado recibe un
 // mensaje honesto en vez de uno genérico, y que la app ya no crea usuarias
 // nuevas por su cuenta (shouldCreateUser: false).
@@ -16,10 +18,10 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { signInWithOtp: signInWithOtpFalso } }),
 }));
 
-import Home from '@/app/page';
+import FormularioAcceso from '@/components/FormularioAcceso';
 
 async function pedirAcceso(email = 'ana@example.com') {
-  render(<Home />);
+  render(<FormularioAcceso />);
   await userEvent.type(screen.getByLabelText('Tu email'), email);
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 }
@@ -74,7 +76,7 @@ describe('Pantalla de acceso — entrada solo por invitación (Paso 16)', () => 
 
   it('avisa del enlace caducado ya en el primer render, sin pasar por un efecto', () => {
     parametrosFalsos.set('error', 'enlace-caducado');
-    render(<Home />);
+    render(<FormularioAcceso />);
 
     expect(screen.getByText(/ese enlace ya no es válido/i)).toBeInTheDocument();
   });
