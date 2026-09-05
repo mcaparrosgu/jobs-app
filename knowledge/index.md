@@ -521,6 +521,19 @@ existe en produccion y no se toca desde aqui.
   opcional atenuado. No toca IA: no dispara evals. 352 pruebas, verificado
   en vivo. Publicado en rama (vista previa), sin fusionar a `master`.
 
+- [arreglo-tab-matching-05-09.md](arreglo-tab-matching-05-09.md) —
+  05/09/2026, **EN CURSO**: Mar probó la vista previa y reportó la pestaña
+  duplicada del enlace mágico (arreglada: autosincroniza sola, no se puede
+  evitar que se abra la 2ª pestaña, eso lo decide el email) y ofertas que no
+  encajaban con su CV (Senior Full-Stack, Network Engineer — el matching
+  bastaba con 1 palabra clave genérica compartida). Arreglo de código
+  (exigir 2 coincidencias, `app/api/ofertas/route.ts`) publicado. Arreglo de
+  prompt (`lib/ia.ts`/`prompts/system.md`, no colar herramientas mencionadas
+  de pasada) **sin comitear**: evals dieron ROJO por dos fallos conocidos y
+  no relacionados (B05, A06) en una tanda que compitió por cuota de
+  Cloudflare con la prueba en vivo de Mar — pendiente de relanzar mañana con
+  cuota fresca antes de decidir si se publica.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
