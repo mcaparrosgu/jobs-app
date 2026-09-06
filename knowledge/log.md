@@ -1,5 +1,37 @@
 # Registro de cambios del bundle
 
+## 2026-09-06 — PENDIENTES.md + hook SessionStart para el seguimiento de tareas
+
+* **Mar pidió** un mecanismo para tener siempre delante lo que falta por
+  hacer, ordenado por prioridad, con las tareas hechas apartadas al final y
+  muy diferenciadas visualmente de lo pendiente.
+* **Se descartó** atarlo a "activar una skill" (su idea inicial): disparador
+  arbitrario —la mayoría de skills del proyecto no tienen que ver con
+  tareas— y un hook solo puede *disparar*, no *re-priorizar*. Lo que
+  mantiene un fichero así al día son dos momentos que ya tienen ritual:
+  cerrar una tarea y descubrir una nueva (el ritual de `log.md`/`index.md`).
+* **Se creó y se borró** una skill `/hola` que devolvía la lista a demanda;
+  se prefirió el hook (automático de verdad) más una regla de mantenimiento.
+* **Hecho**:
+  1. `PENDIENTES.md` en la raíz — lista viva de tareas abiertas por
+     prioridad (🔴/🟡/⚪), cada una con Qué / Contexto (enlace a
+     `knowledge/*.md`) / bloqueos; sección "✅ Completadas" al final en un
+     `<details>` colapsable, tachadas y fechadas. Sembrada con 6 tareas ya
+     cerradas para fijar el formato.
+  2. `.claude/settings.json` (fichero nuevo, ámbito proyecto) — hook
+     `SessionStart` que hace `cat` de `PENDIENTES.md` en contexto al
+     arrancar cada sesión. Probado en Git Bash, JSON validado con `node`.
+  3. `CLAUDE.md` → sección "Documentación": regla nueva de mantener
+     `PENDIENTES.md` junto con `log.md`/`index.md`; `log.md` manda si se
+     contradicen.
+* **No toca código de la app.** Comiteado en
+  `mejora-usabilidad-onboarding-05-09` (`fb71740`) y publicado a esa rama
+  (rama → vista previa; la puerta de IA no aplica).
+* **Verificación pendiente para la siguiente sesión**: que el hook aparezca
+  en `/hooks` y que el bloque `=== PENDIENTES.md ===` salga al arrancar.
+* **Creación**: `pendientes-md-y-hook-06-09.md`. **Actualización**:
+  `knowledge/index.md`, `CLAUDE.md`.
+
 ## 2026-09-05 (tarde) — Pestaña duplicada + ofertas incoherentes con el CV (EN CURSO)
 
 * **Mar probó la vista previa** del arreglo de la mañana y reportó dos cosas

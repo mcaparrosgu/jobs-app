@@ -534,6 +534,17 @@ existe en produccion y no se toca desde aqui.
   Cloudflare con la prueba en vivo de Mar — pendiente de relanzar mañana con
   cuota fresca antes de decidir si se publica.
 
+- [pendientes-md-y-hook-06-09.md](pendientes-md-y-hook-06-09.md) —
+  06/09/2026: Mar pidió tener siempre delante lo que falta, por prioridad,
+  con lo hecho apartado al final. Se descartó atarlo a "activar una skill"
+  (disparador arbitrario; un hook no re-prioriza, solo recuerda) y una skill
+  `/hola` que se creó y se borró. Solución: `PENDIENTES.md` en la raíz
+  (lista viva, sección "✅ Completadas" en un `<details>` al final),
+  mantenido a mano junto con `log.md`/`index.md` (regla nueva en
+  `CLAUDE.md`), más un hook `SessionStart` en `.claude/settings.json` que
+  hace `cat` del fichero al arrancar cada sesión. Comiteado y publicado en
+  la rama `mejora-usabilidad-onboarding-05-09` (`fb71740`); no toca código.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
