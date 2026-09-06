@@ -133,6 +133,14 @@ son Mar: sus cuatro compañeras de clase.
 - `knowledge/` — bundle **OKF** con las decisiones y su porqué. Después de
   cada cambio relevante hay que actualizar `knowledge/index.md` y
   `knowledge/log.md`.
+- `PENDIENTES.md` (raíz) — lista viva de tareas abiertas, ordenada por
+  prioridad, con las hechas apartadas al final. **En la misma tanda en que
+  actualizas `log.md`/`index.md`**: mueve a la sección "✅ Completadas" lo
+  que se haya cerrado (con fecha absoluta y enlace a su `knowledge/*.md`) y
+  añade lo nuevo con su nivel de prioridad. Es el único documento que mira
+  hacia delante; `log.md` sigue siendo la historia cronológica y manda si
+  los dos se contradicen. Un hook `SessionStart`
+  (`.claude/settings.json`) lo vuelca en contexto al arrancar cada sesión.
 
 ## Evals de la IA
 

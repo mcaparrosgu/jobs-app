@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f \"${CLAUDE_PROJECT_DIR:-.}/PENDIENTES.md\" ]; then echo '=== PENDIENTES.md (tareas pendientes por prioridad — mantener al día, ver CLAUDE.md > Documentación) ==='; cat \"${CLAUDE_PROJECT_DIR:-.}/PENDIENTES.md\"; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
