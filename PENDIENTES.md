@@ -15,6 +15,26 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 
 ## 🔴 Prioridad alta
 
+### P0-bis · Reintentar el robot de publicación con cuota fresca de Cloudflare
+- **Qué:** el push de la rama `mejora-usabilidad-onboarding-05-09` (08/09,
+  `fd90edc`+`e825773`) disparó los evals del robot → **puerta ROJO** en
+  `resistencia_inyeccion` (8/11, 72,7 %). Solo cayeron **A10** (extraerPerfil:
+  mezcló empresas de dos personas) y **B08** (generarCvYCarta: CV demasiado
+  corto, 96 car.), y B08 arrastró la métrica por el patrón T113 (un fallo de
+  validación cuenta contra todas sus métricas).
+- **Lectura:** casi seguro **ruido de proveedor**, no el cambio del prompt:
+  `calidad_palabras_clave` (la métrica que mide este cambio) dio 4/4 100 %;
+  B08 es de `generarCvYCarta`, que este cambio ni toca (familia B05/T113);
+  la tanda local de esa misma mañana con el mismo código salió VERDE 11/11;
+  se corrieron **dos tandas completas el mismo día** (local + robot) →
+  cuota diaria agotada. Ver `knowledge/arreglo-tab-matching-05-09.md`.
+- **Acción:** con cuota fresca (renueva a diario), `gh run rerun 34222697726`
+  (o re-push). Sin tocar el prompt.
+  - VERDE → desbloquea P2.
+  - Vuelven A10/B08 con cuota fresca → mirar B08 aparte (techo de tokens en
+    generación, previo a esta rama); decidir con Mar.
+- **Bloquea:** P2.
+
 ### P1 · Frente 2 — prueba de usabilidad con 5 personas
 - **Qué:** ejecutar la prueba de usabilidad (skill `prueba-usuarios`),
   entre el Paso 16 y el Paso 17.
@@ -37,15 +57,13 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   `knowledge/arreglo-tab-matching-05-09.md`. Commits en la rama: guard de
   sesión en `/`, guía de 3 pasos, formulario de perfil en secciones,
   autosync de la pestaña del enlace mágico, umbral de 2 coincidencias en
-  ofertas, y el ajuste de prompt de `extraerPerfil` (`fd90edc`, evals VERDE
-  el 08/09 — ver Completadas).
-- **Falta primero:** `git push` de la rama con permiso de Mar. `fd90edc`
-  toca `lib/ia.ts`/`prompts/system.md`, así que el robot relanzará sus
-  evals al recibir el push (planificar esa cuota).
-- **Antes de fusionar:** `npm run comprobar:esquema`; permiso explícito de
-  Mar (`CLAUDE.md` punto 3).
-- **Estado:** local al día (todo comiteado en la rama); `origin` aún sin el
-  último commit.
+  ofertas, y el ajuste de prompt de `extraerPerfil` (`fd90edc`, evals
+  locales VERDE el 08/09; robot en preview ROJO por ruido — ver P0-bis).
+- **Falta primero:** cerrar P0-bis (robot VERDE con cuota fresca).
+- **Antes de fusionar:** `npm run comprobar:esquema`; `/diff` + `/code-review`;
+  permiso explícito de Mar (`CLAUDE.md` punto 3).
+- **Estado:** rama subida a `origin` (`e825773`); vista previa desplegada
+  NO (la puerta de IA bloqueó el deploy). Sin fusionar.
 
 ### P3 · Fechas en el CV
 - **Qué:** reintentar añadir el periodo por entrada al CV generado, con una
@@ -96,12 +114,13 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 
 <br>
 
-### ~~P0 · Relanzar `npm run evals` — prompt de `extraerPerfil` confirmado VERDE~~ — cerrada 2026-09-08
-Relanzado con cuota fresca y sin prueba en vivo a la vez (Mar dio vía libre).
-**Puerta VERDE**, las cinco métricas al 100 % (`calidad_palabras_clave` 4/4).
-B05 y A06 —los fallos del 05/09— pasaron: el ROJO de entonces era ruido del
-proveedor por competir cuota. Comiteado `fd90edc` en
-`mejora-usabilidad-onboarding-05-09`; el `git push` se hace en P2.
+### ~~P0 · Relanzar `npm run evals` (tanda local) — prompt de `extraerPerfil`~~ — cerrada 2026-09-08
+Relanzado en local con cuota fresca y sin prueba en vivo a la vez (Mar dio
+vía libre). **Puerta VERDE local**, las cinco métricas al 100 %
+(`calidad_palabras_clave` 4/4); B05 y A06 —los fallos del 05/09— pasaron.
+Comiteado `fd90edc` y subido (`e825773`) a
+`mejora-usabilidad-onboarding-05-09`. **Ojo:** el robot volvió a dar ROJO en
+la preview (2ª tanda del día, cuota agotada) → seguimiento en **P0-bis**.
 → `knowledge/arreglo-tab-matching-05-09.md`
 
 ### ~~T112 · Respaldo de IA — Mistral La Plateforme de pago (opción C1)~~ — cerrada 2026-09-02

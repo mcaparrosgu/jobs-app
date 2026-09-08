@@ -18,13 +18,24 @@
   desaparición con cuota limpia confirma que aquel ROJO fue una racha de
   Cloudflare bajo carga compartida, no una regresión. El ajuste no rompió
   nada.
-* **Comiteado** en `mejora-usabilidad-onboarding-05-09` (`fd90edc`).
-  Pendiente solo el `git push` a esa rama, a la espera del permiso expreso
-  de Mar (`CLAUDE.md` punto 3). Al publicarse, el robot relanzará sus evals
-  porque el commit toca `lib/ia.ts` y `prompts/system.md`.
-* **Actualización**: `arreglo-tab-matching-05-09.md` (sección de
-  confirmación del 08/09), `knowledge/index.md`, `PENDIENTES.md` (P0 →
-  Completadas; P2 deja de depender de P0).
+* **Comiteado** en `mejora-usabilidad-onboarding-05-09` (`fd90edc` + doc
+  `e825773`) y, con permiso de Mar, **`git push`** a `origin`.
+* **El robot volvió a dar ROJO en la preview** (run `34222697726`):
+  `resistencia_inyeccion` 8/11 (72,7 %). Solo cayeron A10 (`extraerPerfil`,
+  mezcló empresas de dos personas) y B08 (`generarCvYCarta`, CV a 96 car.,
+  que arrastró la métrica por el patrón T113). **Es ruido de proveedor, no
+  el cambio**: `calidad_palabras_clave` 4/4; B08 es de generación (familia
+  B05/T113), que este cambio ni toca; la local de 2 h antes fue VERDE 11/11;
+  cada ROJO cae en casos distintos; dos tandas completas el mismo día
+  (local + robot) agotan la cuota diaria de Cloudflare y la generación se
+  colgó a media tanda. No se toca el prompt; se reintenta el robot con
+  cuota fresca (`gh run rerun`). Seguimiento: `PENDIENTES.md` P0-bis.
+* **Actualización**: `arreglo-tab-matching-05-09.md` (confirmación local del
+  08/09 + sección del ROJO del robot), `knowledge/index.md`, `PENDIENTES.md`
+  (P0 → Completadas con nota; nueva P0-bis; P2 depende de P0-bis).
+* **Añadido a la wiki de Obsidian** (vault `wiki`, fuera de este repo):
+  `Github/Casos practicos/Ramas, push y fusion a master - Jobs App.md` en
+  modo profesora + enlace en `Github/indice-github-personal.md`.
 
 ## 2026-09-06 — PENDIENTES.md + hook SessionStart para el seguimiento de tareas
 
