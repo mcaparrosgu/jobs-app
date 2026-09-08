@@ -1,6 +1,6 @@
 ---
 type: Arreglo
-title: "Pestaña duplicada al entrar + ofertas incoherentes con el CV (05/09/2026, en curso)"
+title: "Pestaña duplicada al entrar + ofertas incoherentes con el CV (05/09/2026; prompt confirmado VERDE el 08/09)"
 description: "Mar probó la vista previa del arreglo de onboarding y encontró dos problemas nuevos: el enlace mágico abre una pestaña nueva y la original se quedaba congelada en 'te hemos enviado un enlace' (confuso, dos pestañas idénticas); y las ofertas mostradas no encajaban con su CV real (le enseñaba 'Senior Full-Stack', 'Network Engineer' pese a ser un perfil de operaciones). Diagnóstico: el enlace en pestaña nueva lo decide el cliente de email, no la web, así que no se puede evitar — se arregló autosincronizando la pestaña vieja (router.refresh() periódico + al recuperar foco). Las ofertas colaban por un matching 'Ctrl+F literal' que bastaba con 1 sola palabra clave genérica (Docker, Python, CRUD) compartida con perfiles de ingeniería — arreglado exigiendo 2 coincidencias distintas en app/api/ofertas/route.ts (código, sin IA, ya publicado). Un tercer ajuste, en el prompt de extraerPerfil (que no cuele una herramienta mencionada de pasada como palabra clave), quedó con veredicto ROJO en los evals — pero por dos fallos ya conocidos y no relacionados (B05, A06), en una tanda que compitió por cuota de Cloudflare con la propia prueba en vivo de Mar. Sin comitear, pendiente de relanzar con cuota fresca."
 tags: [jobs-app, arreglo, frontend, ofertas, matching, ia, prompt, prueba-usuarios, pendiente]
 okf_version: "0.2"
@@ -128,6 +128,33 @@ Los dos fallos de detalle:
 3 pasos, formulario en secciones, autosync de pestaña, umbral de 2
 coincidencias) ya está comiteado y publicado en la rama; esto es lo único
 que falta.
+
+# Confirmación del 08/09/2026 — VERDE, prompt comiteado
+
+Relanzado `npm run evals` con cuota fresca de Cloudflare y sin ninguna otra
+prueba en vivo a la vez (Mar dio vía libre expresamente).
+
+| métrica | resultado | umbral |
+| :-- | :-- | :-- |
+| `formato` | 12/12, 100% | 95% |
+| `calidad_palabras_clave` | 4/4, 100% | 90% |
+| `fidelidad` | 25/25, 100% | 90% |
+| `idioma` | 6/6, 100% | 100% |
+| `resistencia_inyeccion` | 11/11, 100% | 85% |
+
+**VEREDICTO: VERDE.** Las dos llamadas pasaron 12/12 y 13/13.
+`extraer-perfil` en 6 m 52 s, `generar-cv-carta` en 18 m 1 s — tiempos
+normales, proveedor estable (la sonda no hizo falta: 0 errores, 0 timeouts).
+
+**B05 y A06 pasaron esta vez.** Eran justo los dos fallos del 05/09, y su
+desaparición con cuota limpia confirma lo que ya se sospechaba: aquel ROJO
+fue una racha de Cloudflare bajo carga compartida con la prueba en vivo de
+Mar, no una regresión. El ajuste del prompt no rompió nada.
+
+**Comiteado** (`fd90edc`) en `mejora-usabilidad-onboarding-05-09`. Pendiente
+solo el `git push` a esa rama, a la espera del permiso expreso de Mar
+(`CLAUDE.md` punto 3). Al publicarse, el robot relanzará sus propios evals
+porque el commit toca `lib/ia.ts` y `prompts/system.md`.
 
 # Qué hacer mañana (06/09/2026), en cuanto haya cuota fresca de Cloudflare
 

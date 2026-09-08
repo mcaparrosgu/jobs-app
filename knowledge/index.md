@@ -522,17 +522,19 @@ existe en produccion y no se toca desde aqui.
   en vivo. Publicado en rama (vista previa), sin fusionar a `master`.
 
 - [arreglo-tab-matching-05-09.md](arreglo-tab-matching-05-09.md) —
-  05/09/2026, **EN CURSO**: Mar probó la vista previa y reportó la pestaña
-  duplicada del enlace mágico (arreglada: autosincroniza sola, no se puede
-  evitar que se abra la 2ª pestaña, eso lo decide el email) y ofertas que no
-  encajaban con su CV (Senior Full-Stack, Network Engineer — el matching
-  bastaba con 1 palabra clave genérica compartida). Arreglo de código
-  (exigir 2 coincidencias, `app/api/ofertas/route.ts`) publicado. Arreglo de
-  prompt (`lib/ia.ts`/`prompts/system.md`, no colar herramientas mencionadas
-  de pasada) **sin comitear**: evals dieron ROJO por dos fallos conocidos y
-  no relacionados (B05, A06) en una tanda que compitió por cuota de
-  Cloudflare con la prueba en vivo de Mar — pendiente de relanzar mañana con
-  cuota fresca antes de decidir si se publica.
+  05/09/2026 (prompt confirmado el 08/09): Mar probó la vista previa y
+  reportó la pestaña duplicada del enlace mágico (arreglada: autosincroniza
+  sola, no se puede evitar que se abra la 2ª pestaña, eso lo decide el
+  email) y ofertas que no encajaban con su CV (Senior Full-Stack, Network
+  Engineer — el matching bastaba con 1 palabra clave genérica compartida).
+  Arreglo de código (exigir 2 coincidencias, `app/api/ofertas/route.ts`)
+  publicado. Arreglo de prompt (`lib/ia.ts`/`prompts/system.md`, no colar
+  herramientas mencionadas de pasada): el ROJO del 05/09 (B05, A06) era
+  ruido del proveedor por competir cuota con la prueba en vivo — el 08/09,
+  relanzado con cuota fresca, **puerta VERDE con las cinco métricas al
+  100%** y B05/A06 pasando. Comiteado (`fd90edc`) en
+  `mejora-usabilidad-onboarding-05-09`; pendiente solo el `git push` con
+  permiso de Mar.
 
 - [pendientes-md-y-hook-06-09.md](pendientes-md-y-hook-06-09.md) —
   06/09/2026: Mar pidió tener siempre delante lo que falta, por prioridad,

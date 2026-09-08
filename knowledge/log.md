@@ -1,5 +1,31 @@
 # Registro de cambios del bundle
 
+## 2026-09-08 — Prompt de `extraerPerfil` confirmado VERDE y comiteado
+
+* **Tarea P0 de `PENDIENTES.md`**: relanzar `npm run evals` con cuota fresca
+  para confirmar el ajuste de prompt de `extraerPerfil` del 05/09 (no colar
+  como palabra clave una herramienta mencionada de pasada), que estaba
+  modificado sin comitear en `lib/ia.ts` y `prompts/system.md`.
+* **Antes de lanzar**: preguntado a Mar si había vía libre (evals y una
+  prueba en vivo compiten por la misma cuota de Cloudflare — fue justo lo
+  que enturbió la tanda del 05/09). Dio vía libre expresamente.
+* **Resultado**: **VEREDICTO VERDE**. Las cinco métricas al 100%
+  (`formato` 12/12, `calidad_palabras_clave` 4/4, `fidelidad` 25/25,
+  `idioma` 6/6, `resistencia_inyeccion` 11/11). Las dos llamadas pasaron
+  12/12 y 13/13. `extraer-perfil` 6 m 52 s, `generar-cv-carta` 18 m 1 s;
+  proveedor estable, 0 errores.
+* **B05 y A06 pasaron** esta vez — eran los dos fallos del 05/09. Su
+  desaparición con cuota limpia confirma que aquel ROJO fue una racha de
+  Cloudflare bajo carga compartida, no una regresión. El ajuste no rompió
+  nada.
+* **Comiteado** en `mejora-usabilidad-onboarding-05-09` (`fd90edc`).
+  Pendiente solo el `git push` a esa rama, a la espera del permiso expreso
+  de Mar (`CLAUDE.md` punto 3). Al publicarse, el robot relanzará sus evals
+  porque el commit toca `lib/ia.ts` y `prompts/system.md`.
+* **Actualización**: `arreglo-tab-matching-05-09.md` (sección de
+  confirmación del 08/09), `knowledge/index.md`, `PENDIENTES.md` (P0 →
+  Completadas; P2 deja de depender de P0).
+
 ## 2026-09-06 — PENDIENTES.md + hook SessionStart para el seguimiento de tareas
 
 * **Mar pidió** un mecanismo para tener siempre delante lo que falta por

@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-06_
+_Última actualización: 2026-09-08_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -14,24 +14,6 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 ---
 
 ## 🔴 Prioridad alta
-
-### P0 · Relanzar `npm run evals` con cuota fresca de Cloudflare
-- **Qué:** confirmar en verde el ajuste de prompt de `extraerPerfil` (regla
-  nueva: no colar una herramienta mencionada de pasada), que está
-  **modificado sin comitear** en `lib/ia.ts` y `prompts/system.md`.
-- **Contexto:** `knowledge/arreglo-tab-matching-05-09.md`. Los evals del
-  05/09 salieron ROJO solo por **B05** y **A06** (fallos conocidos, ajenos a
-  este cambio) en una tanda que compitió por cuota con una prueba en vivo.
-  `calidad_palabras_clave` —la métrica que sí mide este cambio— dio 100 %.
-- **Antes de lanzar:** no gastar cuota en diagnóstico; confirmar que nadie
-  prueba la app en vivo a la vez ([[feedback_no_evals_junto_prueba_en_vivo]]).
-- **Ramas de decisión:**
-  - VERDE → `git add lib/ia.ts prompts/system.md`, commit y push a
-    `mejora-usabilidad-onboarding-05-09`.
-  - Vuelve B05/A06 → no es este cambio: decidir con Mar.
-  - Algo nuevo (p. ej. `calidad_palabras_clave` bajo umbral) → sí es el
-    prompt: revisar antes de tocar nada más.
-- **Bloquea:** P2.
 
 ### P1 · Frente 2 — prueba de usabilidad con 5 personas
 - **Qué:** ejecutar la prueba de usabilidad (skill `prueba-usuarios`),
@@ -55,11 +37,15 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   `knowledge/arreglo-tab-matching-05-09.md`. Commits en la rama: guard de
   sesión en `/`, guía de 3 pasos, formulario de perfil en secciones,
   autosync de la pestaña del enlace mágico, umbral de 2 coincidencias en
-  ofertas.
-- **Depende de:** P0 (para que entre también el ajuste de prompt).
+  ofertas, y el ajuste de prompt de `extraerPerfil` (`fd90edc`, evals VERDE
+  el 08/09 — ver Completadas).
+- **Falta primero:** `git push` de la rama con permiso de Mar. `fd90edc`
+  toca `lib/ia.ts`/`prompts/system.md`, así que el robot relanzará sus
+  evals al recibir el push (planificar esa cuota).
 - **Antes de fusionar:** `npm run comprobar:esquema`; permiso explícito de
   Mar (`CLAUDE.md` punto 3).
-- **Estado:** publicado en rama (vista previa), sin fusionar.
+- **Estado:** local al día (todo comiteado en la rama); `origin` aún sin el
+  último commit.
 
 ### P3 · Fechas en el CV
 - **Qué:** reintentar añadir el periodo por entrada al CV generado, con una
@@ -109,6 +95,14 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 <summary><b>Ver histórico de tareas cerradas</b> (no editar salvo para añadir una nueva al principio)</summary>
 
 <br>
+
+### ~~P0 · Relanzar `npm run evals` — prompt de `extraerPerfil` confirmado VERDE~~ — cerrada 2026-09-08
+Relanzado con cuota fresca y sin prueba en vivo a la vez (Mar dio vía libre).
+**Puerta VERDE**, las cinco métricas al 100 % (`calidad_palabras_clave` 4/4).
+B05 y A06 —los fallos del 05/09— pasaron: el ROJO de entonces era ruido del
+proveedor por competir cuota. Comiteado `fd90edc` en
+`mejora-usabilidad-onboarding-05-09`; el `git push` se hace en P2.
+→ `knowledge/arreglo-tab-matching-05-09.md`
 
 ### ~~T112 · Respaldo de IA — Mistral La Plateforme de pago (opción C1)~~ — cerrada 2026-09-02
 Cloudflare sigue de principal; Mistral entra como 2.º de la cascada, solo si
