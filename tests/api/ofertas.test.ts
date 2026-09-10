@@ -458,4 +458,76 @@ describe('GET /api/ofertas — coincidencia mínima de 2 términos (falsos posit
 
     expect(cuerpo.ofertas).toHaveLength(1);
   });
+
+  it('un perfil de nicho con dos puestos ve una oferta que solo coincide en uno de ellos', async () => {
+    // El umbral de 2 se pensó contra herramientas genéricas sueltas, no
+    // contra los títulos de perfil: para una traductora, un anuncio que dice
+    // "Traductora" ya encaja aunque no repita su segundo título. Sin el
+    // atajo de "un puesto basta", perfiles así (varias de las testers) se
+    // quedaban con la lista vacía.
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{
+          data: { puestos: ['Traductora', 'Correctora de estilo'], palabras_clave: [] },
+          error: null,
+        }],
+        ofertas: [
+          { count: 5, error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Traductora audiovisual (EN>ES)',
+              descripcion: 'Trabajo 100% remoto, jornada completa',
+              empresa: 'Acme',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
+        ],
+        intereses: [{ data: [], error: null }],
+        generaciones: [{ data: [], error: null }, { count: 0, error: null }],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const cuerpo = await (await GET()).json();
+
+    expect(cuerpo.ofertas).toHaveLength(1);
+    expect(cuerpo.ofertas[0].id).toBe('oferta-1');
+  });
+
+  it('una herramienta genérica suelta (sin acierto de puesto) sigue necesitando 2 coincidencias', async () => {
+    // El atajo es solo para los puestos: una palabra clave de herramienta
+    // que aparece sola en una oferta de otro sector se sigue descartando.
+    const { cliente } = crearClienteFalso({
+      user: USUARIA,
+      tablas: {
+        perfiles: [{
+          data: { puestos: ['Correctora de estilo'], palabras_clave: ['Python'] },
+          error: null,
+        }],
+        ofertas: [
+          { count: 5, error: null },
+          {
+            data: [{
+              id: 'oferta-1',
+              titulo: 'Data Engineer',
+              descripcion: 'Pipelines en Python y Spark',
+              empresa: 'TechCorp',
+              enlace: 'https://x',
+              ingerida_en: '2026-01-01',
+            }],
+            error: null,
+          },
+        ],
+      },
+    });
+    vi.mocked(createClient).mockResolvedValue(cliente as never);
+
+    const cuerpo = await (await GET()).json();
+
+    expect(cuerpo.ofertas).toEqual([]);
+  });
 });

@@ -7,9 +7,10 @@ import { createClient } from '@/lib/supabase/server';
 // Con una sola palabra clave coincidiendo bastaba para enseñar la oferta, y
 // un perfil con términos de herramienta genéricos (Docker, Python, CRUD...)
 // hace que cualquier oferta técnica no relacionada cuele con solo uno de
-// ellos. Exigir 2 coincidencias distintas (puesto o palabra clave, donde
-// sea) reduce mucho esos falsos positivos sin dejar de encontrar nada para
-// un perfil con muy pocos términos propios.
+// ellos. Exigir 2 coincidencias distintas reduce mucho esos falsos
+// positivos. La excepción es un acierto en un PUESTO (ver más abajo): con
+// uno basta, para no dejar sin ofertas a un perfil de nicho con dos títulos
+// y pocas palabras clave.
 const MINIMO_TERMINOS_COINCIDENTES = 2;
 
 function contarTerminosCoincidentes(texto: string, terminos: string[]): number {
@@ -80,6 +81,12 @@ export async function GET() {
     .map(limpiarTermino)
     .filter((t) => t.length > 0);
 
+  // Los términos que salen solo de los puestos, para el atajo de "un puesto
+  // basta" al aplicar el umbral (ver más abajo).
+  const terminosPuesto = normalizarPalabrasClave(perfil.puestos)
+    .map(limpiarTermino)
+    .filter((t) => t.length > 0);
+
   if (terminos.length === 0) {
     return NextResponse.json({ sinPerfil: false, huboIngestaHoy, ofertas: [] });
   }
@@ -117,9 +124,18 @@ export async function GET() {
   // Con un perfil de un único término (p. ej. solo un puesto marcado, sin
   // palabras clave) exigir 2 coincidencias dejaría siempre la lista vacía.
   const umbral = Math.min(MINIMO_TERMINOS_COINCIDENTES, terminos.length);
-  const ofertasRelevantes = (ofertas ?? []).filter(
-    (o) => contarTerminosCoincidentes(`${o.titulo} ${o.descripcion ?? ''}`, terminos) >= umbral,
-  );
+  const ofertasRelevantes = (ofertas ?? []).filter((o) => {
+    const texto = `${o.titulo} ${o.descripcion ?? ''}`;
+    // Un acierto en un PUESTO que la usuaria eligió es señal fuerte de por
+    // sí: con uno basta. El umbral de 2 se reserva para el encaje que es solo
+    // de palabras clave, que es donde estaban los falsos positivos (una
+    // herramienta genérica —Docker, Python— suelta en una oferta de otro
+    // sector). Sin este atajo, un perfil de nicho con dos títulos y pocas
+    // palabras clave se quedaba sin ofertas en cuanto el anuncio nombraba
+    // solo uno de los dos.
+    if (contarTerminosCoincidentes(texto, terminosPuesto) >= 1) return true;
+    return contarTerminosCoincidentes(texto, terminos) >= umbral;
+  });
 
   const ids = ofertasRelevantes.map((o) => o.id);
   let idsConInteres = new Set<string>();

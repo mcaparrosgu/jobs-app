@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TarjetaOferta, { type EstadoGeneracion } from '@/components/TarjetaOferta';
-import GuiaPasos from '@/components/GuiaPasos';
 import { diaEnMadrid, etiquetaDiaEnMadrid } from '@/lib/fechas';
 
 type Oferta = {
@@ -105,7 +104,6 @@ export default function Ofertas() {
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-10 font-sans dark:bg-black">
       <main className="w-full max-w-3xl">
-        <GuiaPasos pasoActual={3} />
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Ofertas para ti
         </h1>
