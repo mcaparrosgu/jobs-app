@@ -810,14 +810,6 @@ export async function extraerPerfil(cvTexto: string): Promise<PerfilExtraido> {
         'al cliente", "trabajo en equipo".\n' +
         '- Puedes añadir el sinónimo con el que ese mismo término aparece en los ' +
         'anuncios (a menudo en inglés), siempre que también quepa en 3 palabras.\n' +
-        '- Antes de incluir una herramienta o tecnología ajena al área principal del ' +
-        'perfil (p. ej. una herramienta de desarrollo/DevOps en un CV de otro sector), ' +
-        'comprueba que el CV la presente como una competencia habitual ("manejo de ' +
-        'X", "experiencia en Y", "certificación en Z"), no como una mención de una ' +
-        'sola vez al describir una tarea puntual — así no se cuela una palabra clave ' +
-        'que atraiga ofertas de un puesto muy distinto al suyo. "Manejo avanzado de ' +
-        'SAP" sí es una competencia; "usé Docker una vez para desplegar un flujo" no ' +
-        'lo es.\n' +
         '- Todas respaldadas por el CV. No inventes nada que no esté en el texto.\n\n' +
         'Sobre "palabras_clave_sugeridas": una lista aparte (0 a 30 términos), con las ' +
         'mismas reglas de formato de arriba, de términos RELACIONADOS que no hayas ' +
