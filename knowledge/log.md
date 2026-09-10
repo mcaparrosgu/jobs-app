@@ -1,5 +1,178 @@
 # Registro de cambios del bundle
 
+## 2026-09-08 — Prompt de `extraerPerfil` confirmado VERDE y comiteado
+
+* **Tarea P0 de `PENDIENTES.md`**: relanzar `npm run evals` con cuota fresca
+  para confirmar el ajuste de prompt de `extraerPerfil` del 05/09 (no colar
+  como palabra clave una herramienta mencionada de pasada), que estaba
+  modificado sin comitear en `lib/ia.ts` y `prompts/system.md`.
+* **Antes de lanzar**: preguntado a Mar si había vía libre (evals y una
+  prueba en vivo compiten por la misma cuota de Cloudflare — fue justo lo
+  que enturbió la tanda del 05/09). Dio vía libre expresamente.
+* **Resultado**: **VEREDICTO VERDE**. Las cinco métricas al 100%
+  (`formato` 12/12, `calidad_palabras_clave` 4/4, `fidelidad` 25/25,
+  `idioma` 6/6, `resistencia_inyeccion` 11/11). Las dos llamadas pasaron
+  12/12 y 13/13. `extraer-perfil` 6 m 52 s, `generar-cv-carta` 18 m 1 s;
+  proveedor estable, 0 errores.
+* **B05 y A06 pasaron** esta vez — eran los dos fallos del 05/09. Su
+  desaparición con cuota limpia confirma que aquel ROJO fue una racha de
+  Cloudflare bajo carga compartida, no una regresión. El ajuste no rompió
+  nada.
+* **Comiteado** en `mejora-usabilidad-onboarding-05-09` (`fd90edc` + doc
+  `e825773`) y, con permiso de Mar, **`git push`** a `origin`.
+* **El robot volvió a dar ROJO en la preview** (run `34222697726`):
+  `resistencia_inyeccion` 8/11 (72,7 %). Solo cayeron A10 (`extraerPerfil`,
+  mezcló empresas de dos personas) y B08 (`generarCvYCarta`, CV a 96 car.,
+  que arrastró la métrica por el patrón T113). **Es ruido de proveedor, no
+  el cambio**: `calidad_palabras_clave` 4/4; B08 es de generación (familia
+  B05/T113), que este cambio ni toca; la local de 2 h antes fue VERDE 11/11;
+  cada ROJO cae en casos distintos; dos tandas completas el mismo día
+  (local + robot) agotan la cuota diaria de Cloudflare y la generación se
+  colgó a media tanda. No se toca el prompt; se reintenta el robot con
+  cuota fresca (`gh run rerun`). Seguimiento: `PENDIENTES.md` P0-bis.
+* **Actualización**: `arreglo-tab-matching-05-09.md` (confirmación local del
+  08/09 + sección del ROJO del robot), `knowledge/index.md`, `PENDIENTES.md`
+  (P0 → Completadas con nota; nueva P0-bis; P2 depende de P0-bis).
+* **Añadido a la wiki de Obsidian** (vault `wiki`, fuera de este repo):
+  `Github/Casos practicos/Ramas, push y fusion a master - Jobs App.md` en
+  modo profesora + enlace en `Github/indice-github-personal.md`.
+
+## 2026-09-06 — PENDIENTES.md + hook SessionStart para el seguimiento de tareas
+
+* **Mar pidió** un mecanismo para tener siempre delante lo que falta por
+  hacer, ordenado por prioridad, con las tareas hechas apartadas al final y
+  muy diferenciadas visualmente de lo pendiente.
+* **Se descartó** atarlo a "activar una skill" (su idea inicial): disparador
+  arbitrario —la mayoría de skills del proyecto no tienen que ver con
+  tareas— y un hook solo puede *disparar*, no *re-priorizar*. Lo que
+  mantiene un fichero así al día son dos momentos que ya tienen ritual:
+  cerrar una tarea y descubrir una nueva (el ritual de `log.md`/`index.md`).
+* **Se creó y se borró** una skill `/hola` que devolvía la lista a demanda;
+  se prefirió el hook (automático de verdad) más una regla de mantenimiento.
+* **Hecho**:
+  1. `PENDIENTES.md` en la raíz — lista viva de tareas abiertas por
+     prioridad (🔴/🟡/⚪), cada una con Qué / Contexto (enlace a
+     `knowledge/*.md`) / bloqueos; sección "✅ Completadas" al final en un
+     `<details>` colapsable, tachadas y fechadas. Sembrada con 6 tareas ya
+     cerradas para fijar el formato.
+  2. `.claude/settings.json` (fichero nuevo, ámbito proyecto) — hook
+     `SessionStart` que hace `cat` de `PENDIENTES.md` en contexto al
+     arrancar cada sesión. Probado en Git Bash, JSON validado con `node`.
+  3. `CLAUDE.md` → sección "Documentación": regla nueva de mantener
+     `PENDIENTES.md` junto con `log.md`/`index.md`; `log.md` manda si se
+     contradicen.
+* **No toca código de la app.** Comiteado en
+  `mejora-usabilidad-onboarding-05-09` (`fb71740`) y publicado a esa rama
+  (rama → vista previa; la puerta de IA no aplica).
+* **Verificación pendiente para la siguiente sesión**: que el hook aparezca
+  en `/hooks` y que el bloque `=== PENDIENTES.md ===` salga al arrancar.
+* **Creación**: `pendientes-md-y-hook-06-09.md`. **Actualización**:
+  `knowledge/index.md`, `CLAUDE.md`.
+
+## 2026-09-05 (tarde) — Pestaña duplicada + ofertas incoherentes con el CV (EN CURSO)
+
+* **Mar probó la vista previa** del arreglo de la mañana y reportó dos cosas
+  más: (1) el enlace mágico abre pestaña nueva y la original se queda
+  congelada en "te hemos enviado un enlace" — confuso, dos pestañas
+  idénticas; (2) las ofertas no encajaban con su CV real (le enseñó "Senior
+  Full-Stack", "Network Engineer" pese a ser un perfil de operaciones).
+* **Pestaña duplicada**: no se puede evitar que se abra una pestaña nueva
+  (lo decide el cliente de correo, no la web) — explicado con honestidad en
+  vez de prometer algo imposible. Presentadas dos alternativas reales
+  (código de 6 dígitos sin 2ª pestaña nunca, vs. mantener el enlace y
+  autosincronizar la pestaña vieja); **Mar eligió la segunda**, menos
+  cambio. `components/FormularioAcceso.tsx`: mientras espera el enlace,
+  comprueba la sesión cada 4s y al recuperar el foco (`router.refresh()`,
+  las cookies de sesión son del navegador entero, no de una pestaña) y se
+  lleva sola a `/ofertas` o `/perfil` en cuanto detecta que ya entró desde
+  la otra pestaña.
+* **Ofertas incoherentes, causa encontrada**: `app/api/ofertas/route.ts`
+  hace un "Ctrl+F literal" documentado a propósito (`lib/palabras-clave.ts`)
+  — 1 sola palabra clave coincidiendo bastaba. El perfil de Mar mezcla
+  términos propios (n8n, GDPR...) con herramientas genéricas que la IA sacó
+  de su CV (Docker, Python, CRUD), que también aparecen en ofertas de
+  ingeniería sin ninguna relación. **Preguntado explícitamente** qué capa
+  arreglar primero (solo código / también el prompt de la IA) — Mar eligió
+  **las dos**.
+* **Arreglo de código (publicado)**: `app/api/ofertas/route.ts` exige ahora
+  2 coincidencias distintas (puesto o palabra clave) antes de enseñar una
+  oferta, no 1 — con `Math.min(2, terminos.length)` para no dejar vacía la
+  lista a un perfil de un único término. `select` añade `descripcion`,
+  `limit` sube de 50 a 150 candidatas antes del filtro. 3 pruebas nuevas
+  (descarta 1 coincidencia, acepta 2, respeta el caso de 1 solo término).
+  358 pruebas totales, lint, `tsc` y `comprobar:esquema` limpios. Commit
+  `a32763e`, publicado en `mejora-usabilidad-onboarding-05-09`, robot verde
+  (no toca IA).
+* **Arreglo de prompt (SIN PUBLICAR)**: `lib/ia.ts` (`extraerPerfil`) +
+  `prompts/system.md`, nueva regla — no incluir una herramienta ajena al
+  área principal del perfil salvo que el CV la presente como competencia
+  habitual, no como mención de una tarea puntual. Compatible con el caso
+  dorado A11 (SAP como competencia explícita).
+* **Evals (`npm run evals`) → ROJO**, pero `calidad_palabras_clave` (la
+  métrica que de verdad mide este cambio) salió **4/4, 100%**. Los dos
+  fallos reales son **B05** (`generarCvYCarta`, ni lo toca este cambio —
+  mismo caso ya arreglado el 30/08 y confirmado el 31/08) y **A06**
+  ("poeta", residual conocido desde el 31/08). La tanda **compitió por
+  cuota de Cloudflare con la propia Mar probando "me interesa" en vivo** a
+  la vez — señal de racha del proveedor bajo carga compartida, no
+  necesariamente una regresión real (regla de `CLAUDE.md`: comprobar
+  estabilidad del proveedor antes de creerse una tanda).
+* **Decisión**: no comitear el cambio de prompt hoy. `lib/ia.ts` y
+  `prompts/system.md` quedan modificados en el árbol de trabajo local, sin
+  publicar. **Mañana** (06/09), con cuota fresca y sin nada más corriendo a
+  la vez: relanzar `npm run evals`; si sale VERDE, comitear y publicar; si
+  vuelve el mismo B05/A06, no es este cambio — decidir con Mar; si sale algo
+  nuevo, sí sería el prompt y toca revisarlo.
+* **Creación**: `arreglo-tab-matching-05-09.md`. **Actualización**:
+  `knowledge/index.md`.
+
+## 2026-09-05 (Guard de sesión en / + guía de 3 pasos + formulario en secciones)
+
+* **Mar probó la web ella misma** antes de pasársela a la clase y la vio poco
+  intuitiva, desordenada y con explicaciones insuficientes — no quiso lanzar
+  la prueba de usabilidad hasta arreglarlo. Tres quejas: "si ya estoy
+  logueada veo el email otra vez", "falta información, desordenada", "el
+  proceso tiene que explicarse mejor".
+* **Investigado antes de tocar código** (exploración de solo lectura): el
+  primer punto era un **bug real**, no percepción — `app/page.tsx` (client
+  component) nunca comprobaba la sesión, así que quien ya estaba logueada
+  volvía a ver el formulario de email al visitar `/` directamente, con
+  `MenuNavegacion` pintándose encima por añadidura (contradice
+  `docs/03-spec.md` §3.1). La guía de pasos (`GuiaPasos.tsx`) tenía 2 pasos y
+  nunca se mostraba en `/ofertas` pese a admitirlo. `FormularioPerfil.tsx`
+  pesaba igual lo obligatorio (CV) que lo opcional (salario mínimo).
+* **Preguntado explícitamente a Mar** (dos decisiones, `CLAUDE.md` punto 7):
+  extender la guía existente a 3 pasos en vez de rediseñar como landing
+  nueva, y sí reestructurar el formulario de perfil en esta misma ronda.
+* **Arreglado**: `lib/perfil.ts` (nuevo) centraliza "¿tiene perfil
+  guardado?", reutilizado por `app/auth/callback/route.ts` y el nuevo guard
+  de `app/page.tsx` (ahora Server Component, redirige a `/ofertas` o
+  `/perfil` según sesión y perfil). `components/FormularioAcceso.tsx`
+  (nuevo) recoge el formulario de email que antes vivía en `app/page.tsx`.
+  `GuiaPasos.tsx` pasa a 3 pasos ("Pide acceso" / "Pega tu CV" / "Mira tus
+  ofertas"), visible en `/`, `/perfil` y — por primera vez — `/ofertas`, con
+  un subtítulo de orientación nuevo ahí. `FormularioPerfil.tsx` se
+  reestructura en 3 secciones numeradas más un bloque "Opcional" atenuado
+  (checkbox de experiencia + salario mínimo), sin tocar su lógica.
+* **Verificación**: 352 pruebas en verde (8 nuevas/reescritas), lint y
+  `tsc --noEmit` limpios, `next build` compila. Verificado en vivo con la
+  sesión real de Mar: `/` redirige sin mostrar el formulario ni el menú
+  superpuesto; `/ofertas` y `/perfil` muestran la guía y las secciones
+  nuevas correctamente, sin errores de consola. No toca `lib/ia.ts` ni el
+  esquema de datos: no dispara evals ni `comprobar:esquema`.
+* **`docs/03-spec.md` §3.1 actualizado**: "en qué paso de los dos está" →
+  "en qué paso de los tres está", para que siga describiendo el
+  comportamiento real (corrección de contenido, no reestructuración).
+* **Publicado en rama** `mejora-usabilidad-onboarding-05-09` (commit
+  `83c0f62`), con permiso explícito de Mar. Robot de publicación en verde
+  (evals saltados, "el cambio no toca la IA"). Vista previa:
+  `https://jobs-21egjth4a-mcaparrosgu-4812s-projects.vercel.app`. **Sin
+  fusionar a `master`** — pendiente de que Mar decida si esto ya desbloquea
+  el arranque de la prueba de usabilidad (frente 2) o si quiere pulir algo
+  más.
+* **Creación**: `mejora-onboarding-guard-sesion-05-09.md`. **Actualización**:
+  `knowledge/index.md`.
+
 ## 2026-09-04 (Marco Passe-Partout — primera identidad visual de Jobs App)
 
 * Invocada la skill `/frontend`. Sin logo ni identidad visual previa, se

@@ -510,6 +510,43 @@ existe en produccion y no se toca desde aqui.
   que arreglaba un solape del marco con el texto — Mar prefirió el scroll
   nativo. La solución al solape queda documentada por si se retoma.
 
+- [mejora-onboarding-guard-sesion-05-09.md](mejora-onboarding-guard-sesion-05-09.md)
+  — 05/09/2026: Mar probó la web antes de la prueba con la clase y la vio
+  poco intuitiva. Bug real confirmado: `app/page.tsx` nunca comprobaba la
+  sesión, así que quien ya estaba logueada volvía a ver el formulario de
+  email en `/` (con el menú superpuesto). Arreglado con `/` como Server
+  Component que redirige según sesión y perfil (`lib/perfil.ts`).
+  `GuiaPasos` pasa de 2 a 3 pasos y acompaña las 3 pantallas reales;
+  `FormularioPerfil` se reestructura en secciones numeradas con el bloque
+  opcional atenuado. No toca IA: no dispara evals. 352 pruebas, verificado
+  en vivo. Publicado en rama (vista previa), sin fusionar a `master`.
+
+- [arreglo-tab-matching-05-09.md](arreglo-tab-matching-05-09.md) —
+  05/09/2026 (prompt confirmado el 08/09): Mar probó la vista previa y
+  reportó la pestaña duplicada del enlace mágico (arreglada: autosincroniza
+  sola, no se puede evitar que se abra la 2ª pestaña, eso lo decide el
+  email) y ofertas que no encajaban con su CV (Senior Full-Stack, Network
+  Engineer — el matching bastaba con 1 palabra clave genérica compartida).
+  Arreglo de código (exigir 2 coincidencias, `app/api/ofertas/route.ts`)
+  publicado. Arreglo de prompt (`lib/ia.ts`/`prompts/system.md`, no colar
+  herramientas mencionadas de pasada): el ROJO del 05/09 (B05, A06) era
+  ruido del proveedor por competir cuota con la prueba en vivo — el 08/09,
+  relanzado con cuota fresca, **puerta VERDE con las cinco métricas al
+  100%** y B05/A06 pasando. Comiteado (`fd90edc`) en
+  `mejora-usabilidad-onboarding-05-09`; pendiente solo el `git push` con
+  permiso de Mar.
+
+- [pendientes-md-y-hook-06-09.md](pendientes-md-y-hook-06-09.md) —
+  06/09/2026: Mar pidió tener siempre delante lo que falta, por prioridad,
+  con lo hecho apartado al final. Se descartó atarlo a "activar una skill"
+  (disparador arbitrario; un hook no re-prioriza, solo recuerda) y una skill
+  `/hola` que se creó y se borró. Solución: `PENDIENTES.md` en la raíz
+  (lista viva, sección "✅ Completadas" en un `<details>` al final),
+  mantenido a mano junto con `log.md`/`index.md` (regla nueva en
+  `CLAUDE.md`), más un hook `SessionStart` en `.claude/settings.json` que
+  hace `cat` del fichero al arrancar cada sesión. Comiteado y publicado en
+  la rama `mejora-usabilidad-onboarding-05-09` (`fb71740`); no toca código.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

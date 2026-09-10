@@ -101,9 +101,10 @@ en todas las pantallas un menú permanente con los dos sitios a los que
 puede ir —su perfil y sus ofertas—, con indicación de en cuál está en ese
 momento, además de la opción de cerrar sesión. Puede volver a su perfil a
 cambiar sus palabras clave y regresar a las ofertas cuantas veces quiera,
-sin pasar por ninguna pantalla intermedia. Mientras todavía no haya
-guardado su perfil, el sistema le indica además en qué paso de los dos está
-(contar su perfil → ver sus ofertas), para que no tenga que deducirlo.
+sin pasar por ninguna pantalla intermedia. A lo largo de las tres primeras
+pantallas del recorrido (pedir acceso, contar su perfil, ver sus ofertas),
+el sistema le indica además en qué paso de los tres está, para que no
+tenga que deducirlo.
 
 ### 3.2 Recorrido secundario: aviso de ofertas nuevas
 

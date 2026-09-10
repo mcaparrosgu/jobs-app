@@ -174,6 +174,7 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
 
   return (
     <div className="mt-8 w-full max-w-xl text-left">
+      <EncabezadoSeccion numero={1} titulo="Tu CV" />
       <label htmlFor="nombre" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Tu nombre completo
       </label>
@@ -205,8 +206,13 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       >
         {analizando ? 'Analizando tu CV…' : puestosSugeridos.length > 0 ? 'Volver a analizar con la IA' : 'Analizar con la IA'}
       </button>
+      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        Al analizar, sustituimos los puestos y palabras clave que tengas ahora
+        mismo por una propuesta nueva basada en este CV. Tarda unos segundos.
+      </p>
 
-      <label className="mt-8 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Puestos</label>
+      <EncabezadoSeccion numero={2} titulo="Revisa lo que propone la IA" />
+      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Puestos</label>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
         Marca los que te interesen: cuantos más, más ofertas encontrarás.
       </p>
@@ -315,34 +321,40 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{avisoPalabra}</p>
       )}
 
-      <label className="mt-6 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+      <div className="mt-8 rounded-lg border border-dashed border-zinc-300 bg-zinc-50/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Opcional
+        </span>
+        <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+          <input
+            type="checkbox"
+            checked={usarExperienciaCv}
+            onChange={(evento) => setUsarExperienciaCv(evento.target.checked)}
+            className="h-4 w-4 rounded border-zinc-300"
+          />
+          Tener en cuenta la experiencia de mi CV al buscar ofertas
+        </label>
+
+        <label htmlFor="salario-minimo" className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Salario mínimo deseado (€/año)
+        </label>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Si lo dejas en blanco, no filtramos las ofertas por salario.
+        </p>
         <input
-          type="checkbox"
-          checked={usarExperienciaCv}
-          onChange={(evento) => setUsarExperienciaCv(evento.target.checked)}
-          className="h-4 w-4 rounded border-zinc-300"
+          id="salario-minimo"
+          type="number"
+          min="0"
+          step="1000"
+          inputMode="numeric"
+          value={salarioMinimo}
+          onChange={(evento) => setSalarioMinimo(evento.target.value)}
+          placeholder="Por ejemplo, 30000"
+          className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
         />
-        Tener en cuenta la experiencia de mi CV al buscar ofertas
-      </label>
+      </div>
 
-      <label htmlFor="salario-minimo" className="mt-6 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Salario mínimo deseado (€/año, opcional)
-      </label>
-      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Si lo dejas en blanco, no filtramos las ofertas por salario.
-      </p>
-      <input
-        id="salario-minimo"
-        type="number"
-        min="0"
-        step="1000"
-        inputMode="numeric"
-        value={salarioMinimo}
-        onChange={(evento) => setSalarioMinimo(evento.target.value)}
-        placeholder="Por ejemplo, 30000"
-        className="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-2.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-      />
-
+      <EncabezadoSeccion numero={3} titulo="Guarda tu perfil" />
       {mensaje && (
         <p
           className={`mt-4 text-sm ${mensaje.tipo === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}
@@ -367,6 +379,20 @@ export default function FormularioPerfil({ perfilInicial }: { perfilInicial: Per
       >
         {guardando ? 'Guardando…' : 'Guardar'}
       </button>
+    </div>
+  );
+}
+
+function EncabezadoSeccion({ numero, titulo }: { numero: number; titulo: string }) {
+  return (
+    <div className="mt-8 mb-3 flex items-center gap-2 first:mt-0">
+      <span
+        aria-hidden
+        className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-50 dark:text-zinc-900"
+      >
+        {numero}
+      </span>
+      <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{titulo}</h2>
     </div>
   );
 }
