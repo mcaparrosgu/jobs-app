@@ -39,17 +39,15 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 - **Contexto:** `knowledge/arreglo-tab-matching-05-09.md`,
   `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
 
-### P1 · Frente 2 — prueba de usabilidad con 5 personas
-- **Qué:** ejecutar la prueba de usabilidad (skill `prueba-usuarios`),
-  entre el Paso 16 y el Paso 17.
-- **Contexto:** `knowledge/prueba-usuarios-frente-2-prep.md`. El guion de 3
-  tareas, las reglas de sesión y el plan de datos ya están preparados.
-- **Falta (bloquea el arranque):**
-  1. Que Mar traiga los 5 nombres/emails (2 de la clase + 3 externas).
+### P1 · Frente 2 — entrega a las 5 compañeras de clase
+- **Qué:** entregar la app en clase **mañana (11/09)**. Sin sesiones 1:1
+  agendadas ni CVs de muestra: se da acceso a las 5 y la prueban en/tras
+  clase. El guion de 3 tareas de `knowledge/prueba-usuarios-frente-2-prep.md`
+  sigue valiendo como referencia de qué mirar.
+- **Falta:**
+  1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. CVs de muestra, si hacen falta.
-  4. Agendar las 5 sesiones.
-- **Estado:** bloqueada, pendiente de Mar.
+- **Estado:** pendiente de los emails.
 
 ---
 
