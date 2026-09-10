@@ -61,6 +61,18 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   ROJO.
 - **Estado:** no urgente, tarea aparte.
 
+### P9 · Nombre del MVP e identidad verbal
+- **Qué:** Mar elige el nombre del MVP entre las opciones de
+  `docs/marketing/05-identidad-verbal.md` (paso mkt-06, redactado el 10/09).
+- **Contexto:** 1ª ronda (jop/gop/Encaja/Jobo/Curra…) **descartada por Mar**:
+  quiere un nombre serio/fiable/profesional. 2ª ronda (`05-identidad-verbal.md`
+  §1.d) con finalistas **JobFit / FitCV / Postula**; brainstorming abierto. El
+  documento usa `[NOMBRE]` de marcador hasta que se cierre.
+- **Falta:** decisión de Mar + comprobación de dominio/marca de los finalistas
+  (terreno saturado con los compuestos en inglés). Luego: propagar el nombre a
+  copy de la app / README (con visto bueno) e invocar `/bitacora`.
+- **Estado:** pendiente de que Mar elija.
+
 ---
 
 ## ⚪ Prioridad baja
@@ -85,20 +97,26 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 - **Contexto:** `knowledge/robustez-demo-frente-1.md`,
   `knowledge/prueba-e2e-produccion-01-09.md`. El frontend ya reintenta ante
   5xx, así que no bloquea a la usuaria.
-- **Chequeo (2026-09-10):** la ruta ya tiene `maxDuration = 60` y
-  `Font.register` a nivel de módulo. El único arreglo real (cron de
-  calentamiento) añade una pieza móvil permanente para tapar un 503 raro y
-  ya recuperado. **Recomendación: dejarlo mitigado**, sin cambio de código.
+- **Chequeo (2026-09-10):** revisado `app/api/descargar/[id]/route.ts` — ya
+  tiene `maxDuration = 60` y `Font.register` a nivel de módulo (se reusa en
+  instancias calientes). El único arreglo "de verdad" sería un cron de
+  calentamiento, que añade una pieza móvil permanente y gasta cuota de cron
+  para tapar un 503 raro y ya recuperado por el frontend. **Recomendación:
+  dejarlo como está**, mitigado y documentado. Sin cambio de código.
 
 ### P7 · Página 2 del PDF medio vacía
 - **Qué:** cuando el CV desborda por poco, la segunda página sale casi en
   blanco. Inherente a `<Page wrap>` en A4.
 - **Contexto:** `knowledge/prueba-e2e-produccion-01-09.md`. No bloquea.
 - **Chequeo (2026-09-10):** causa localizada — cada cabecera de entrada de
-  experiencia es `<View wrap={false}>` (deliberado, T83); cuando cae junto al
-  borde salta entera y deja el hueco. Mitigación posible (`minPresenceAhead`
-  en los títulos), pero la skill `diseno-cv-pdf` exige verla renderizada
-  contra un CV de 3-4 páginas. **Recomendación: plegarlo en P3.**
+  experiencia es `<View wrap={false}>` (deliberado, T83, para no separar
+  la empresa de su cargo/periodo); cuando una cae junto al borde de página
+  salta entera a la siguiente y deja el hueco. Mitigación contenida posible
+  (`minPresenceAhead` en los títulos de sección para que no queden
+  huérfanos), pero la skill `diseno-cv-pdf` exige verificar a ojo cualquier
+  cambio de layout contra un CV forzado a 3-4 páginas. **Recomendación:
+  plegarlo en P3** (la otra pasada de PDF/prompt post-entrega) para que
+  tenga un ciclo de prueba visual de verdad. Sin cambio de código ahora.
 
 ### P10 · Cuatro observaciones menores del `/code-review` de P2
 - **Qué:** pulido de baja prioridad que salió al revisar la rama de P2, sin
@@ -139,6 +157,14 @@ fusionar, `/code-review` encontró 6 cosas: se arreglaron las 2 con impacto
 perfil de nicho; y quitada la guía de pasos de `/ofertas`, que salía siempre);
 las 4 menores → **P10**. 360 pruebas en verde. `fd90edc` sigue pendiente →
 **P0-bis**. → `knowledge/arreglo-tab-matching-05-09.md`
+
+### ~~P8 · Estrategia de ingesta de ofertas (Apify vs. alternativa gratis)~~ — cerrada 2026-09-10
+Investigación hecha el 10/09 (`knowledge/investigacion-apify-optimizacion.md`).
+**Mar eligió la opción A: seguir con las 7 fuentes nativas gratuitas actuales**
+(coste 0, ya probadas). No se implementa nada; JobSpy (opción B) y Apify muy
+contenido (opción C) quedan documentados por si la prueba P1 revela que faltan
+ofertas de algún sector. El crédito de Apify sigue a 0 y no se ha tocado ningún
+workflow. → `knowledge/investigacion-apify-optimizacion.md`
 
 ### ~~P0 · Relanzar `npm run evals` (tanda local) — prompt de `extraerPerfil`~~ — cerrada 2026-09-08
 Relanzado en local con cuota fresca y sin prueba en vivo a la vez (Mar dio

@@ -20,10 +20,86 @@
   pocas palabras clave se quedaba sin ofertas; (2) `<GuiaPasos>` salía
   siempre en `/ofertas`, quitada. +2 tests, 360 en verde. Los 4 menores →
   **P10**.
-* **Nota de divergencia de docs**: `PENDIENTES.md`/`log.md` en `master` van por
-  detrás de la rama `marketing-nombre-mvp`, que tiene P8 (ingesta, cerrada —
-  Mar eligió las 7 fuentes gratis) y P9 (nombre del MVP) más la
-  reconciliación `/hola` del 10/09. Se reconcilian cuando esa rama entre.
+* **Divergencia resuelta**: la rama `marketing-nombre-mvp` (investigación de
+  Apify + paso mkt-06 + reconciliación `/hola`) se fusionó a `master` el mismo
+  10/09, después de este bloque. Sus dos entradas de log del 10/09 van justo
+  debajo; P8 y P9 ya viven en `PENDIENTES.md` de `master`.
+
+## 2026-09-10 — /hola: P8 decidida, P6/P7 revisadas, P0-bis relanzado
+
+* **P0-bis**: relanzado el robot de publicación con cuota fresca
+  (`gh run rerun 34222697726`, rama `mejora-usabilidad-onboarding-05-09`),
+  sin tocar el prompt. Lint y pruebas VERDE; la puerta de calidad de la IA
+  quedó corriendo. Pendiente del veredicto.
+* **P2**: preparación previa a la fusión, toda en verde —
+  `npm run comprobar:esquema` OK (6 tablas), `npm run lint` OK,
+  `npm test` 358/358, revisión del diff `master..mejora-usabilidad-onboarding-05-09`
+  sin hallazgos (umbral de 2 coincidencias en ofertas con `Math.min`,
+  `tienePerfilGuardado` compartido, retoque de `extraerPerfil` sincronizado
+  en `lib/ia.ts` y `prompts/system.md`). **El merge no se hizo**: espera
+  al robot VERDE y al permiso explícito de Mar (`CLAUDE.md` punto 3).
+* **P8 cerrada**: Mar eligió la **opción A** — seguir con las 7 fuentes
+  nativas gratuitas. No se implementa nada; JobSpy (B) y Apify contenido (C)
+  quedan como plan B en `investigacion-apify-optimizacion.md` por si P1
+  revela huecos de sector. Crédito de Apify a 0, ningún workflow tocado.
+* **P6 revisada**: `app/api/descargar/[id]/route.ts` ya tiene
+  `maxDuration = 60` y `Font.register` a nivel de módulo; el único arreglo
+  real (cron de calentamiento) no compensa para un 503 raro que el frontend
+  ya reintenta. Recomendación: dejarlo mitigado, sin cambio de código.
+* **P7 revisada**: el hueco de la 2ª página viene de las cabeceras de
+  entrada `<View wrap={false}>` (deliberado, T83). Mitigación posible con
+  `minPresenceAhead`, pero exige verificación visual contra un CV de 3-4
+  páginas (skill `diseno-cv-pdf`). Recomendación: plegarlo en P3. Sin
+  cambio de código ahora.
+* **P5**: sin acción. Ambas variantes (Mistral principal / Claude Haiku 4.5)
+  implican más presupuesto o trabajo de evals; hoy Cloudflare de principal
+  tiene la puerta VERDE. Aclarado a Mar: Claude Haiku iría por API de pago
+  (como Mistral), no por su suscripción; y Mistral **no** pasa la puerta
+  como principal (el pequeño inventa años, el mediano acorta CVs) — por eso
+  quedó solo de respaldo.
+
+## 2026-09-10 — Dos frentes nuevos: coste de Apify y nombre del MVP
+
+* **Petición de Mar**: añadir dos tareas — (1) cómo no fundir el crédito de
+  Apify en menos de un mes y si hay alternativa gratis en GitHub; (2) elegir
+  nombre para el MVP invocando las skills de marketing.
+* **Creación**: `knowledge/investigacion-apify-optimizacion.md` — investigación
+  **preventiva** (la cuenta de Apify sigue a 0, no se reactiva ni se toca ningún
+  workflow). Verificado el 10/09 contra doc de Apify: CU = RAM (GB) × tiempo (h);
+  precio por CU en Free entre 0,20 y 0,40 $ según fuentes de terceros (planificar
+  con 0,40); se factura aparte cómputo, datos, **proxy** y almacenamiento; muchos
+  actores de la Store añaden **recargo pay-per-result** encima; corte duro a los
+  5 $. Aritmética: 1 ingesta/día ≈ 0,166 $/día para todas las fuentes Apify
+  juntas → sólo entra con actores HTTP ligeros y `maxItems` bajo; con navegador o
+  recargo por resultado, no. Alternativa libre viable: **JobSpy**
+  (`speedyapply/JobSpy`, MIT, activo, puro HTTP: LinkedIn/Indeed/Glassdoor/
+  Google/ZipRecruiter/…), corriendo como función Python en el mismo Vercel o cron
+  de GitHub Actions; **JobFunnel** descartado (repo archivado). Termina con 3
+  opciones (A: quedarse con las 7 fuentes gratis actuales — recomendada ahora;
+  B: JobSpy en Vercel; C: Apify muy contenido si algún día hay crédito). Decide
+  Mar.
+* **Creación**: `docs/marketing/05-identidad-verbal.md` (Paso mkt-06, primera
+  carpeta `docs/marketing/`). Skills locales `director-creativo` y
+  `mkt-06-identidad-verbal` **actualizadas** desde el método maestro (la
+  directora creativa pasó de "Yara" a **Corita**, homenaje a Corita Kent). Como
+  no existen los `docs/marketing/03`/`04` del método, se leyó en su lugar
+  `docs/00-03` + `marco-passe-partout-04-09.md`. Mar trajo candidatos de nombre
+  ("jop" / "gop"): **gop descartado** (sin significado; colisión con *Grand Old
+  Party*); **jop conservado como opción**, no como recomendación (no comunica
+  solo, roza "jopé"). Alternativas por territorio (Jobo, Encaja, Curra, CV a
+  medida, La Carta, Calza) — recomendación "Encaja". **Mar descarta toda esa 1ª
+  ronda**: quiere un nombre serio/fiable/profesional. 2ª ronda (sección 1.d),
+  finalistas **JobFit / FitCV / Postula**; se avisa de la trampa de POV (los
+  nombres tipo "recruiter/ATS" suenan a producto para empresas, no para la
+  candidata). Brainstorming sigue abierto. Documento completo: tono de voz (4
+  ejes), 5 mensajes clave, tagline
+  elegida ("Tú eliges. Del papeleo nos encargamos."), clichés a evitar, y copy
+  final en 3 contextos. **El nombre NO queda cerrado** — lo elige Mar
+  (`CLAUDE.md` punto 7).
+* **No tocado**: ningún workflow de n8n, ninguna credencial, ningún código
+  (`lib/*`, `evals/*`) → no se relanzan evals.
+* **Pendiente**: Mar elige nombre (P9). La estrategia de ingesta (P8) la
+  decidió Mar el mismo día: opción A, seguir con las 7 fuentes gratis.
 
 ## 2026-09-08 — Prompt de `extraerPerfil` confirmado VERDE y comiteado
 
