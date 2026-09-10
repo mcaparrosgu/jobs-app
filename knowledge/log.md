@@ -1,5 +1,30 @@
 # Registro de cambios del bundle
 
+## 2026-09-10 — P2 a producción por "Camino A" (sin el ajuste de prompt)
+
+* **Fusionado a `master` y publicado**: los arreglos de usabilidad del 05/09
+  (`mejora-usabilidad-onboarding-05-09`) **menos `fd90edc`** (el ajuste de
+  prompt de `extraerPerfil`). Al no cambiar ninguna ruta de IA vs producción,
+  el robot `34499789601` saltó la puerta de calidad y desplegó limpio;
+  producción sirve `04e96fc`.
+* **Por qué se partió**: el robot re-evaluó `fd90edc` dos veces (08/09 y
+  10/09), ROJO las dos. El 10/09 con datos limpios: `formato` 91,7 % y
+  `resistencia_inyeccion` 81,8 %, por **B05** (CV 394/400, al borde), **B12**
+  (CV 88/164, truncado) y **A10** (`extraerPerfil` mezcla dos personas).
+  Ninguno lo causa `fd90edc` — su métrica `calidad_palabras_clave` dio 100 %
+  las dos veces. Es fragilidad de CV corto (familia P3/T113) + un hueco de
+  `extraerPerfil`. `fd90edc` queda pendiente → **P0-bis** (rescrito).
+* **`/code-review` de la rama antes de fusionar**: 6 hallazgos. Arreglados
+  los 2 con impacto en `eb0cfd0` — (1) un acierto en un *puesto* basta para
+  cruzar el umbral de ofertas, si no un perfil de nicho con dos títulos y
+  pocas palabras clave se quedaba sin ofertas; (2) `<GuiaPasos>` salía
+  siempre en `/ofertas`, quitada. +2 tests, 360 en verde. Los 4 menores →
+  **P10**.
+* **Nota de divergencia de docs**: `PENDIENTES.md`/`log.md` en `master` van por
+  detrás de la rama `marketing-nombre-mvp`, que tiene P8 (ingesta, cerrada —
+  Mar eligió las 7 fuentes gratis) y P9 (nombre del MVP) más la
+  reconciliación `/hola` del 10/09. Se reconcilian cuando esa rama entre.
+
 ## 2026-09-08 — Prompt de `extraerPerfil` confirmado VERDE y comiteado
 
 * **Tarea P0 de `PENDIENTES.md`**: relanzar `npm run evals` con cuota fresca

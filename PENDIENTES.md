@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-08_
+_Última actualización: 2026-09-10_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -15,25 +15,29 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 
 ## 🔴 Prioridad alta
 
-### P0-bis · Reintentar el robot de publicación con cuota fresca de Cloudflare
-- **Qué:** el push de la rama `mejora-usabilidad-onboarding-05-09` (08/09,
-  `fd90edc`+`e825773`) disparó los evals del robot → **puerta ROJO** en
-  `resistencia_inyeccion` (8/11, 72,7 %). Solo cayeron **A10** (extraerPerfil:
-  mezcló empresas de dos personas) y **B08** (generarCvYCarta: CV demasiado
-  corto, 96 car.), y B08 arrastró la métrica por el patrón T113 (un fallo de
-  validación cuenta contra todas sus métricas).
-- **Lectura:** casi seguro **ruido de proveedor**, no el cambio del prompt:
-  `calidad_palabras_clave` (la métrica que mide este cambio) dio 4/4 100 %;
-  B08 es de `generarCvYCarta`, que este cambio ni toca (familia B05/T113);
-  la tanda local de esa misma mañana con el mismo código salió VERDE 11/11;
-  se corrieron **dos tandas completas el mismo día** (local + robot) →
-  cuota diaria agotada. Ver `knowledge/arreglo-tab-matching-05-09.md`.
-- **Acción:** con cuota fresca (renueva a diario), `gh run rerun 34222697726`
-  (o re-push). Sin tocar el prompt.
-  - VERDE → desbloquea P2.
-  - Vuelven A10/B08 con cuota fresca → mirar B08 aparte (techo de tokens en
-    generación, previo a esta rama); decidir con Mar.
-- **Bloquea:** P2.
+### P0-bis · Publicar el ajuste de prompt de `extraerPerfil` (`fd90edc`) — bloqueado por fragilidad de CV corto
+- **Qué:** `fd90edc` ("no colar como palabra clave una herramienta mencionada
+  de pasada") sigue **sin publicar**. P2 se fusionó a `master` el 10/09 **sin
+  él** (Camino A), así que ya no bloquea nada — pero el ajuste en sí sigue
+  pendiente.
+- **Historia del robot:** re-evaluado dos veces, ROJO las dos.
+  - **08/09** (`34222697726`): `resistencia_inyeccion` 8/11 — 2ª tanda del día,
+    cuota agotada, datos poco fiables.
+  - **10/09** (mismo run, re-lanzado): **datos limpios** ("modelo respondiendo").
+    `formato` 91,7 % (umbral 95) y `resistencia_inyeccion` 81,8 % (umbral 85).
+    Caen **B05** (CV 394 car., mínimo 400 — al borde), **B12** (CV 88 car.,
+    mínimo 164 — truncado de verdad, caso de inyección) y **A10** (`extraerPerfil`
+    mezcla empresas de dos personas pegadas).
+- **Lectura:** el cambio de `fd90edc` **no** causa ninguno: su métrica,
+  `calidad_palabras_clave`, dio 100 % las dos veces. B05/B12 son la fragilidad
+  de CV corto (familia P3 / T113 / T95) en `generarCvYCarta`, que `fd90edc` ni
+  toca; A10 es un hueco conocido de `extraerPerfil`.
+- **Acción:** (1) arreglar el suelo de longitud / techo de tokens de
+  `generarCvYCarta` para B05/B12 (adelanta parte de P3); (2) instrucción para
+  A10 ("si hay dos personas pegadas, usa solo la primera"); (3) re-meter
+  `fd90edc` y relanzar `npm run evals` con cuota fresca; (4) push → robot VERDE.
+- **Contexto:** `knowledge/arreglo-tab-matching-05-09.md`,
+  `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
 
 ### P1 · Frente 2 — prueba de usabilidad con 5 personas
 - **Qué:** ejecutar la prueba de usabilidad (skill `prueba-usuarios`),
@@ -50,20 +54,6 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 ---
 
 ## 🟡 Prioridad media
-
-### P2 · Fusionar `mejora-usabilidad-onboarding-05-09` a `master`
-- **Qué:** llevar a producción los arreglos de usabilidad del 05/09.
-- **Contexto:** `knowledge/mejora-onboarding-guard-sesion-05-09.md` y
-  `knowledge/arreglo-tab-matching-05-09.md`. Commits en la rama: guard de
-  sesión en `/`, guía de 3 pasos, formulario de perfil en secciones,
-  autosync de la pestaña del enlace mágico, umbral de 2 coincidencias en
-  ofertas, y el ajuste de prompt de `extraerPerfil` (`fd90edc`, evals
-  locales VERDE el 08/09; robot en preview ROJO por ruido — ver P0-bis).
-- **Falta primero:** cerrar P0-bis (robot VERDE con cuota fresca).
-- **Antes de fusionar:** `npm run comprobar:esquema`; `/diff` + `/code-review`;
-  permiso explícito de Mar (`CLAUDE.md` punto 3).
-- **Estado:** rama subida a `origin` (`e825773`); vista previa desplegada
-  NO (la puerta de IA bloqueó el deploy). Sin fusionar.
 
 ### P3 · Fechas en el CV
 - **Qué:** reintentar añadir el periodo por entrada al CV generado, con una
@@ -97,11 +87,35 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 - **Contexto:** `knowledge/robustez-demo-frente-1.md`,
   `knowledge/prueba-e2e-produccion-01-09.md`. El frontend ya reintenta ante
   5xx, así que no bloquea a la usuaria.
+- **Chequeo (2026-09-10):** la ruta ya tiene `maxDuration = 60` y
+  `Font.register` a nivel de módulo. El único arreglo real (cron de
+  calentamiento) añade una pieza móvil permanente para tapar un 503 raro y
+  ya recuperado. **Recomendación: dejarlo mitigado**, sin cambio de código.
 
 ### P7 · Página 2 del PDF medio vacía
 - **Qué:** cuando el CV desborda por poco, la segunda página sale casi en
   blanco. Inherente a `<Page wrap>` en A4.
 - **Contexto:** `knowledge/prueba-e2e-produccion-01-09.md`. No bloquea.
+- **Chequeo (2026-09-10):** causa localizada — cada cabecera de entrada de
+  experiencia es `<View wrap={false}>` (deliberado, T83); cuando cae junto al
+  borde salta entera y deja el hueco. Mitigación posible (`minPresenceAhead`
+  en los títulos), pero la skill `diseno-cv-pdf` exige verla renderizada
+  contra un CV de 3-4 páginas. **Recomendación: plegarlo en P3.**
+
+### P10 · Cuatro observaciones menores del `/code-review` de P2
+- **Qué:** pulido de baja prioridad que salió al revisar la rama de P2, sin
+  impacto en el flujo principal (por eso P2 se publicó sin esperar a esto):
+  1. `app/api/ofertas/route.ts` — términos solapados ("Project Manager" +
+     "Manager") cuentan 2 sobre la misma frase y se saltan el umbral.
+  2. `components/FormularioAcceso.tsx` — el sondeo de sesión hace
+     `router.refresh()` cada 4 s **sin tope ni backoff** mientras se espera
+     el enlace mágico; una pestaña abandonada lo repite indefinidamente.
+  3. `app/api/ofertas/route.ts` — la respuesta de ofertas ya no tiene tope
+     (límite 50→150 y el filtro JS no recorta); un `.slice(0, 50)` al final.
+  4. `lib/perfil.ts` — `tienePerfilGuardado` traga el error de lectura y
+     devuelve `false`, así que un fallo transitorio manda a `/perfil` a quien
+     sí tiene perfil. Añadir comprobación de `error`.
+- **Estado:** anotado, sin urgencia.
 
 ---
 ---
@@ -113,6 +127,20 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 <summary><b>Ver histórico de tareas cerradas</b> (no editar salvo para añadir una nueva al principio)</summary>
 
 <br>
+
+### ~~P2 · Arreglos de usabilidad del 05/09 a producción~~ — cerrada 2026-09-10
+Publicado por **Camino A**: se fusionó `mejora-usabilidad-onboarding-05-09` a
+`master` **sin `fd90edc`** (el ajuste de prompt de `extraerPerfil`), así que el
+robot no re-evaluó la IA y desplegó limpio. Robot `34499789601` VERDE
+(puerta de IA **saltada**), producción sirve `04e96fc` en
+`https://jobs-app-dun.vercel.app` (HTTP 200 comprobado). Incluye: guard de
+sesión en `/`, guía de 3 pasos, formulario de perfil en secciones, autosync de
+la pestaña del enlace mágico, umbral de coincidencias en ofertas. Antes de
+fusionar, `/code-review` encontró 6 cosas: se arreglaron las 2 con impacto
+(commit `eb0cfd0` — un acierto de puesto basta para no dejar sin ofertas a un
+perfil de nicho; y quitada la guía de pasos de `/ofertas`, que salía siempre);
+las 4 menores → **P10**. 360 pruebas en verde. `fd90edc` sigue pendiente →
+**P0-bis**. → `knowledge/arreglo-tab-matching-05-09.md`
 
 ### ~~P0 · Relanzar `npm run evals` (tanda local) — prompt de `extraerPerfil`~~ — cerrada 2026-09-08
 Relanzado en local con cuota fresca y sin prueba en vivo a la vez (Mar dio
