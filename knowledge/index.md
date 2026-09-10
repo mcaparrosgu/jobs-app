@@ -547,6 +547,28 @@ existe en produccion y no se toca desde aqui.
   hace `cat` del fichero al arrancar cada sesión. Comiteado y publicado en
   la rama `mejora-usabilidad-onboarding-05-09` (`fb71740`); no toca código.
 
+- [investigacion-apify-optimizacion.md](investigacion-apify-optimizacion.md) —
+  10/09/2026: investigación **preventiva** (la cuenta de Apify sigue a 0) sobre
+  cómo no fundir los 5 $/mes de la capa gratuita y si un scraper libre de GitHub
+  quita la dependencia. Apify cobra por cómputo (CU = RAM × tiempo), no por
+  resultados, y muchos actores de la Store añaden recargo pay-per-result encima;
+  con 1 ingesta/día sólo entra con actores HTTP ligeros y pocos resultados.
+  Alternativa viable: **JobSpy** (MIT, activo, puro HTTP) como función Python en
+  Vercel o cron de GitHub Actions; JobFunnel descartado (archivado). Tres
+  opciones + recomendación (quedarse con las 7 fuentes gratis actuales); decide
+  Mar. No se tocó ningún workflow.
+
+- [`docs/marketing/05-identidad-verbal.md`](../docs/marketing/05-identidad-verbal.md)
+  — 10/09/2026: paso mkt-06 del método de marketing (primera carpeta
+  `docs/marketing/`), redactado por "Corita" (dirección creativa). Auditados los
+  candidatos de Mar ("jop" conservado como opción, "gop" descartado) y añadidas
+  alternativas por territorio. Mar descartó esa 1ª ronda por poco profesional;
+  2ª ronda (dirección seria/fiable) con finalistas **JobFit / FitCV / Postula**,
+  brainstorming abierto. Incluye tono de voz, mensajes clave, tagline y copy en
+  3 contextos. El nombre lo elige Mar. Skills
+  locales `director-creativo` y `mkt-06-identidad-verbal` actualizadas desde el
+  método maestro (Yara → Corita).
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

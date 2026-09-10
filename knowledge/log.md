@@ -1,5 +1,48 @@
 # Registro de cambios del bundle
 
+## 2026-09-10 — Dos frentes nuevos: coste de Apify y nombre del MVP
+
+* **Petición de Mar**: añadir dos tareas — (1) cómo no fundir el crédito de
+  Apify en menos de un mes y si hay alternativa gratis en GitHub; (2) elegir
+  nombre para el MVP invocando las skills de marketing.
+* **Creación**: `knowledge/investigacion-apify-optimizacion.md` — investigación
+  **preventiva** (la cuenta de Apify sigue a 0, no se reactiva ni se toca ningún
+  workflow). Verificado el 10/09 contra doc de Apify: CU = RAM (GB) × tiempo (h);
+  precio por CU en Free entre 0,20 y 0,40 $ según fuentes de terceros (planificar
+  con 0,40); se factura aparte cómputo, datos, **proxy** y almacenamiento; muchos
+  actores de la Store añaden **recargo pay-per-result** encima; corte duro a los
+  5 $. Aritmética: 1 ingesta/día ≈ 0,166 $/día para todas las fuentes Apify
+  juntas → sólo entra con actores HTTP ligeros y `maxItems` bajo; con navegador o
+  recargo por resultado, no. Alternativa libre viable: **JobSpy**
+  (`speedyapply/JobSpy`, MIT, activo, puro HTTP: LinkedIn/Indeed/Glassdoor/
+  Google/ZipRecruiter/…), corriendo como función Python en el mismo Vercel o cron
+  de GitHub Actions; **JobFunnel** descartado (repo archivado). Termina con 3
+  opciones (A: quedarse con las 7 fuentes gratis actuales — recomendada ahora;
+  B: JobSpy en Vercel; C: Apify muy contenido si algún día hay crédito). Decide
+  Mar.
+* **Creación**: `docs/marketing/05-identidad-verbal.md` (Paso mkt-06, primera
+  carpeta `docs/marketing/`). Skills locales `director-creativo` y
+  `mkt-06-identidad-verbal` **actualizadas** desde el método maestro (la
+  directora creativa pasó de "Yara" a **Corita**, homenaje a Corita Kent). Como
+  no existen los `docs/marketing/03`/`04` del método, se leyó en su lugar
+  `docs/00-03` + `marco-passe-partout-04-09.md`. Mar trajo candidatos de nombre
+  ("jop" / "gop"): **gop descartado** (sin significado; colisión con *Grand Old
+  Party*); **jop conservado como opción**, no como recomendación (no comunica
+  solo, roza "jopé"). Alternativas por territorio (Jobo, Encaja, Curra, CV a
+  medida, La Carta, Calza) — recomendación "Encaja". **Mar descarta toda esa 1ª
+  ronda**: quiere un nombre serio/fiable/profesional. 2ª ronda (sección 1.d),
+  finalistas **JobFit / FitCV / Postula**; se avisa de la trampa de POV (los
+  nombres tipo "recruiter/ATS" suenan a producto para empresas, no para la
+  candidata). Brainstorming sigue abierto. Documento completo: tono de voz (4
+  ejes), 5 mensajes clave, tagline
+  elegida ("Tú eliges. Del papeleo nos encargamos."), clichés a evitar, y copy
+  final en 3 contextos. **El nombre NO queda cerrado** — lo elige Mar
+  (`CLAUDE.md` punto 7).
+* **No tocado**: ningún workflow de n8n, ninguna credencial, ningún código
+  (`lib/*`, `evals/*`) → no se relanzan evals.
+* **Pendiente**: Mar elige nombre; decidir estrategia de ingesta. Ambas en
+  `PENDIENTES.md` (P8, P9).
+
 ## 2026-09-08 — Prompt de `extraerPerfil` confirmado VERDE y comiteado
 
 * **Tarea P0 de `PENDIENTES.md`**: relanzar `npm run evals` con cuota fresca

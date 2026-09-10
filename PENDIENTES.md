@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-08_
+_Última actualización: 2026-09-10_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -72,6 +72,32 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   veces (01/09 y antes): el modelo inventa años y acorta CVs, la puerta sale
   ROJO.
 - **Estado:** no urgente, tarea aparte.
+
+### P8 · Estrategia de ingesta de ofertas (Apify vs. alternativa gratis)
+- **Qué:** decidir e implementar cómo se traen las ofertas a medio plazo.
+  **Investigación hecha** el 10/09 →
+  `knowledge/investigacion-apify-optimizacion.md`.
+- **Opciones (decide Mar):** A) quedarse con las 7 fuentes nativas gratuitas
+  actuales *(recomendada ahora, coste 0, ya probada)*; B) añadir **JobSpy**
+  como función Python en el mismo Vercel, llamada desde n8n por HTTP; C) si
+  algún día hay crédito Apify, reactivar 1-2 fuentes muy contenidas (tope 5 $,
+  memoria mínima, `maxItems` bajo, sólo actores HTTP, sin recargo
+  pay-per-result).
+- **Estado:** pendiente de que Mar elija. No bloquea nada; revisar si la
+  prueba P1 muestra que faltan ofertas de algún sector. El crédito de Apify
+  sigue a 0 y no se ha tocado ningún workflow.
+
+### P9 · Nombre del MVP e identidad verbal
+- **Qué:** Mar elige el nombre del MVP entre las opciones de
+  `docs/marketing/05-identidad-verbal.md` (paso mkt-06, redactado el 10/09).
+- **Contexto:** 1ª ronda (jop/gop/Encaja/Jobo/Curra…) **descartada por Mar**:
+  quiere un nombre serio/fiable/profesional. 2ª ronda (`05-identidad-verbal.md`
+  §1.d) con finalistas **JobFit / FitCV / Postula**; brainstorming abierto. El
+  documento usa `[NOMBRE]` de marcador hasta que se cierre.
+- **Falta:** decisión de Mar + comprobación de dominio/marca de los finalistas
+  (terreno saturado con los compuestos en inglés). Luego: propagar el nombre a
+  copy de la app / README (con visto bueno) e invocar `/bitacora`.
+- **Estado:** pendiente de que Mar elija.
 
 ---
 
