@@ -1,5 +1,38 @@
 # Registro de cambios del bundle
 
+## 2026-09-10 — /hola: P8 decidida, P6/P7 revisadas, P0-bis relanzado
+
+* **P0-bis**: relanzado el robot de publicación con cuota fresca
+  (`gh run rerun 34222697726`, rama `mejora-usabilidad-onboarding-05-09`),
+  sin tocar el prompt. Lint y pruebas VERDE; la puerta de calidad de la IA
+  quedó corriendo. Pendiente del veredicto.
+* **P2**: preparación previa a la fusión, toda en verde —
+  `npm run comprobar:esquema` OK (6 tablas), `npm run lint` OK,
+  `npm test` 358/358, revisión del diff `master..mejora-usabilidad-onboarding-05-09`
+  sin hallazgos (umbral de 2 coincidencias en ofertas con `Math.min`,
+  `tienePerfilGuardado` compartido, retoque de `extraerPerfil` sincronizado
+  en `lib/ia.ts` y `prompts/system.md`). **El merge no se hizo**: espera
+  al robot VERDE y al permiso explícito de Mar (`CLAUDE.md` punto 3).
+* **P8 cerrada**: Mar eligió la **opción A** — seguir con las 7 fuentes
+  nativas gratuitas. No se implementa nada; JobSpy (B) y Apify contenido (C)
+  quedan como plan B en `investigacion-apify-optimizacion.md` por si P1
+  revela huecos de sector. Crédito de Apify a 0, ningún workflow tocado.
+* **P6 revisada**: `app/api/descargar/[id]/route.ts` ya tiene
+  `maxDuration = 60` y `Font.register` a nivel de módulo; el único arreglo
+  real (cron de calentamiento) no compensa para un 503 raro que el frontend
+  ya reintenta. Recomendación: dejarlo mitigado, sin cambio de código.
+* **P7 revisada**: el hueco de la 2ª página viene de las cabeceras de
+  entrada `<View wrap={false}>` (deliberado, T83). Mitigación posible con
+  `minPresenceAhead`, pero exige verificación visual contra un CV de 3-4
+  páginas (skill `diseno-cv-pdf`). Recomendación: plegarlo en P3. Sin
+  cambio de código ahora.
+* **P5**: sin acción. Ambas variantes (Mistral principal / Claude Haiku 4.5)
+  implican más presupuesto o trabajo de evals; hoy Cloudflare de principal
+  tiene la puerta VERDE. Aclarado a Mar: Claude Haiku iría por API de pago
+  (como Mistral), no por su suscripción; y Mistral **no** pasa la puerta
+  como principal (el pequeño inventa años, el mediano acorta CVs) — por eso
+  quedó solo de respaldo.
+
 ## 2026-09-10 — Dos frentes nuevos: coste de Apify y nombre del MVP
 
 * **Petición de Mar**: añadir dos tareas — (1) cómo no fundir el crédito de

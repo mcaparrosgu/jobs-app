@@ -153,6 +153,15 @@ cambio de gestión y vigilancia continuas.
 Ninguna de las tres está elegida. B y C son mutuamente compatibles a futuro
 (JobSpy para lo que tolera IP de datacenter, Apify para lo que no).
 
+# Decisión de Mar (10/09/2026)
+
+**Opción A: seguir con las 7 fuentes nativas gratuitas actuales.** Coste 0, ya
+probadas en producción real. No se implementa nada. B (JobSpy en Vercel) y C
+(Apify muy contenido con crédito) quedan aquí documentadas como plan B por si
+la prueba de usabilidad con 5 personas (P1) revela que faltan ofertas de algún
+sector concreto. El crédito de Apify sigue a 0 y no se ha tocado ningún
+workflow.
+
 # Relacionado
 
 - [`hito-4-n8n-supabase.md`](hito-4-n8n-supabase.md) — las 6 fuentes Apify

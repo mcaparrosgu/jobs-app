@@ -73,20 +73,6 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   ROJO.
 - **Estado:** no urgente, tarea aparte.
 
-### P8 · Estrategia de ingesta de ofertas (Apify vs. alternativa gratis)
-- **Qué:** decidir e implementar cómo se traen las ofertas a medio plazo.
-  **Investigación hecha** el 10/09 →
-  `knowledge/investigacion-apify-optimizacion.md`.
-- **Opciones (decide Mar):** A) quedarse con las 7 fuentes nativas gratuitas
-  actuales *(recomendada ahora, coste 0, ya probada)*; B) añadir **JobSpy**
-  como función Python en el mismo Vercel, llamada desde n8n por HTTP; C) si
-  algún día hay crédito Apify, reactivar 1-2 fuentes muy contenidas (tope 5 $,
-  memoria mínima, `maxItems` bajo, sólo actores HTTP, sin recargo
-  pay-per-result).
-- **Estado:** pendiente de que Mar elija. No bloquea nada; revisar si la
-  prueba P1 muestra que faltan ofertas de algún sector. El crédito de Apify
-  sigue a 0 y no se ha tocado ningún workflow.
-
 ### P9 · Nombre del MVP e identidad verbal
 - **Qué:** Mar elige el nombre del MVP entre las opciones de
   `docs/marketing/05-identidad-verbal.md` (paso mkt-06, redactado el 10/09).
@@ -123,11 +109,26 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 - **Contexto:** `knowledge/robustez-demo-frente-1.md`,
   `knowledge/prueba-e2e-produccion-01-09.md`. El frontend ya reintenta ante
   5xx, así que no bloquea a la usuaria.
+- **Chequeo (2026-09-10):** revisado `app/api/descargar/[id]/route.ts` — ya
+  tiene `maxDuration = 60` y `Font.register` a nivel de módulo (se reusa en
+  instancias calientes). El único arreglo "de verdad" sería un cron de
+  calentamiento, que añade una pieza móvil permanente y gasta cuota de cron
+  para tapar un 503 raro y ya recuperado por el frontend. **Recomendación:
+  dejarlo como está**, mitigado y documentado. Sin cambio de código.
 
 ### P7 · Página 2 del PDF medio vacía
 - **Qué:** cuando el CV desborda por poco, la segunda página sale casi en
   blanco. Inherente a `<Page wrap>` en A4.
 - **Contexto:** `knowledge/prueba-e2e-produccion-01-09.md`. No bloquea.
+- **Chequeo (2026-09-10):** causa localizada — cada cabecera de entrada de
+  experiencia es `<View wrap={false}>` (deliberado, T83, para no separar
+  la empresa de su cargo/periodo); cuando una cae junto al borde de página
+  salta entera a la siguiente y deja el hueco. Mitigación contenida posible
+  (`minPresenceAhead` en los títulos de sección para que no queden
+  huérfanos), pero la skill `diseno-cv-pdf` exige verificar a ojo cualquier
+  cambio de layout contra un CV forzado a 3-4 páginas. **Recomendación:
+  plegarlo en P3** (la otra pasada de PDF/prompt post-entrega) para que
+  tenga un ciclo de prueba visual de verdad. Sin cambio de código ahora.
 
 ---
 ---
@@ -139,6 +140,14 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 <summary><b>Ver histórico de tareas cerradas</b> (no editar salvo para añadir una nueva al principio)</summary>
 
 <br>
+
+### ~~P8 · Estrategia de ingesta de ofertas (Apify vs. alternativa gratis)~~ — cerrada 2026-09-10
+Investigación hecha el 10/09 (`knowledge/investigacion-apify-optimizacion.md`).
+**Mar eligió la opción A: seguir con las 7 fuentes nativas gratuitas actuales**
+(coste 0, ya probadas). No se implementa nada; JobSpy (opción B) y Apify muy
+contenido (opción C) quedan documentados por si la prueba P1 revela que faltan
+ofertas de algún sector. El crédito de Apify sigue a 0 y no se ha tocado ningún
+workflow. → `knowledge/investigacion-apify-optimizacion.md`
 
 ### ~~P0 · Relanzar `npm run evals` (tanda local) — prompt de `extraerPerfil`~~ — cerrada 2026-09-08
 Relanzado en local con cuota fresca y sin prueba en vivo a la vez (Mar dio

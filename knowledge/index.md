@@ -555,8 +555,9 @@ existe en produccion y no se toca desde aqui.
   con 1 ingesta/día sólo entra con actores HTTP ligeros y pocos resultados.
   Alternativa viable: **JobSpy** (MIT, activo, puro HTTP) como función Python en
   Vercel o cron de GitHub Actions; JobFunnel descartado (archivado). Tres
-  opciones + recomendación (quedarse con las 7 fuentes gratis actuales); decide
-  Mar. No se tocó ningún workflow.
+  opciones + recomendación (quedarse con las 7 fuentes gratis actuales).
+  **Mar eligió la opción A el 10/09/2026** (7 fuentes gratis, coste 0); B y C
+  quedan como plan B. No se tocó ningún workflow.
 
 - [`docs/marketing/05-identidad-verbal.md`](../docs/marketing/05-identidad-verbal.md)
   — 10/09/2026: paso mkt-06 del método de marketing (primera carpeta
