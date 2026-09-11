@@ -15,6 +15,13 @@ import GuiaPasos from '@/components/GuiaPasos';
 // cerrarla ni tocarla a mano.
 const INTERVALO_COMPROBACION_MS = 4000;
 
+// P10 (11/09/2026, punto 2) · El sondeo por intervalo no tenía tope: una
+// pestaña abandonada con el enlace sin abrir lo repetía sin fin. Los
+// oyentes de foco/visibilidad se quedan (son baratos y solo disparan si la
+// usuaria vuelve a esta pestaña); el intervalo ciego se para pasado un
+// tiempo razonable de espera del enlace.
+const TIEMPO_MAXIMO_SONDEO_MS = 10 * 60 * 1000;
+
 type Estado = 'inicial' | 'enviando' | 'enviado' | 'error';
 
 const MENSAJE_ENLACE_CADUCADO =
@@ -92,11 +99,13 @@ function FormularioEmail() {
     }
 
     const intervalo = setInterval(comprobarSiYaHaySesion, INTERVALO_COMPROBACION_MS);
+    const tope = setTimeout(() => clearInterval(intervalo), TIEMPO_MAXIMO_SONDEO_MS);
     document.addEventListener('visibilitychange', alRecuperarFoco);
     window.addEventListener('focus', comprobarSiYaHaySesion);
 
     return () => {
       clearInterval(intervalo);
+      clearTimeout(tope);
       document.removeEventListener('visibilitychange', alRecuperarFoco);
       window.removeEventListener('focus', comprobarSiYaHaySesion);
     };

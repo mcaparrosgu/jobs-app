@@ -13,9 +13,19 @@ import { createClient } from '@/lib/supabase/server';
 // y pocas palabras clave.
 const MINIMO_TERMINOS_COINCIDENTES = 2;
 
+// P10 (11/09/2026, punto 1) · Dos términos del propio perfil pueden estar uno
+// dentro del otro ("Project Manager" y "Manager"): sobre una misma oferta que
+// dice "Project Manager", los dos contaban como coincidencias distintas y
+// bastaban para saltarse `MINIMO_TERMINOS_COINCIDENTES` con una sola señal
+// real, no dos. Se cuenta el término más específico que coincide y se
+// descarta cualquier otro que sea substring suyo.
 function contarTerminosCoincidentes(texto: string, terminos: string[]): number {
   const comparable = paraComparar(texto);
-  return terminos.filter((t) => comparable.includes(paraComparar(t))).length;
+  const coincidentes = terminos.map(paraComparar).filter((t) => comparable.includes(t));
+  const independientes = coincidentes.filter(
+    (t, i) => !coincidentes.some((otro, j) => i !== j && otro.length > t.length && otro.includes(t)),
+  );
+  return new Set(independientes).size;
 }
 
 // Añadido el 23/08/2026 (T85), a petición de Mar: una oferta se queda
@@ -23,6 +33,13 @@ function contarTerminosCoincidentes(texto: string, terminos: string[]): number {
 // perfil — así hay margen para pensárselo sin que la lista crezca sin fin.
 // Pasados los 15 días desaparece de verdad (no es solo un separador visual).
 const DIAS_CADUCIDAD_OFERTAS = 15;
+
+// P10 (11/09/2026, punto 3) · El `.limit(150)` de la consulta de candidatas,
+// más abajo, es a propósito más amplio que lo que se enseña (el umbral real
+// se aplica después en JS). Pero nada recortaba el resultado FINAL a lo que
+// de verdad se muestra: con un perfil laxo, `ofertasRelevantes` podía llegar
+// hasta 150. Tope explícito, aplicado tras el filtro del umbral.
+const LIMITE_OFERTAS_MOSTRADAS = 50;
 
 // Quita caracteres que romperían la sintaxis del filtro .or() de Supabase.
 function limpiarTermino(termino: string): string {
@@ -135,7 +152,7 @@ export async function GET() {
     // solo uno de los dos.
     if (contarTerminosCoincidentes(texto, terminosPuesto) >= 1) return true;
     return contarTerminosCoincidentes(texto, terminos) >= umbral;
-  });
+  }).slice(0, LIMITE_OFERTAS_MOSTRADAS);
 
   const ids = ofertasRelevantes.map((o) => o.id);
   let idsConInteres = new Set<string>();
