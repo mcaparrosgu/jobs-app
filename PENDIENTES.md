@@ -22,16 +22,25 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   tareas de `knowledge/prueba-usuarios-frente-2-prep.md` sigue valiendo como
   referencia de qué mirar. Puede que alguna compañera genere un CV de
   verdad en la propia clase — motivo del empujón a **P0-bis** el 11/09
-  (cerrado, ver Completadas): `generarCvYCarta` y `extraerPerfil` llegan al
-  lunes con la puerta de evals VERDE, en local. **Falta el push** para que
-  eso llegue a producción — permiso explícito de Mar, cada vez
-  (`CLAUDE.md` punto 3).
+  (cerrado, ver Completadas): `generarCvYCarta` y `extraerPerfil` en verde
+  en local. Publicado con permiso de Mar a la rama
+  `arregla-p0bis-b12-a10-11-09` (push, no a `master`), pero el robot dio
+  **NO CONCLUYENTE** (`gh run 34612763230`): 2 de 25 casos se quedaron sin
+  calificar por el **juez** (Groq sin cuota / timeout), no por el código —
+  las métricas que sí se calificaron salieron en 100 % o mejor que en
+  local. No es un fallo del prompt (`CLAUDE.md`: "relanzar, no arreglar").
+  Mar decidió relanzarlo **mañana** (12/09), con la cuota de Groq del día
+  ya renovada.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Permiso de Mar para publicar los commits `1c4b92b` (P0-bis) y
-     `98d5931` (P10), hoy solo en local.
-- **Estado:** pendiente de los emails. Con el aplazamiento, sin prisa.
+  3. Mañana: `gh run rerun 34612763230 --failed` (o relanzar el workflow
+     entero) sobre la rama `arregla-p0bis-b12-a10-11-09`, cuota fresca.
+  4. Si sale VERDE: permiso explícito de Mar para fusionar esa rama a
+     `master` (publicación real) — permiso distinto del de publicar la
+     rama, que ya se dio hoy.
+- **Estado:** pendiente de los emails y de relanzar el robot mañana. Con
+  el aplazamiento a lunes, sin prisa.
 
 ---
 
@@ -123,9 +132,12 @@ tocó ningún umbral. De paso, corregido el mismo hueco de replicación en
 `evals/promptfoo/helpers.cjs`. Re-metido `fd90edc`. `npm run evals`
 completo con cuota fresca: **VEREDICTO VERDE** (formato 100 %,
 calidad_palabras_clave 100 %, fidelidad 96 % [24/25], idioma 100 %,
-resistencia_inyeccion 100 %). Commit `1c4b92b`, **solo en local** — falta
-permiso explícito de Mar para el push (`CLAUDE.md` punto 3), seguimiento en
-**P1**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+resistencia_inyeccion 100 %). Commit `1c4b92b`. Publicado con permiso de
+Mar a la rama `arregla-p0bis-b12-a10-11-09` (push, no `master`); el robot
+(`gh run 34612763230`) dio **NO CONCLUYENTE** por el juez (Groq sin cuota
+tras dos tandas el mismo día) — las métricas calificadas salieron en
+100 % o mejor. Relanzamiento y fusión a `master` pendientes → **P1**.
+→ `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 
 ### ~~P10 · Cuatro observaciones menores del `/code-review` de P2~~ — cerrada 2026-09-11
 1. `app/api/ofertas/route.ts` — términos solapados del perfil ("Project

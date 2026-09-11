@@ -1,5 +1,27 @@
 # Registro de cambios del bundle
 
+## 2026-09-11 (tarde) — Rama publicada, robot NO CONCLUYENTE por el juez sin cuota
+
+* Con permiso explícito de Mar ("push"), publicada la rama
+  `arregla-p0bis-b12-a10-11-09` (commits `1c4b92b`, `98d5931`, `62104d0`) —
+  nunca directo a `master`, como manda el Paso 16. `npm run comprobar:esquema`
+  OK antes de publicar.
+* El robot (`gh run 34612763230`) detectó bien que tocaba `lib/ia.ts` /
+  `prompts/system.md` / `evals/` y relanzó la puerta de calidad completa.
+  Lint y pruebas VERDE. La puerta de IA: **NO CONCLUYENTE**, no ROJO —
+  2 de 25 casos (B08, B10) se quedaron sin calificar por el **juez** (Groq):
+  timeout de 180 s en uno, `RateLimitExhaustedError` en el otro. Las
+  métricas que sí se calificaron salieron en 100 % o mejor que en la tanda
+  local de la mañana (fidelidad subió de 96 % a 100 %). Lectura igual que
+  documenta `CLAUDE.md`: no es un fallo del prompt, es cuota — relanzar, no
+  arreglar. Probable causa: dos tandas grandes de Groq-juez el mismo día
+  (la local de la mañana + esta), la misma cuota compartida.
+* **Decisión de Mar**: relanzar el robot **mañana** (12/09), con la cuota
+  de Groq del día ya renovada. La fusión a `master` (publicación real de
+  verdad) queda pendiente de ese veredicto **y** de un segundo permiso
+  explícito de Mar, distinto del de publicar la rama. Seguimiento en **P1**
+  de `PENDIENTES.md`.
+
 ## 2026-09-11 — P0-bis cerrado (VERDE) y P10 cerrado; P1 aplazada al lunes
 
 * **P0-bis cerrado**: arreglados **B12** (una instrucción incrustada

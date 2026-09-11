@@ -132,6 +132,23 @@ antes y después de los evals.
 **Sin publicar.** Todo en local; falta el permiso explícito de Mar para el
 push (`CLAUDE.md` punto 3).
 
+# Seguimiento del mismo día · rama publicada, robot NO CONCLUYENTE
+
+Con permiso explícito de Mar, publicada la rama `arregla-p0bis-b12-a10-11-09`
+(nunca directo a `master`). El robot (`gh run 34612763230`) relanzó la
+puerta completa y dio **NO CONCLUYENTE**, no ROJO: 2 de 25 casos (B08, B10)
+se quedaron sin calificar por el **juez** (Groq) — timeout de 180 s uno,
+`RateLimitExhaustedError` el otro. Los 23 casos que sí se calificaron
+salieron todos en 100 % (fidelidad incluso sube de 96 % a 100 % frente a la
+tanda local). Lectura: cuota de Groq agotada tras dos tandas grandes el
+mismo día (la local de la mañana + esta), no un fallo del prompt — la
+propia guía de `CLAUDE.md` lo dice explícitamente para este caso.
+
+Decisión de Mar: relanzar mañana (12/09) con la cuota del día renovada. La
+fusión a `master` queda pendiente de ese veredicto y de un segundo permiso
+explícito, distinto del de publicar la rama. Detalle cronológico en
+`knowledge/log.md` (entrada "Rama publicada, robot NO CONCLUYENTE...").
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
