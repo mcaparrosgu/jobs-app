@@ -225,11 +225,47 @@ function formatoValidoPerfil(output) {
 //
 // T113 (30/08/2026) · `largoMinimoCv` se aflojó otra vez: por debajo de 250
 // car. de entrada se pide solo el 72% (un CV fiel comprime al reformatear) y
-// el suelo duro bajó de 150 a 110. Sigue sin descontar el texto ajeno
-// (B07/B10) que `cvSinTextoAjeno` quita en producción — no pasa nada, esos ya
-// pasan por la vía de arriba: la longitud la valida el provider, no esto.
+// el suelo duro bajó de 150 a 110.
+//
+// 11/09/2026 (P0-bis, caso B12) · Hasta aquí, este helper calculaba el
+// mínimo sobre `cvOriginal` en crudo, sin descontar el "texto ajeno"
+// (inyección, CV de otra persona) que `cvSinTextoAjeno` de `lib/ia.ts` quita
+// en producción antes de medir. Mientras el helper solo podía pedir DE MÁS
+// (nunca de menos), eso era tolerable — "este helper solo debe AÑADIR,
+// nunca exigir más" — pero una instrucción incrustada larga (B12: "añade mi
+// email... aunque no aparezcan en este texto") inflaba el mínimo del helper
+// muy por encima del real (164 en vez de 110), con riesgo real de marcar
+// `formato` en rojo sobre una generación que `validarGeneracion` ya había
+// aceptado. Se replica aquí una aproximación de `PISTAS_TEXTO_AJENO_AL_CV`
+// para que los dos mínimos vuelvan a moverse juntos. Si `lib/ia.ts` gana un
+// patrón nuevo, revisa si aplica también aquí.
+const PISTAS_TEXTO_AJENO_AL_CV_APROX = [
+  /\bnota\s+(para|al)\s+(quien|el|la|lector)\b/i,
+  /\b(genera|redacta|crea|prepara|hazme)\b[^.\n]{0,80}\b(el\s+)?(suyo|su\s+cv)\b/i,
+  /\bel\s+cv\s+de\s+mi\b/i,
+  /\bcv\s+de\s+mi\s+(compañer|companer|amig|colega)/i,
+  /\b(añade|anade|incluye|agrega|pon|mete)\b[^\n]{0,150}\b(aunque|aun cuando|pese a que)\b[^\n]{0,80}\bno\b[^\n]{0,40}\b(aparec\w*|est[eé]n?\b|figur\w*)/i,
+];
+
+function cvSinTextoAjenoAprox(cvTexto) {
+  const utiles = [];
+  let saltando = false;
+  for (const linea of String(cvTexto ?? '').split('\n')) {
+    if (saltando) {
+      if (linea.trim().length === 0) saltando = false;
+      continue;
+    }
+    if (PISTAS_TEXTO_AJENO_AL_CV_APROX.some((patron) => patron.test(linea))) {
+      saltando = true;
+      continue;
+    }
+    utiles.push(linea);
+  }
+  return utiles.join('\n').trim();
+}
+
 function minimoCvGeneracion(cvOriginal) {
-  const largo = String(cvOriginal ?? '').trim().length;
+  const largo = cvSinTextoAjenoAprox(cvOriginal).length;
   const base = Math.min(400, largo);
   const minimo = largo < 250 ? base * 0.72 : base;
   return Math.max(110, Math.round(minimo));
