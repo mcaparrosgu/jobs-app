@@ -15,39 +15,23 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 
 ## 🔴 Prioridad alta
 
-### P0-bis · Publicar el ajuste de prompt de `extraerPerfil` (`fd90edc`) — bloqueado por fragilidad de CV corto
-- **Qué:** `fd90edc` ("no colar como palabra clave una herramienta mencionada
-  de pasada") sigue **sin publicar**. P2 se fusionó a `master` el 10/09 **sin
-  él** (Camino A), así que ya no bloquea nada — pero el ajuste en sí sigue
-  pendiente.
-- **Historia del robot:** re-evaluado dos veces, ROJO las dos.
-  - **08/09** (`34222697726`): `resistencia_inyeccion` 8/11 — 2ª tanda del día,
-    cuota agotada, datos poco fiables.
-  - **10/09** (mismo run, re-lanzado): **datos limpios** ("modelo respondiendo").
-    `formato` 91,7 % (umbral 95) y `resistencia_inyeccion` 81,8 % (umbral 85).
-    Caen **B05** (CV 394 car., mínimo 400 — al borde), **B12** (CV 88 car.,
-    mínimo 164 — truncado de verdad, caso de inyección) y **A10** (`extraerPerfil`
-    mezcla empresas de dos personas pegadas).
-- **Lectura:** el cambio de `fd90edc` **no** causa ninguno: su métrica,
-  `calidad_palabras_clave`, dio 100 % las dos veces. B05/B12 son la fragilidad
-  de CV corto (familia P3 / T113 / T95) en `generarCvYCarta`, que `fd90edc` ni
-  toca; A10 es un hueco conocido de `extraerPerfil`.
-- **Acción:** (1) arreglar el suelo de longitud / techo de tokens de
-  `generarCvYCarta` para B05/B12 (adelanta parte de P3); (2) instrucción para
-  A10 ("si hay dos personas pegadas, usa solo la primera"); (3) re-meter
-  `fd90edc` y relanzar `npm run evals` con cuota fresca; (4) push → robot VERDE.
-- **Contexto:** `knowledge/arreglo-tab-matching-05-09.md`,
-  `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
-
 ### P1 · Frente 2 — entrega a las 5 compañeras de clase
-- **Qué:** entregar la app en clase **hoy (11/09)**. Sin sesiones 1:1
-  agendadas ni CVs de muestra: se da acceso a las 5 y la prueban en/tras
-  clase. El guion de 3 tareas de `knowledge/prueba-usuarios-frente-2-prep.md`
-  sigue valiendo como referencia de qué mirar.
+- **Qué:** entregar la app en clase **el lunes (14/09)**, no el 11/09 —
+  aplazada por Mar el 11/09, sin prisa. Sin sesiones 1:1 agendadas ni CVs de
+  muestra: se da acceso a las 5 y la prueban en/tras clase. El guion de 3
+  tareas de `knowledge/prueba-usuarios-frente-2-prep.md` sigue valiendo como
+  referencia de qué mirar. Puede que alguna compañera genere un CV de
+  verdad en la propia clase — motivo del empujón a **P0-bis** el 11/09
+  (cerrado, ver Completadas): `generarCvYCarta` y `extraerPerfil` llegan al
+  lunes con la puerta de evals VERDE, en local. **Falta el push** para que
+  eso llegue a producción — permiso explícito de Mar, cada vez
+  (`CLAUDE.md` punto 3).
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-- **Estado:** pendiente de los emails.
+  3. Permiso de Mar para publicar los commits `1c4b92b` (P0-bis) y
+     `98d5931` (P10), hoy solo en local.
+- **Estado:** pendiente de los emails. Con el aplazamiento, sin prisa.
 
 ---
 
@@ -118,21 +102,6 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   plegarlo en P3** (la otra pasada de PDF/prompt post-entrega) para que
   tenga un ciclo de prueba visual de verdad. Sin cambio de código ahora.
 
-### P10 · Cuatro observaciones menores del `/code-review` de P2
-- **Qué:** pulido de baja prioridad que salió al revisar la rama de P2, sin
-  impacto en el flujo principal (por eso P2 se publicó sin esperar a esto):
-  1. `app/api/ofertas/route.ts` — términos solapados ("Project Manager" +
-     "Manager") cuentan 2 sobre la misma frase y se saltan el umbral.
-  2. `components/FormularioAcceso.tsx` — el sondeo de sesión hace
-     `router.refresh()` cada 4 s **sin tope ni backoff** mientras se espera
-     el enlace mágico; una pestaña abandonada lo repite indefinidamente.
-  3. `app/api/ofertas/route.ts` — la respuesta de ofertas ya no tiene tope
-     (límite 50→150 y el filtro JS no recorta); un `.slice(0, 50)` al final.
-  4. `lib/perfil.ts` — `tienePerfilGuardado` traga el error de lectura y
-     devuelve `false`, así que un fallo transitorio manda a `/perfil` a quien
-     sí tiene perfil. Añadir comprobación de `error`.
-- **Estado:** anotado, sin urgencia.
-
 ---
 ---
 ---
@@ -143,6 +112,32 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 <summary><b>Ver histórico de tareas cerradas</b> (no editar salvo para añadir una nueva al principio)</summary>
 
 <br>
+
+### ~~P0-bis · Publicar el ajuste de prompt de `extraerPerfil` (`fd90edc`)~~ — cerrada 2026-09-11
+Arreglados **B12** (una instrucción incrustada inflaba el mínimo de
+longitud exigido al CV, mismo patrón que `cvSinTextoAjeno` de T113 con una
+forma nueva) y **A10** (`extraerPerfil` mezclaba dos personas pegadas — la
+regla ya estaba en `prompts/system.md` pero nunca había llegado al prompt
+real). **B05 era ruido** de una sola tanda, confirmado con sonda; no se
+tocó ningún umbral. De paso, corregido el mismo hueco de replicación en
+`evals/promptfoo/helpers.cjs`. Re-metido `fd90edc`. `npm run evals`
+completo con cuota fresca: **VEREDICTO VERDE** (formato 100 %,
+calidad_palabras_clave 100 %, fidelidad 96 % [24/25], idioma 100 %,
+resistencia_inyeccion 100 %). Commit `1c4b92b`, **solo en local** — falta
+permiso explícito de Mar para el push (`CLAUDE.md` punto 3), seguimiento en
+**P1**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+
+### ~~P10 · Cuatro observaciones menores del `/code-review` de P2~~ — cerrada 2026-09-11
+1. `app/api/ofertas/route.ts` — términos solapados del perfil ("Project
+   Manager" + "Manager") ya no cuentan como dos coincidencias distintas.
+2. `components/FormularioAcceso.tsx` — el sondeo de sesión se para a los
+   10 minutos; los oyentes de foco/visibilidad se quedan.
+3. `app/api/ofertas/route.ts` — tope explícito de 50 en la respuesta final.
+4. `lib/perfil.ts` — `tienePerfilGuardado` propaga el error de lectura en
+   vez de tragárselo.
+
+`npm run lint` y `npm test` (360/360) en verde. Commit `98d5931`, solo en
+local. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 
 ### ~~P2 · Arreglos de usabilidad del 05/09 a producción~~ — cerrada 2026-09-10
 Publicado por **Camino A**: se fusionó `mejora-usabilidad-onboarding-05-09` a

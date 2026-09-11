@@ -570,6 +570,14 @@ existe en produccion y no se toca desde aqui.
   locales `director-creativo` y `mkt-06-identidad-verbal` actualizadas desde el
   método maestro (Yara → Corita).
 
+- [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md) —
+  11/09/2026: P0-bis cerrado. B12 (instrucción incrustada inflando el
+  mínimo de longitud) y A10 (`extraerPerfil` mezclando dos personas
+  pegadas) eran el mismo patrón que T113 ya había documentado — un listón
+  mal calculado y una regla escrita en `prompts/system.md` que nunca había
+  llegado al prompt real. De paso, arreglado el mismo hueco de replicación
+  en `evals/promptfoo/helpers.cjs`. Puerta VERDE con cuota fresca.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 

@@ -1,5 +1,44 @@
 # Registro de cambios del bundle
 
+## 2026-09-11 — P0-bis cerrado (VERDE) y P10 cerrado; P1 aplazada al lunes
+
+* **P0-bis cerrado**: arreglados **B12** (una instrucción incrustada
+  inflaba el mínimo de longitud exigido al CV — mismo patrón que
+  `cvSinTextoAjeno`, T113, forma nueva) y **A10** (`extraerPerfil` mezclaba
+  dos personas pegadas — la regla ya estaba en `prompts/system.md` pero
+  nunca había llegado al prompt real, mismo patrón de T113). Re-metido
+  `fd90edc`. De paso, corregido el mismo hueco de replicación en
+  `evals/promptfoo/helpers.cjs` que `CLAUDE.md` ya avisaba vigilar.
+  **B05 no era una avería** (ruido de una sola tanda, confirmado con
+  sonda). `npm run evals` completo con cuota fresca: **VEREDICTO VERDE**
+  (formato 100%, calidad_palabras_clave 100%, fidelidad 96%, idioma 100%,
+  resistencia_inyeccion 100%). Sin publicar — falta permiso explícito de
+  Mar. → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
+* **P10 cerrado**: las 4 observaciones menores del `/code-review` de P2 —
+  término solapado en el contador de ofertas, sondeo de sesión sin tope,
+  respuesta de ofertas sin recorte a 50, `tienePerfilGuardado` tragando el
+  error de lectura. `npm run lint` y `npm test` (360/360) en verde.
+* **P1 aplazada**: Mar movió la entrega a las 5 compañeras del 11/09 (hoy)
+  al **lunes 14/09**, sin prisa — motivo de fondo para adelantar P0-bis en
+  esta misma sesión, por si alguna genera un CV de verdad en clase.
+* **Corregido en el chat**: la afirmación de que Mistral "inventa fechas y
+  carreras universitarias" no es lo documentado — lo medido
+  (`decision-mistral-pago.md`) es que `mistral-small-2603` (el respaldo de
+  pago) tiende a inventar una cifra de "X años de experiencia", no
+  titulaciones. La invención de una carrera universitaria completa sí está
+  documentada, pero de otro modelo en otro papel: `mistral-small-3.1-24b-instruct`
+  vía **Cloudflare** (el principal de `generarCvYCarta`), con el prompt de
+  **antes** de T94 — nunca reverificado contra el prompt actual porque las
+  tandas posteriores morían antes por el timeout de gemma-4. La tanda de
+  hoy (VERDE, con B06 entre los 24/25 casos de fidelidad que pasaron) es la
+  primera confirmación en vivo de que el prompt actual no reproduce esa
+  invención.
+* **Entregado**: guion de presentación para la clase (qué es Jobs App, el
+  recorrido, dónde entra la IA, privacidad, stack, preguntas probables),
+  publicado como Artifact y como Google Doc en la carpeta de Drive de Mar.
+  No es un concepto OKF — es un entregable para Mar, no documentación del
+  proyecto.
+
 ## 2026-09-10 — P2 a producción por "Camino A" (sin el ajuste de prompt)
 
 * **Fusionado a `master` y publicado**: los arreglos de usabilidad del 05/09
