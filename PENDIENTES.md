@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-10_
+_Última actualización: 2026-09-11_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -40,7 +40,7 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   `knowledge/arreglo-t113-techo-tokens-y-minimos.md`.
 
 ### P1 · Frente 2 — entrega a las 5 compañeras de clase
-- **Qué:** entregar la app en clase **mañana (11/09)**. Sin sesiones 1:1
+- **Qué:** entregar la app en clase **hoy (11/09)**. Sin sesiones 1:1
   agendadas ni CVs de muestra: se da acceso a las 5 y la prueban en/tras
   clase. El guion de 3 tareas de `knowledge/prueba-usuarios-frente-2-prep.md`
   sigue valiendo como referencia de qué mirar.
