@@ -577,6 +577,12 @@ existe en produccion y no se toca desde aqui.
   mal calculado y una regla escrita en `prompts/system.md` que nunca había
   llegado al prompt real. De paso, arreglado el mismo hueco de replicación
   en `evals/promptfoo/helpers.cjs`. Puerta VERDE con cuota fresca.
+  Seguimiento 12/09: tres relanzamientos en la rama (VERDE al 3º), `fd90edc`
+  subido a `master` con permiso de Mar, y dos intentos más en `master` ambos
+  NO CONCLUYENTE (el 2º por cuota de Cloudflare agotada tras 5 tandas en un
+  día — un push de solo docs también dispara la puerta mientras un cambio
+  de IA siga sin publicarse). Relanzamiento sobre `master` pospuesto a
+  mañana, sin más pushes hoy.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
