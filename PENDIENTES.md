@@ -30,18 +30,25 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   por timeout. Mar decidió no relanzar una 5ª vez hoy — producción sigue
   sirviendo el commit anterior, sin romperse; el código ya está en
   `origin/master` esperando veredicto. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+  Un commit posterior de solo documentación disparó una 5ª tanda igual (el
+  robot compara con lo publicado, no con el commit anterior — cualquier push
+  a `master` cuenta mientras `fd90edc` no se publique): esta vez **cuota de
+  Cloudflare agotada** (429 en varios casos), no solo el juez.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Mañana (13/09): relanzar la puerta de calidad sobre `master`
-     (`gh run rerun 34691164886 --failed`), cuota fresca. Si vuelve a fallar
-     justo en B06, considerar una sonda aislada de ese caso en vez de
-     relanzar la tanda entera (ver "Patrón a vigilar" en
+  3. Mañana (13/09), cuota fresca: relanzar el run fallido
+     (`gh run rerun 34696212200 --failed`) sobre `master` — **no hace falta
+     otro push**, el código ya está en `origin/master`. Si vuelve a fallar
+     justo en B06 (el caso que hizo timeout en 3 de las 4 primeras tandas),
+     considerar una sonda aislada de ese caso en vez de relanzar la tanda
+     entera (ver "Patrón a vigilar" en
      `knowledge/arreglo-p0bis-b12-a10-11-09.md`).
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
      (ya es `master`, la fusión ya se hizo hoy).
 - **Estado:** pendiente de los emails y de relanzar el robot mañana sobre
-  `master`. Con el aplazamiento a lunes, sin prisa.
+  `master` (sin más pushes hoy: cuota de Cloudflare agotada). Con el
+  aplazamiento a lunes, sin prisa.
 
 ---
 

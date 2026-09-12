@@ -185,6 +185,36 @@ juez — no hay muestra suficiente todavía para distinguirlo. Si vuelve a
 hacer timeout mañana, merece una sonda aislada de ese caso concreto en vez
 de relanzar la tanda entera.
 
+# Seguimiento 12/09 (2) · un push de solo docs volvió a disparar la puerta, y esta vez fue cuota de Cloudflare
+
+Tras el push de código (arriba), un commit **de solo documentación**
+(`PENDIENTES.md`, `knowledge/log.md`, este fichero) se subió también a
+`master` con permiso explícito de Mar. Sorpresa no anticipada: el robot
+**volvió a correr la puerta completa** (`gh run 34696212200`) pese a no
+tocar ningún fichero de IA — porque decide si hacen falta evals comparando
+con **lo que está publicado en producción**, no con el commit anterior
+(`CLAUDE.md`, trampa documentada en "Publicación"). Como `fd90edc` seguía sin
+publicarse (los 4 intentos previos habían fallado), el diff contra
+producción seguía incluyendo el cambio de `lib/ia.ts`, así que cualquier
+push a `master` — código o no — iba a disparar la puerta mientras eso no se
+resuelva. **Lección para la próxima vez: mientras un cambio de IA esté
+pendiente de publicar, cualquier otro push a `master`, incluido uno de solo
+docs, cuenta como una tanda más.**
+
+Esta 5ª tanda del día fue distinta a las cuatro anteriores: no fue solo el
+juez con timeout puntual, fue la **cuota de Cloudflare agotada** —
+`Cloudflare (@cf/mistralai/mistral-small-3.1-24b-instruct) respondió 429` en
+varios casos de `formato`, `fidelidad`, `idioma` y `resistencia_inyeccion`,
+con hasta 7 casos sin evaluar en una sola métrica. Coherente con la
+referencia medida el 27/08 en `CLAUDE.md`: la cuota diaria de Cloudflare
+(10.000 neuronas) se agota, y cinco tandas de 25 casos en un mismo día la
+agotan.
+
+**No se relanza más hoy.** Con la cuota de Cloudflare a cero, cualquier
+intento adicional fallaría igual, no por el prompt. El código ya está en
+`origin/master`; mañana (13/09) basta con relanzar el run fallido
+(`gh run rerun 34696212200 --failed`), sin necesidad de otro push.
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)

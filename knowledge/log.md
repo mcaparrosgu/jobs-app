@@ -18,6 +18,15 @@
   con cuota fresca. El código ya está en `origin/master`; solo falta que la
   puerta de calidad dé un veredicto para que se publique de verdad en
   Vercel. Seguimiento en **P1** de `PENDIENTES.md`.
+* Con permiso explícito, un commit **de solo documentación** se subió
+  también a `master` — y volvió a disparar la puerta entera (`gh run
+  34696212200`), sin tocar ningún fichero de IA: el robot decide comparando
+  con lo publicado en producción, no con el commit anterior, y `fd90edc`
+  seguía sin publicarse. Mientras un cambio de IA esté pendiente, **cualquier
+  push a `master` cuenta como una tanda más**. Esta 5ª tanda del día sí fue
+  por **cuota de Cloudflare agotada** (429 en varios casos, no solo timeout
+  del juez) — coherente con la referencia del 27/08 de que ~5 tandas de 25
+  casos agotan las 10.000 neuronas diarias. No se relanza más hoy.
   → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
 
 ## 2026-09-11 (tarde) — Rama publicada, robot NO CONCLUYENTE por el juez sin cuota
