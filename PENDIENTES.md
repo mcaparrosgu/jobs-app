@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-11_
+_Última actualización: 2026-09-12_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -20,27 +20,28 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   aplazada por Mar el 11/09, sin prisa. Sin sesiones 1:1 agendadas ni CVs de
   muestra: se da acceso a las 5 y la prueban en/tras clase. El guion de 3
   tareas de `knowledge/prueba-usuarios-frente-2-prep.md` sigue valiendo como
-  referencia de qué mirar. Puede que alguna compañera genere un CV de
-  verdad en la propia clase — motivo del empujón a **P0-bis** el 11/09
-  (cerrado, ver Completadas): `generarCvYCarta` y `extraerPerfil` en verde
-  en local. Publicado con permiso de Mar a la rama
-  `arregla-p0bis-b12-a10-11-09` (push, no a `master`), pero el robot dio
-  **NO CONCLUYENTE** (`gh run 34612763230`): 2 de 25 casos se quedaron sin
-  calificar por el **juez** (Groq sin cuota / timeout), no por el código —
-  las métricas que sí se calificaron salieron en 100 % o mejor que en
-  local. No es un fallo del prompt (`CLAUDE.md`: "relanzar, no arreglar").
-  Mar decidió relanzarlo **mañana** (12/09), con la cuota de Groq del día
-  ya renovada.
+  referencia de qué mirar.
+- **12/09**: relanzado 3 veces sobre la rama `arregla-p0bis-b12-a10-11-09`
+  con cuota fresca — 1º y 2º NO CONCLUYENTE (timeout del juez en B06), 3º
+  **VERDE** (fidelidad 92 %, resto 100 %). Con permiso explícito de Mar,
+  `git push origin master` (el código ya estaba listo, sin merge de git que
+  hacer). El pipeline de producción volvió a evaluar por tocar `lib/ia.ts`:
+  **NO CONCLUYENTE** una 4ª vez (`gh run 34691164886`), otra vez solo B06
+  por timeout. Mar decidió no relanzar una 5ª vez hoy — producción sigue
+  sirviendo el commit anterior, sin romperse; el código ya está en
+  `origin/master` esperando veredicto. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Mañana: `gh run rerun 34612763230 --failed` (o relanzar el workflow
-     entero) sobre la rama `arregla-p0bis-b12-a10-11-09`, cuota fresca.
-  4. Si sale VERDE: permiso explícito de Mar para fusionar esa rama a
-     `master` (publicación real) — permiso distinto del de publicar la
-     rama, que ya se dio hoy.
-- **Estado:** pendiente de los emails y de relanzar el robot mañana. Con
-  el aplazamiento a lunes, sin prisa.
+  3. Mañana (13/09): relanzar la puerta de calidad sobre `master`
+     (`gh run rerun 34691164886 --failed`), cuota fresca. Si vuelve a fallar
+     justo en B06, considerar una sonda aislada de ese caso en vez de
+     relanzar la tanda entera (ver "Patrón a vigilar" en
+     `knowledge/arreglo-p0bis-b12-a10-11-09.md`).
+  4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
+     (ya es `master`, la fusión ya se hizo hoy).
+- **Estado:** pendiente de los emails y de relanzar el robot mañana sobre
+  `master`. Con el aplazamiento a lunes, sin prisa.
 
 ---
 

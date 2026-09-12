@@ -1,5 +1,25 @@
 # Registro de cambios del bundle
 
+## 2026-09-12 — Tres relanzamientos en la rama (VERDE), push a `master`, 4º NO CONCLUYENTE
+
+* Relanzado `gh run rerun 34612763230 --failed` tres veces sobre la rama
+  `arregla-p0bis-b12-a10-11-09` con la cuota del día renovada: 1º y 2º NO
+  CONCLUYENTE (1 caso, B06, sin calificar por timeout de 180 s del juez); 3º
+  **VERDE** (fidelidad 92 %, resto 100 %). Preview de la rama publicada en
+  Vercel.
+* Con permiso explícito de Mar (distinto del de publicar la rama), `git push
+  origin master` (`fd233f1..2929934`) — `master` local ya contenía los mismos
+  commits que la rama como ancestro directo, sin merge de git que hacer. El
+  pipeline de producción real volvió a evaluar por tocar `lib/ia.ts`: **NO
+  CONCLUYENTE** una 4ª vez el mismo día (`gh run 34691164886`), otra vez solo
+  B06 por timeout del juez. "Publicar en Vercel" no llegó a correr;
+  producción sigue sirviendo el commit anterior, sin romperse.
+* **Decisión de Mar**: no relanzar una 5ª vez hoy — esperar a mañana (13/09)
+  con cuota fresca. El código ya está en `origin/master`; solo falta que la
+  puerta de calidad dé un veredicto para que se publique de verdad en
+  Vercel. Seguimiento en **P1** de `PENDIENTES.md`.
+  → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
+
 ## 2026-09-11 (tarde) — Rama publicada, robot NO CONCLUYENTE por el juez sin cuota
 
 * Con permiso explícito de Mar ("push"), publicada la rama

@@ -149,6 +149,42 @@ fusión a `master` queda pendiente de ese veredicto y de un segundo permiso
 explícito, distinto del de publicar la rama. Detalle cronológico en
 `knowledge/log.md` (entrada "Rama publicada, robot NO CONCLUYENTE...").
 
+# Seguimiento 12/09 · tres relanzamientos en la rama, VERDE, fusión a `master`, 4º NO CONCLUYENTE
+
+Con la cuota del día renovada, `gh run rerun 34612763230 --failed` sobre la
+rama, tres veces seguidas:
+
+1. **1er relanzamiento**: sigue NO CONCLUYENTE — 1 caso (B06) sin calificar
+   por timeout de 180 s del juez. Resto al 100 %.
+2. **2º relanzamiento**: mismo resultado — B06 timeout otra vez.
+3. **3er relanzamiento**: **VERDE**. formato 100 %, calidad_palabras_clave
+   100 %, fidelidad 92 % (23/25 — A06 y B03 suspenso de calidad normal, no
+   del juez), idioma 100 %, resistencia_inyección 100 %. Preview de la rama
+   publicada en Vercel.
+
+Con permiso explícito de Mar (distinto del de publicar la rama), `master`
+local — que ya contenía los mismos commits que la rama como ancestro directo,
+sin necesidad de un merge de git — se subió a `origin/master`
+(`fd233f1..2929934`, `git push origin master`). Esto disparó el pipeline de
+producción real, que vuelve a evaluar por tocar `lib/ia.ts`: **NO
+CONCLUYENTE** por 4ª vez en el día (`gh run 34691164886`) — otra vez solo
+B06 sin calificar por timeout de 180 s del juez, resto al 100 %. "Publicar en
+Vercel" no llegó a correr; producción sigue sirviendo el commit anterior, sin
+romperse.
+
+**Decisión de Mar**: no relanzar una 5ª vez hoy — esperar a mañana con cuota
+fresca. `master` local queda por delante de `origin/master` en el código (ya
+subido), pendiente solo de que la puerta dé un veredicto. Seguimiento en
+**P1** de `PENDIENTES.md`.
+
+**Patrón a vigilar**: B06 ("Logro real que casi encaja — tentación de
+exagerar") fue el caso que hizo timeout en 3 de las 4 tandas de hoy. Podría
+ser ruido de una racha mala de Groq (ver "Antes de creerte una tanda..." en
+`CLAUDE.md`) o algo propio de ese caso que tarda más de la cuenta en el
+juez — no hay muestra suficiente todavía para distinguirlo. Si vuelve a
+hacer timeout mañana, merece una sonda aislada de ese caso concreto en vez
+de relanzar la tanda entera.
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
