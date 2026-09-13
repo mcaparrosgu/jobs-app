@@ -566,9 +566,10 @@ existe en produccion y no se toca desde aqui.
   alternativas por territorio. Mar descartó esa 1ª ronda por poco profesional;
   2ª ronda (dirección seria/fiable) con finalistas **JobFit / FitCV / Postula**,
   brainstorming abierto. Incluye tono de voz, mensajes clave, tagline y copy en
-  3 contextos. El nombre lo elige Mar. Skills
-  locales `director-creativo` y `mkt-06-identidad-verbal` actualizadas desde el
-  método maestro (Yara → Corita).
+  3 contextos. Skills locales `director-creativo` y `mkt-06-identidad-verbal`
+  actualizadas desde el método maestro (Yara → Corita).
+  **Nombre cerrado 13/09/2026: Llana**, ver
+  [decision-nombre-llana-13-09.md](decision-nombre-llana-13-09.md).
 
 - [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md) —
   11/09/2026: P0-bis cerrado. B12 (instrucción incrustada inflando el

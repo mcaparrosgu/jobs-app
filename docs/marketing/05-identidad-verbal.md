@@ -15,8 +15,8 @@
 > 1 (NAMING) va en **modo revisión**: primero audito lo suyo, luego añado
 > alternativas. Las secciones 2-6 van en **modo creación** desde cero.
 >
-> **El nombre NO queda cerrado aquí.** Doy opciones y una recomendación
-> razonada; la elección es de Mar (`CLAUDE.md` punto 7).
+> **Nombre cerrado el 13/09/2026: Llana.** Ver 1.e para la decisión final y
+> su motivo. El resto del documento ya usa el nombre en vez de `[NOMBRE]`.
 
 ---
 
@@ -161,13 +161,55 @@ de segunda (más concreto, dice qué recibes) y **Postula** si quieres castellan
 puro. Para cualquiera de los compuestos en inglés, la comprobación de
 dominio/marca es obligatoria antes de decidir: es un terreno lleno.
 
-> En lo que sigue uso **[NOMBRE]** como marcador. Sustitúyelo por tu elección.
+### 1.e) Decisión final — Llana (13/09/2026)
+
+Sesión larga de brainstorming con Corita (seis rondas: territorios fonéticos,
+objetos/velocidad, luz/tiempo, oficio/sonido, sinónimos directos en
+castellano, más una auditoría de una lista traída por Mar desde una
+conversación con Gemini). JobFit y FitCV de la 2ª ronda quedaron descartados
+al comprobar dominio: los dos tienen un competidor real que hace exactamente
+lo mismo con ese nombre casi exacto (`jobfit.cv`, `fitcv.com.br`). Postula
+sobrevivió limpia toda la sesión pero no llegó a engancharle a Mar.
+
+**Elegido: Llana.** Palabra española corriente, sin metáfora que explicar:
+- Es la herramienta del albañil que alisa y deja plana una superficie — la
+  misma idea que hace la IA con el CV para cada oferta, sin que haga falta
+  explicárselo a nadie.
+- Registro serio y adulto (cumple el giro de la 2ª ronda hacia "profesional,
+  no juguetón"), pero cálido — no fría ni corporativa.
+- Sin colisión de marca: comprobado tanto en el sector (ninguna app de CV/
+  empleo la usa) como en general (solo dos empresas pequeñas y regionales,
+  "Llana Carretillas" y "Llana Consultores", en sectores sin relación).
+- Género gramatical femenino de fábrica, útil para el copy ("Llana te ha
+  preparado...").
+
+**Descriptor de marca:** *"Llana, tu guía personalizada para buscar
+trabajo."* "Guía" es la palabra que ya usa el posicionamiento de este mismo
+documento ("guiamos el camino, no la decisión") — nada nuevo que inventar.
+Se descartaron **"agente"** y **"asistente"**: la IA de Jobs App no es un
+agente autónomo (dos llamadas puntuales, sin chat ni herramientas — decisión
+de fondo del proyecto) y "agente de empleo" es además una figura regulada en
+España (agencias de colocación); ninguno de los dos encaja con "no busca por
+ti, no decide por ti". "Asistente" además roza el cliché ya prohibido en la
+sección 5 de este documento ("asistente inteligente").
+
+**Nota de alcance:** el descriptor describe **Jobs App**, la MVP de 5
+personas, no el proyecto "Jobs" más grande que Mar tiene en mente (con
+seguimiento del estado de la candidatura, más parecido a herramientas como
+EzApply). Si esa versión más grande llega a construirse, el descriptor
+tendrá que revisarse para reflejar lo que de verdad haga en ese momento.
+
+**Pendiente antes de usarlo en público:** comprobación real de dominio
+(registrador, no solo búsqueda web) y de marca en la OEPM — la búsqueda de
+esta sesión descarta colisión de producto pero no sustituye ese trámite.
+
+> En el resto del documento, **Llana** sustituye a `[NOMBRE]`.
 
 ---
 
 ## 2. TONO DE VOZ
 
-Cuatro ejes. En cada uno, dónde se coloca [NOMBRE] y una frase real de producto.
+Cuatro ejes. En cada uno, dónde se coloca Llana y una frase real de producto.
 
 **Cercano ↔ Formal → muy cercano, de tú, sin coleguismo forzado.**
 Hablamos como una compañera de clase que ya ha pasado por esto, no como un
@@ -214,7 +256,7 @@ Jerarquizados: el 1 es el que debe quedar si solo queda uno.
 | Tu CV, a la altura de cada oferta. | Runner-up. Más aspiracional; buena para cabeceras. |
 | Un CV a medida por cada oferta que te importa. | Descriptiva y honesta; algo larga. |
 | Deja de reescribir tu CV. | Directa al dolor; en negativo. |
-| Encaja con la oferta sin reescribirlo todo. | Funciona sobre todo si el nombre acaba siendo "Encaja". |
+| Encaja con la oferta sin reescribirlo todo. | Descartada: el nombre final no es "Encaja". |
 | La parte mecánica, hecha. | Minimalista; pierde el matiz de "tú decides". |
 
 Elegida: **"Tú eliges. Del papeleo nos encargamos."**
@@ -222,14 +264,16 @@ Porque el riesgo de este producto no es que no se entienda qué hace, sino que
 alguien crea que "busca trabajo por ti" o que "decide por ti". La tagline pone
 esa frontera por delante, y lo hace en el tono cómplice de la marca.
 
-> Si el nombre final es "Encaja", vale la pena reconsiderar la quinta opción
-> como tagline de campaña puntual, no como firma permanente.
+Va junto al **descriptor de marca** (ver 1.e): *"Llana, tu guía personalizada
+para buscar trabajo."* El descriptor identifica qué es Llana en una frase
+(útil bajo el logo, en la cabecera); la tagline es el eslogan de campaña.
+Ambos pueden convivir sin pisarse.
 
 ---
 
 ## 5. PALABRAS Y CLICHÉS A EVITAR
 
-El vocabulario que usa toda la categoría y que a [NOMBRE] la volvería
+El vocabulario que usa toda la categoría y que a Llana la volvería
 indistinguible:
 
 - **"Potencia / impulsa tu carrera"**, "lleva tu carrera al siguiente nivel",
@@ -253,7 +297,7 @@ indistinguible:
 
 ## 6. LA VOZ EN TRES CONTEXTOS
 
-Texto final, listo para pegar (con **[NOMBRE]** pendiente de sustituir).
+Texto final, listo para pegar.
 
 ### 6.a) Web / producto
 
@@ -289,7 +333,7 @@ Post de Mar contando el proyecto (LinkedIn / hilo), en primera persona:
 > reescribir el CV y la carta para cada oferta. Media hora por oferta que no
 > aporta nada, solo desgasta.
 >
-> Así que en el bootcamp me puse a construir **[NOMBRE]**: pegas tu CV una
+> Así que en el bootcamp me puse a construir **Llana**: pegas tu CV una
 > vez, te enseña las ofertas remotas que encajan contigo y, por cada una que
 > te interesa, te deja un CV y una carta a medida en un PDF listo para
 > enviar. No busca por ti ni decide por ti — solo te quita el copia-pega.
@@ -322,11 +366,11 @@ llegado":
 
 ## Pendiente
 
-- **Elegir el nombre.** Brainstorming en curso: la 1ª ronda (1.a-1.c) quedó
-  descartada por Mar; la 2ª ronda (1.d, dirección profesional) tiene como
-  finalistas **JobFit / FitCV / Postula**. El resto del documento usa
-  **[NOMBRE]** como marcador hasta que se cierre.
+- ~~Elegir el nombre.~~ **Cerrado 13/09/2026: Llana.** Ver 1.e.
 - Confirmar / corregir el posicionamiento de trabajo cuando se hagan los pasos
   mkt-03 a mkt-05 (`docs/marketing/03` y `04`).
-- Comprobación rápida de dominio y marca para los 2-3 finalistas antes de
-  decidir.
+- **Antes de usar el nombre en público:** comprobación real de dominio (en un
+  registrador) y de marca en la OEPM — la sesión de naming descartó
+  colisión de producto por búsqueda web, no un registro formal.
+- Propagar el nombre a copy de la app / README, con visto bueno de Mar.
+- Invocar `/bitacora` para dejar constancia de la sesión de naming.

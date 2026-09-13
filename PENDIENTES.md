@@ -42,11 +42,23 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   3. Que Mar traiga los 5 nombres/emails de sus compañeras.
   4. Darlas de alta en Supabase Auth (`shouldCreateUser: false`).
 - **Estado:** en espera de cuota de Groq fresca (mañana) y de los emails.
-  Con el aplazamiento a lunes, hay margen de sobra.
+  Con el aplazamiento a lunes, hay margen de sobra. Reconfirmado 13/09 15:10:
+  el run `34754157164` ya había terminado (NO CONCLUYENTE por B08, cuota de
+  Groq) — sin cambios respecto a lo ya documentado.
 
 ---
 
 ## 🟡 Prioridad media
+
+### P11 · Registro formal del nombre "Llana"
+- **Qué:** antes de usar el nombre en público (clase del 14/09 vale, es
+  interno; lanzamiento más amplio no): comprobar dominio real en un
+  registrador y marca en la OEPM. La sesión de naming (13/09) descartó
+  colisión de producto por búsqueda web — no sustituye ese trámite.
+- **Contexto:** `docs/marketing/05-identidad-verbal.md` §1.e,
+  [[decision_nombre_llana_13_09]].
+- **Estado:** no bloquea P1 (entrega a la clase); sí antes de propagar el
+  nombre a copy público / README.
 
 ### P3 · Fechas en el CV
 - **Qué:** reintentar añadir el periodo por entrada al CV generado, con una
@@ -55,18 +67,6 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   veces (01/09 y antes): el modelo inventa años y acorta CVs, la puerta sale
   ROJO.
 - **Estado:** no urgente, tarea aparte.
-
-### P9 · Nombre del MVP e identidad verbal
-- **Qué:** Mar elige el nombre del MVP entre las opciones de
-  `docs/marketing/05-identidad-verbal.md` (paso mkt-06, redactado el 10/09).
-- **Contexto:** 1ª ronda (jop/gop/Encaja/Jobo/Curra…) **descartada por Mar**:
-  quiere un nombre serio/fiable/profesional. 2ª ronda (`05-identidad-verbal.md`
-  §1.d) con finalistas **JobFit / FitCV / Postula**; brainstorming abierto. El
-  documento usa `[NOMBRE]` de marcador hasta que se cierre.
-- **Falta:** decisión de Mar + comprobación de dominio/marca de los finalistas
-  (terreno saturado con los compuestos en inglés). Luego: propagar el nombre a
-  copy de la app / README (con visto bueno) e invocar `/bitacora`.
-- **Estado:** pendiente de que Mar elija.
 
 ---
 
@@ -123,6 +123,23 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
 <summary><b>Ver histórico de tareas cerradas</b> (no editar salvo para añadir una nueva al principio)</summary>
 
 <br>
+
+### ~~P9 · Nombre del MVP e identidad verbal~~ — cerrada 2026-09-13
+Sesión de naming con Corita (director-creativo + mkt-06): seis rondas de
+brainstorming (fonética, objetos/velocidad, luz/tiempo, oficio/sonido,
+sinónimos directos en castellano, auditoría de una lista traída por Mar desde
+Gemini), con comprobación de colisión de marca en cada candidato. JobFit y
+FitCV (finalistas de la 2ª ronda, 10/09) cayeron al comprobar dominio: ambos
+tienen un competidor real casi homónimo haciendo lo mismo (`jobfit.cv`,
+`fitcv.com.br`). **Elegido: Llana** — palabra española directa (la
+herramienta de albañil que alisa una superficie, misma idea que la IA con el
+CV), sin colisión de marca real, registro serio y cálido. Descriptor:
+"Llana, tu guía personalizada para buscar trabajo" — se descartaron "agente"
+y "asistente" por sobreprometer (la IA no es un agente autónomo, y "agente
+de empleo" es figura regulada en España) y por chocar con el cliché ya
+prohibido "asistente inteligente". `docs/marketing/05-identidad-verbal.md`
+actualizado con el nombre en todo el documento. Pendiente de registro formal
+→ **P11**. → `docs/marketing/05-identidad-verbal.md` §1.e
 
 ### ~~P0-bis · Publicar el ajuste de prompt de `extraerPerfil` (`fd90edc`)~~ — cerrada 2026-09-11
 Arreglados **B12** (una instrucción incrustada inflaba el mínimo de

@@ -1,5 +1,35 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (6) — Nombre del MVP cerrado: Llana
+
+* Sesión de naming con Corita (director-creativo + mkt-06), seis rondas de
+  brainstorming con comprobación de colisión de marca en cada candidato.
+  Los finalistas de la 2ª ronda (JobFit, FitCV) cayeron al comprobar
+  dominio real (competidores casi homónimos haciendo lo mismo). Explorados
+  y descartados: territorios de objetos/luz/oficio (demasiado metafóricos
+  para Mar), inglés e inventados (terreno agotado — Notch, Sidekick, Swift,
+  Nexa, Zolva, Fluxa colisionan todos), y EzApply (traída por Mar desde una
+  sesión con Gemini: choca con un competidor real de 500K+ usuarios y con
+  "Easy Apply" de LinkedIn).
+* **Elegido: Llana.** Palabra española directa (la herramienta de albañil
+  que alisa una superficie), sin colisión de marca, registro serio y
+  cálido. Descriptor: "Llana, tu guía personalizada para buscar trabajo" —
+  se descartó "agente"/"asistente" por sobreprometer y por chocar con el
+  cliché "asistente inteligente" ya prohibido en el propio documento de
+  marca.
+* Actualizado `docs/marketing/05-identidad-verbal.md` con el nombre en todo
+  el documento. Pendiente: registro formal de dominio/OEPM antes de
+  propagar el nombre en público → **P11** en `PENDIENTES.md`.
+  → [decision-nombre-llana-13-09.md](decision-nombre-llana-13-09.md)
+
+## 2026-09-13 (5) — Reconfirmado el veredicto del run 34754157164: sin cambios
+
+* A las 15:10, `gh run view 34754157164` confirma que el run ya había
+  terminado (11:48 UTC) con el mismo resultado documentado en la entrada
+  (4): NO CONCLUYENTE por `RateLimitExhaustedError` en B08, el resto de
+  métricas calificadas al 100 %. No hay información nueva ni cambio de
+  estado — sigue en pie esperar al 14/09 con cuota de Groq fresca.
+
 ## 2026-09-13 (4) — El margen nuevo arregla B06; NO CONCLUYENTE otra vez por B08 (cuota de Groq, no tiempo)
 
 * Subido `d5a8a4f` a `origin/master`. El robot volvió a evaluar (`gh run
