@@ -583,6 +583,11 @@ existe en produccion y no se toca desde aqui.
   día — un push de solo docs también dispara la puerta mientras un cambio
   de IA siga sin publicarse). Relanzamiento sobre `master` pospuesto a
   mañana, sin más pushes hoy.
+  Seguimiento 13/09: relanzado con cuota fresca — **NO CONCLUYENTE una 6ª
+  vez**, otra vez solo por timeout del juez en **B06** (nada de Cloudflare
+  esta vez, los 25 casos generaron bien). Con 4 de 6 tandas parando en el
+  mismo caso, deja de leerse como ruido: toca una sonda aislada de B06 antes
+  de relanzar la tanda completa una vez más.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

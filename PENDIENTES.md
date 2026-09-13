@@ -1,6 +1,6 @@
 # Pendientes — Jobs App
 
-_Última actualización: 2026-09-12_
+_Última actualización: 2026-09-13_
 
 Lista viva de lo que queda por hacer, ordenada por prioridad. Cada tarea
 enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
@@ -34,21 +34,26 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   robot compara con lo publicado, no con el commit anterior — cualquier push
   a `master` cuenta mientras `fd90edc` no se publique): esta vez **cuota de
   Cloudflare agotada** (429 en varios casos), no solo el juez.
+- **13/09**: relanzado `gh run rerun 34696212200 --failed` sobre `master` con
+  cuota fresca de Cloudflare. **NO CONCLUYENTE una 6ª vez** — esta vez sin
+  ningún 429 de Cloudflare (los 25 casos generaron bien), solo el juez
+  (Groq) sin calificar **B06** otra vez por timeout de 180 s. Todo lo demás
+  en verde: formato 100 %, calidad_palabras_clave 100 %, fidelidad 95,5 %
+  (21/22, único suspenso real B03, sin relación con B06), idioma 100 %,
+  resistencia_inyección 100 %. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+- **Con esta van 4 de 6 tandas parando justo en B06** (12-13/09): deja de
+  leerse como una racha mala de Groq y empieza a parecer algo propio de ese
+  caso concreto.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Mañana (13/09), cuota fresca: relanzar el run fallido
-     (`gh run rerun 34696212200 --failed`) sobre `master` — **no hace falta
-     otro push**, el código ya está en `origin/master`. Si vuelve a fallar
-     justo en B06 (el caso que hizo timeout en 3 de las 4 primeras tandas),
-     considerar una sonda aislada de ese caso en vez de relanzar la tanda
-     entera (ver "Patrón a vigilar" en
-     `knowledge/arreglo-p0bis-b12-a10-11-09.md`).
+  3. Decidir con Mar si se prueba una sonda aislada de B06 (para ver si el
+     rubric es el que tarda de más) antes de relanzar la tanda completa una
+     7ª vez, o si simplemente se relanza otra vez sin más.
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
-     (ya es `master`, la fusión ya se hizo hoy).
-- **Estado:** pendiente de los emails y de relanzar el robot mañana sobre
-  `master` (sin más pushes hoy: cuota de Cloudflare agotada). Con el
-  aplazamiento a lunes, sin prisa.
+     (ya es `master`, la fusión ya se hizo el 12/09).
+- **Estado:** pendiente de los emails y de decidir el siguiente paso sobre
+  B06. Con el aplazamiento a lunes, sin prisa.
 
 ---
 

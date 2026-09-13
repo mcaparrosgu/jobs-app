@@ -1,5 +1,22 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 — 6ª tanda del caso, NO CONCLUYENTE otra vez por B06 (ya no parece ruido)
+
+* `gh run rerun 34696212200 --failed` sobre `master` con la cuota de
+  Cloudflare renovada. Esta vez ninguna llamada a Cloudflare devolvió 429:
+  los 25 casos generaron bien. **NO CONCLUYENTE** de nuevo, y de nuevo por
+  el mismo motivo — el juez (Groq) sin calificar **B06** por timeout de
+  180 s. Todo lo demás salió verde: formato 100 %, calidad_palabras_clave
+  100 %, fidelidad 95,5 % (21/22, el único suspenso real es B03 y no tiene
+  relación con B06), idioma 100 %, resistencia_inyección 100 %.
+* Van **4 de 6 tandas** del 12-13/09 parando justo en B06 por timeout del
+  juez, nunca en otro caso — deja de leerse como una racha mala de Groq y
+  empieza a parecer algo propio de ese caso (rubric largo/ambiguo, o algo en
+  su salida que hace razonar de más al juez). Antes de relanzar una 7ª vez
+  la tanda completa, toca una sonda aislada de B06 — pendiente del visto
+  bueno de Mar. Seguimiento en **P1** de `PENDIENTES.md`.
+  → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
+
 ## 2026-09-12 — Tres relanzamientos en la rama (VERDE), push a `master`, 4º NO CONCLUYENTE
 
 * Relanzado `gh run rerun 34612763230 --failed` tres veces sobre la rama

@@ -215,6 +215,29 @@ intento adicional fallaría igual, no por el prompt. El código ya está en
 `origin/master`; mañana (13/09) basta con relanzar el run fallido
 (`gh run rerun 34696212200 --failed`), sin necesidad de otro push.
 
+# Seguimiento 13/09 · 6ª tanda del caso, NO CONCLUYENTE una vez más, otra vez B06
+
+Con la cuota de Cloudflare renovada, `gh run rerun 34696212200 --failed` sobre
+`master`. Esta vez **no fue cuota de Cloudflare** (ninguna llamada a
+Cloudflare devolvió 429): los 25 casos generaron bien. El único problema fue,
+de nuevo, el **juez** (Groq) sin calificar **B06** ("Logro real que casi
+encaja — tentación de exagerar") por el mismo timeout de 180 s de siempre.
+Todas las métricas que sí se pudieron calificar salieron en verde: formato
+100 % (12/12), calidad_palabras_clave 100 % (4/4), fidelidad 95,5 % (21/22 —
+el único suspenso real es B03, un caso de calidad normal sin relación con
+B06), idioma 100 % (6/6), resistencia_inyección 100 % (11/11).
+
+**El patrón ya no es ruido.** Con esta van 4 de 6 tandas del 12-13/09
+parando exactamente en B06 por timeout del juez, nunca en otro caso. La nota
+del seguimiento del 12/09 ("Patrón a vigilar") decía explícitamente que si
+volvía a pasar merecía una sonda aislada de ese caso concreto en vez de
+relanzar la tanda entera — es la situación en la que estamos ahora.
+Candidatos a mirar antes de relanzar una 7ª vez completa: si el rubric de
+B06 es más largo/ambiguo que el resto y tarda más en juzgarse, o si hay algo
+en la salida de `generarCvYCarta` para ese caso que hace que el juez razone
+de más. `PENDIENTES.md` (P1) recoge la decisión de probar esto antes de
+volver a lanzar la tanda de 25 casos entera.
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
