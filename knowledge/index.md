@@ -594,8 +594,12 @@ existe en produccion y no se toca desde aqui.
   que llama a Groq en la fila, justo donde la cuota por minuto empieza a
   apretar. No toca `lib/ia.ts`, así que no dispara la regla de relanzar
   evals. Con permiso de Mar, subido ese margen de 180 a 240 s en
-  `evals/lanzar.mjs` y `.github/workflows/publicar.yml` (commit local, sin
-  push; falta subir y relanzar con el margen nuevo).
+  `evals/lanzar.mjs` y `.github/workflows/publicar.yml`, y a `origin/master`
+  (`d5a8a4f`). El robot volvió a evaluar: **el margen nuevo arregló B06**
+  (fidelidad 100 %), pero **NO CONCLUYENTE otra vez por B08** —
+  `RateLimitExhaustedError` de Groq tras varios 429, no un timeout. Cuota de
+  Groq agotada de verdad tras tres rondas grandes el mismo día; no se
+  relanza más hoy, se retoma el 14/09 con cuota fresca.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -1,5 +1,24 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (4) — El margen nuevo arregla B06; NO CONCLUYENTE otra vez por B08 (cuota de Groq, no tiempo)
+
+* Subido `d5a8a4f` a `origin/master`. El robot volvió a evaluar (`gh run
+  34754157164`): **B06 pasó** (fidelidad 25/25, 100 %) — el margen de 240 s
+  resolvió justo lo que predecía el análisis. Pero **NO CONCLUYENTE otra
+  vez**, esta vez por **B08**: no timeout, sino
+  `RateLimitExhaustedError: ... after 4 attempts` — Groq sin recuperarse
+  tras varios 429 seguidos. formato, idioma y resistencia_inyección al
+  100 %.
+* Lectura: el margen de tiempo no era la única palanca. También hay una
+  cuota real de Groq que se agota con el uso acumulado del día — hoy van
+  tres rondas grandes contra Groq (6ª tanda, sonda de B06, 7ª tanda). El
+  síntoma se mueve de caso (B06 → B08) porque ya no es "quién tarda más" es
+  "a quién le toca cuando la cuenta ya está sin cupo".
+* **No se relanza más hoy.** Mañana (14/09) con cuota de Groq fresca,
+  relanzar `gh run rerun 34754157164 --failed` sobre `master` tal cual — el
+  código con el margen nuevo ya está en `origin/master`.
+  → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
+
 ## 2026-09-13 (3) — Subido el margen del timeout de evals de 180 a 240 s
 
 * Con permiso explícito de Mar, subido `PROMPTFOO_EVAL_TIMEOUT_MS` de 180000

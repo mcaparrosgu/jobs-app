@@ -53,19 +53,28 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   **no hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 - **Hecho (13/09, con permiso de Mar):** subido `PROMPTFOO_EVAL_TIMEOUT_MS`
   de 180 s a 240 s en `evals/lanzar.mjs` y en los dos steps de evals de
-  `.github/workflows/publicar.yml` — da margen a que generación +
-  calificación + un reintento del juez quepan en el mismo hueco. Cambio solo
-  en el arnés de evals, no en `lib/ia.ts`. Commit local, sin push.
+  `.github/workflows/publicar.yml`, subido a `origin/master`
+  (`d5a8a4f`). El robot volvió a evaluar (`gh run 34754157164`):
+  **el margen nuevo funcionó — B06 pasó** (fidelidad 25/25, 100 %, formato
+  idioma y resistencia_inyección también al 100 %). Pero **NO CONCLUYENTE
+  otra vez**, esta vez por **B08**: `RateLimitExhaustedError` de Groq
+  después de 4 reintentos — ya no un timeout por tiempo, sino la cuota de
+  Groq agotada de verdad tras varias tandas seguidas hoy (la 6ª, la sonda de
+  B06, y esta 7ª). Coherente con que la cuota de Groq se renueva a
+  medianoche UTC (2:00 en España). → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+- **No relanzar más hoy.** El margen de tiempo ya no es el problema; lo que
+  falta es cuota de Groq fresca.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Relanzar la tanda completa (`gh run rerun 34696212200 --failed`) con el
-     margen nuevo ya en `master` — hace falta subir estos commits primero.
+  3. Mañana (14/09), cuota de Groq fresca: relanzar el run fallido
+     (`gh run rerun 34754157164 --failed`) sobre `master` — no hace falta
+     otro push, el código ya está en `origin/master` con el margen nuevo.
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
      (ya es `master`, la fusión ya se hizo el 12/09).
-- **Estado:** pendiente de los emails y de subir el cambio de timeout a
-  `origin/master` para poder relanzar con el margen nuevo. Con el
-  aplazamiento a lunes, sin prisa.
+- **Estado:** pendiente de los emails y de relanzar mañana con cuota de Groq
+  fresca. Con el aplazamiento a lunes (14/09), hay margen justo — la entrega
+  sigue siendo esa noche/mañana.
 
 ---
 

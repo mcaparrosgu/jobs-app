@@ -298,6 +298,39 @@ directa y de menor riesgo es subir el margen de
 cambios hechos todavía: pendiente del visto bueno de Mar, porque toca un
 fichero de workflow de CI.
 
+# Seguimiento 13/09 (2) · el margen nuevo arregla B06, pero aparece B08 — era cuota de Groq, no solo tiempo
+
+Con permiso de Mar, subido `PROMPTFOO_EVAL_TIMEOUT_MS` de 180 s a 240 s
+(`evals/lanzar.mjs` y los dos steps de evals de
+`.github/workflows/publicar.yml`, commit `d5a8a4f`) y subido a
+`origin/master`. El robot volvió a evaluar (`gh run 34754157164`):
+
+- **B06 pasó** — fidelidad 25/25 (100 %). El margen nuevo resolvió
+  exactamente lo que predecía el análisis: generación + calificación ya
+  caben en el hueco. formato, idioma y resistencia_inyección también al
+  100 %.
+- **NO CONCLUYENTE de todos modos**, esta vez por **B08** (el 5º caso que
+  llama a Groq en la fila, tras B02, B03, B04, B06): no fue un timeout, fue
+  `RateLimitExhaustedError: Rate limit exceeded for groq:qwen/qwen3.6-27b
+  after 4 attempts` — promptfoo agotó sus propios reintentos porque Groq
+  seguía devolviendo 429 sin recuperarse.
+
+**Lectura:** el margen de tiempo no era la única palanca — también hay una
+cuota real de Groq que se agota con el uso acumulado del día. Hoy se han
+lanzado contra Groq: la 6ª tanda completa, la sonda aislada de B06, y esta
+7ª tanda completa — tres rondas grandes en pocas horas, más lo gastado el
+12/09. Encaja con la nota ya escrita en `CLAUDE.md` sobre la cuota diaria de
+Groq (se renueva a medianoche UTC, 2:00 en España). El síntoma se mueve de
+caso (B06 → B08) porque ya no es "quién tarda más", es "a quién le toca
+justo cuando la cuenta ya está sin cupo" — coherente con la hipótesis de
+fondo (varias llamadas a Groq en fila sin espaciar), solo que ahora limitada
+por cupo total del día y no por el reloj de 180/240 s de cada fila.
+
+**Decisión:** no relanzar más hoy — solo desgastaría más la cuota sin poder
+demostrar nada. Mañana (14/09) con cuota fresca, relanzar
+`gh run rerun 34754157164 --failed` sobre `master` tal cual; el código con
+el margen nuevo ya está en `origin/master`, no hace falta otro push.
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)
