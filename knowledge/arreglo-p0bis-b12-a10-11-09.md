@@ -238,6 +238,59 @@ en la salida de `generarCvYCarta` para ese caso que hace que el juez razone
 de más. `PENDIENTES.md` (P1) recoge la decisión de probar esto antes de
 volver a lanzar la tanda de 25 casos entera.
 
+# Sonda aislada de B06 · no es el caso, es cómo se reparte la carga del juez
+
+13/09, tras la 6ª tanda NO CONCLUYENTE. Antes de gastar una 7ª tanda
+completa a ciegas, sonda de un solo caso contra el juez real:
+
+```
+npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml --env-file .env.local \
+  -j 1 --filter-pattern "B06" --no-cache -o evals/promptfoo/sonda-b06.json
+```
+
+**B06 solo, en aislado, pasa limpio en 28 s** — muy lejos del timeout de
+180 s. Sí aparecieron dos `429 Too Many Requests` de Groq durante la
+calificación (quedaba cuota fresca de la tanda completa de 15 minutos antes),
+mostrados en el log de error de promptfoo, pero se resolvieron solos con
+reintento automático. **Esto descarta que B06 sea un caso "difícil" para el
+juez** (rubric largo, ambiguo o que le haga razonar de más) — la hipótesis
+que dejamos abierta el 12/09 no se sostiene.
+
+**Lo que sí se confirma mirando el log de depuración**
+(`promptfoo-debug-*.log`): la calificación por `llm-rubric` corre con
+`provider.delay = 0`, y promptfoo la agrupa aparte de las llamadas de
+generación bajo el mensaje "Grouping model-graded assertions by provider to
+minimize local-model reload overhead". Es decir: **el `--delay 65000` y el
+`-j 1` de `package.json` sólo pautan las llamadas de generación** (el
+proveedor `generarCvYCarta.provider.ts`); las llamadas de calificación a
+Groq —9 en total entre los dos ficheros de evals, 6 en
+`generar-cv-carta.yaml`— se disparan aparte, sin ningún hueco entre ellas.
+
+**Hipótesis de trabajo, no confirmada del todo**: en una tanda completa (25
+casos, 9 aserciones `llm-rubric`), esas 9 llamadas a Groq sin espaciar
+agotan el límite por minuto de la cuenta y generan una cadena de reintentos
+con backoff; cuál de las 9 acaba superando los 180 s depende del orden de
+ejecución y de cuánta cuota quedaba ya gastada — y ese orden es el mismo en
+cada tanda porque los ficheros de test no cambian, así que **siempre cae en
+el mismo sitio del recuento, no porque B06 sea especial**, sino porque su
+posición en la cola de calificación coincide con el punto en que la cuenta
+ya está exhausta. No se ha reproducido el fallo con una tanda completa para
+confirmarlo del todo (habría costado otra tanda entera), pero explica sin
+inventar nada por qué siempre es el mismo caso y por qué en aislado nunca
+falla.
+
+**Lo que esto implica para P1**: no hace falta tocar el prompt ni el modelo
+—la causa está en el arnés de pruebas (evals/), no en `lib/ia.ts`— así que
+no dispara la regla de "relanzar evals" de `CLAUDE.md`. Relanzar la tanda
+completa una vez más sigue siendo razonable (puede que esta vez sí quepa
+todo dentro de la ventana), pero si vuelve a fallar, la palanca real no es
+insistir sino espaciar las llamadas de calificación — algo que ninguna
+opción de `promptfoo eval` expone directamente para las aserciones
+model-graded; requeriría investigar más (¿un `-j` global más bajo cambia
+esto? ¿trocear los 6 `llm-rubric` de `generar-cv-carta.yaml` en menos
+aserciones?). Sin cambios de código hechos todavía — queda para que Mar
+decida si merece la pena.
+
 # Relacionado
 
 - [arreglo-t113-techo-tokens-y-minimos.md](arreglo-t113-techo-tokens-y-minimos.md)

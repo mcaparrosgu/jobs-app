@@ -41,19 +41,23 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   en verde: formato 100 %, calidad_palabras_clave 100 %, fidelidad 95,5 %
   (21/22, único suspenso real B03, sin relación con B06), idioma 100 %,
   resistencia_inyección 100 %. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-- **Con esta van 4 de 6 tandas parando justo en B06** (12-13/09): deja de
-  leerse como una racha mala de Groq y empieza a parecer algo propio de ese
-  caso concreto.
+- **Sonda aislada de B06** (13/09): pasa limpio en 28 s, muy lejos del
+  timeout de 180 s — **no es un caso difícil para el juez**. La causa real
+  está en el arnés de evals: la calificación `llm-rubric` (9 llamadas a
+  Groq) corre sin el espaciado que sí tienen las llamadas de generación, así
+  que el timeout cae en el mismo punto de la cola de calificación en cada
+  tanda — no porque B06 en sí tarde más. No toca `lib/ia.ts`, así que **no
+  hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Decidir con Mar si se prueba una sonda aislada de B06 (para ver si el
-     rubric es el que tarda de más) antes de relanzar la tanda completa una
-     7ª vez, o si simplemente se relanza otra vez sin más.
+  3. Decidir con Mar: relanzar la tanda completa una 7ª vez tal cual (puede
+     que quepa dentro de la ventana), o investigar cómo espaciar las 9
+     llamadas de calificación antes de seguir relanzando a ciegas.
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
      (ya es `master`, la fusión ya se hizo el 12/09).
 - **Estado:** pendiente de los emails y de decidir el siguiente paso sobre
-  B06. Con el aplazamiento a lunes, sin prisa.
+  el juez. Con el aplazamiento a lunes, sin prisa.
 
 ---
 

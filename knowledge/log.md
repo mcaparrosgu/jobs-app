@@ -1,5 +1,26 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (2) — Sonda de B06: no es el caso, es cómo se reparte la carga del juez
+
+* Sonda aislada (`npx promptfoo eval ... --filter-pattern "B06"`): B06 solo
+  pasa limpio en 28 s, muy lejos del timeout de 180 s — descarta que su
+  rubric sea "difícil" para el juez.
+* El log de depuración de promptfoo muestra `provider.delay = 0` en la
+  calificación: el `-j 1 --delay 65000` de `package.json` solo pauta las
+  llamadas de **generación**, no las 9 llamadas `llm-rubric` a Groq (6 en
+  `generar-cv-carta.yaml`, 3 en `extraer-perfil.yaml`), que se disparan
+  agrupadas y sin espaciar. Hipótesis de trabajo (no confirmada del todo):
+  en la tanda completa esas 9 llamadas agotan el límite por minuto de Groq y
+  generan reintentos con backoff; cuál de las 9 acaba superando los 180 s
+  depende del orden — el mismo en cada tanda porque los ficheros de test no
+  cambian, de ahí que siempre caiga en el mismo sitio (B06), no porque el
+  caso en sí sea especial.
+* No hace falta tocar el prompt ni el modelo — la causa está en el arnés de
+  pruebas, no en `lib/ia.ts` — así que no dispara la regla de "relanzar
+  evals" de `CLAUDE.md`. Sin cambios de código hechos todavía; queda para
+  que Mar decida el siguiente paso.
+  → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
+
 ## 2026-09-13 — 6ª tanda del caso, NO CONCLUYENTE otra vez por B06 (ya no parece ruido)
 
 * `gh run rerun 34696212200 --failed` sobre `master` con la cuota de
