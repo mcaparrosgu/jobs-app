@@ -1,5 +1,23 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (8) — Primer intento de diseño visual de Llana en Claude Design, fallido; nueva skill local
+
+* Prompt inicial a Claude Design ("años 70", "evitar lo genérico de IA")
+  produjo justo lo que se quería evitar: tipografía Unbounded (geométrica
+  redondeada "amigable", moda de SaaS 2023-2025, no años 70 de verdad) e
+  icono en formato *squircle* (esquinas muy redondeadas, icono de app por
+  defecto) relleno de franjas — genérico, indistinguible de cualquier app
+  de fintech. Lección: un adjetivo de época sin nombres de fuente/forma
+  concretos se rellena con lo que la IA ya sabe hacer por defecto.
+* Creada skill local `.claude/skills/llana-diseno/SKILL.md` con la
+  dirección corregida: tipografías concretas de referencia (Bank Gothic,
+  Eurostile Bold Extended, ITC Avant Garde Gothic Bold, Cooper Black,
+  Windsor), el motivo de cinta VHS/cassette descrito como forma (franjas
+  rectas sobre fondo oscuro, no dentro de un icono de app), lista explícita
+  de qué NO pedir, y las dos paletas a explorar (anclada en coral/ámbar vs.
+  arcoíris VHS completo). Para usarse antes de cualquier prompt de diseño
+  futuro de la marca, en Claude Design o donde sea.
+
 ## 2026-09-13 (7) — P0-bis por fin VERDE de verdad: fd90edc publicado, P1 desbloqueada
 
 * El push de `98ecd29` (solo documentación, el cierre del nombre) volvió a
