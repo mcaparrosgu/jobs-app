@@ -599,8 +599,13 @@ existe en produccion y no se toca desde aqui.
   (`d5a8a4f`). El robot volvió a evaluar: **el margen nuevo arregló B06**
   (fidelidad 100 %), pero **NO CONCLUYENTE otra vez por B08** —
   `RateLimitExhaustedError` de Groq tras varios 429, no un timeout. Cuota de
-  Groq agotada de verdad tras tres rondas grandes el mismo día; no se
-  relanza más hoy, se retoma el 14/09 con cuota fresca.
+  Groq agotada de verdad tras tres rondas grandes el mismo día; se preveía
+  retomar el 14/09 con cuota fresca. **Resuelto el mismo día**: un push de
+  solo documentación (`98ecd29`, cierre del nombre) volvió a disparar la
+  puerta (T115: compara con lo publicado, no con el push anterior), y con la
+  cuota de Groq ya recuperada dio **VEREDICTO VERDE** (`gh run 34766670480`,
+  fidelidad 96 %). `fd90edc` publicado en producción; P1 desbloqueada sin
+  esperar al día siguiente.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

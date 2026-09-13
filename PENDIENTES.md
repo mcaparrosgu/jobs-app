@@ -21,30 +21,21 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   muestra: se da acceso a las 5 y la prueban en/tras clase. El guion de 3
   tareas de `knowledge/prueba-usuarios-frente-2-prep.md` sigue valiendo como
   referencia de qué mirar.
-- **Bloqueador:** el ajuste de prompt de `extraerPerfil` (`fd90edc`, arregla
-  B12 y A10 de T113) está en `origin/master` desde el 12/09 pero **sin
-  publicar**: 7 tandas del robot en dos días, todas NO CONCLUYENTE salvo una
-  VERDE real en rama el 12/09. Nunca ha sido un problema del prompt — el
-  contenido generado sale en 100 % cada vez que el juez llega a calificarlo.
-  Ha sido, en orden: timeout del juez en B06 (180 s, resuelto subiendo el
-  margen a 240 s el 13/09, commit `d5a8a4f`) y ahora **cuota de Groq agotada
-  de verdad** tras usarla mucho en un mismo día (última tanda, `gh run
-  34754157164`: B06 ya pasa con el margen nuevo, pero B08
-  `RateLimitExhaustedError`). Detalle completo del recorrido en
+- **Bloqueador RESUELTO (13/09, 16:13 UTC):** el push de `98ecd29` (solo
+  documentación, el cierre del nombre "Llana") volvió a disparar la puerta
+  de IA porque `fd90edc` seguía sin publicar (regla T115: se compara con lo
+  publicado, no con el push anterior). Esta vez con cuota de Groq
+  recuperada — **VEREDICTO VERDE** (`gh run 34766670480`): formato 100 %,
+  calidad_palabras_clave 100 %, fidelidad 96 % (24/25, B03 es ruido nuevo,
+  no B06/B08), idioma 100 %, resistencia_inyeccion 100 %. **"Publicar en
+  Vercel" corrió solo y `fd90edc` ya está en producción** — no hizo falta
+  esperar a mañana. Detalle del recorrido completo en
   `knowledge/arreglo-p0bis-b12-a10-11-09.md`.
-- **Decisión de Mar (13/09): esperar a mañana.** La cuota de Groq se renueva
-  a medianoche UTC (2:00 en España); no se relanza más hoy.
 - **Falta:**
-  1. Mañana (14/09), cuota de Groq fresca: `gh run rerun 34754157164
-     --failed` sobre `master` — no hace falta otro push, el código con el
-     margen de 240 s ya está en `origin/master`.
-  2. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional.
-  3. Que Mar traiga los 5 nombres/emails de sus compañeras.
-  4. Darlas de alta en Supabase Auth (`shouldCreateUser: false`).
-- **Estado:** en espera de cuota de Groq fresca (mañana) y de los emails.
-  Con el aplazamiento a lunes, hay margen de sobra. Reconfirmado 13/09 15:10:
-  el run `34754157164` ya había terminado (NO CONCLUYENTE por B08, cuota de
-  Groq) — sin cambios respecto a lo ya documentado.
+  1. Que Mar traiga los 5 nombres/emails de sus compañeras.
+  2. Darlas de alta en Supabase Auth (`shouldCreateUser: false`).
+- **Estado:** desbloqueada. Solo quedan los emails y el alta — puede cerrarse
+  en cuanto Mar los traiga, sin depender ya de ninguna cuota.
 
 ---
 

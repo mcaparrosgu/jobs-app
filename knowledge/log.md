@@ -1,5 +1,20 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (7) — P0-bis por fin VERDE de verdad: fd90edc publicado, P1 desbloqueada
+
+* El push de `98ecd29` (solo documentación, el cierre del nombre) volvió a
+  disparar la puerta de IA — `fd90edc` seguía sin publicar, así que la regla
+  de T115 (comparar con lo publicado, no con el push anterior) evaluó otra
+  vez aunque el commit no tocara `lib/ia.ts`. Cuota de Groq ya recuperada:
+  **VEREDICTO VERDE** (`gh run 34766670480`), las cinco métricas por encima
+  de umbral (fidelidad 96 %, 24/25 — B03 es un fallo nuevo y aislado, nada
+  que ver con B06/B08). "Publicar en Vercel" corrió solo.
+* **`fd90edc` (arregla B12 y A10 de T113) ya está en producción.** No hizo
+  falta esperar al 14/09 con cuota fresca como se había decidido — la cuota
+  se recuperó antes de lo previsto, dentro del mismo día.
+* P1 (entrega a las 5 compañeras) queda desbloqueada: solo faltan los
+  emails de Mar y el alta en Supabase Auth.
+
 ## 2026-09-13 (6) — Nombre del MVP cerrado: Llana
 
 * Sesión de naming con Corita (director-creativo + mkt-06), seis rondas de
