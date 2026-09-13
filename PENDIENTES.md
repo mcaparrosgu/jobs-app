@@ -21,60 +21,28 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   muestra: se da acceso a las 5 y la prueban en/tras clase. El guion de 3
   tareas de `knowledge/prueba-usuarios-frente-2-prep.md` sigue valiendo como
   referencia de qué mirar.
-- **12/09**: relanzado 3 veces sobre la rama `arregla-p0bis-b12-a10-11-09`
-  con cuota fresca — 1º y 2º NO CONCLUYENTE (timeout del juez en B06), 3º
-  **VERDE** (fidelidad 92 %, resto 100 %). Con permiso explícito de Mar,
-  `git push origin master` (el código ya estaba listo, sin merge de git que
-  hacer). El pipeline de producción volvió a evaluar por tocar `lib/ia.ts`:
-  **NO CONCLUYENTE** una 4ª vez (`gh run 34691164886`), otra vez solo B06
-  por timeout. Mar decidió no relanzar una 5ª vez hoy — producción sigue
-  sirviendo el commit anterior, sin romperse; el código ya está en
-  `origin/master` esperando veredicto. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-  Un commit posterior de solo documentación disparó una 5ª tanda igual (el
-  robot compara con lo publicado, no con el commit anterior — cualquier push
-  a `master` cuenta mientras `fd90edc` no se publique): esta vez **cuota de
-  Cloudflare agotada** (429 en varios casos), no solo el juez.
-- **13/09**: relanzado `gh run rerun 34696212200 --failed` sobre `master` con
-  cuota fresca de Cloudflare. **NO CONCLUYENTE una 6ª vez** — esta vez sin
-  ningún 429 de Cloudflare (los 25 casos generaron bien), solo el juez
-  (Groq) sin calificar **B06** otra vez por timeout de 180 s. Todo lo demás
-  en verde: formato 100 %, calidad_palabras_clave 100 %, fidelidad 95,5 %
-  (21/22, único suspenso real B03, sin relación con B06), idioma 100 %,
-  resistencia_inyección 100 %. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-- **Sonda aislada de B06** (13/09): pasa limpio en 28 s, muy lejos del
-  timeout de 180 s — **no es un caso difícil para el juez**. Causa real,
-  verificada en el código fuente de `promptfoo`: `evals/lanzar.mjs` fija
-  `PROMPTFOO_EVAL_TIMEOUT_MS=180000`, y con ese valor la calificación no se
-  aplaza — corre en línea con la generación, compartiendo un único límite de
-  180 s por fila que se calculó solo contra la generación (comentario
-  original: "poco más de un minuto"), sin margen para los reintentos de
-  Groq. B06 es el 4º caso de `generar-cv-carta.yaml` que llama a Groq, justo
-  donde la cuota por minuto empieza a apretar. No toca `lib/ia.ts`, así que
-  **no hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-- **Hecho (13/09, con permiso de Mar):** subido `PROMPTFOO_EVAL_TIMEOUT_MS`
-  de 180 s a 240 s en `evals/lanzar.mjs` y en los dos steps de evals de
-  `.github/workflows/publicar.yml`, subido a `origin/master`
-  (`d5a8a4f`). El robot volvió a evaluar (`gh run 34754157164`):
-  **el margen nuevo funcionó — B06 pasó** (fidelidad 25/25, 100 %, formato
-  idioma y resistencia_inyección también al 100 %). Pero **NO CONCLUYENTE
-  otra vez**, esta vez por **B08**: `RateLimitExhaustedError` de Groq
-  después de 4 reintentos — ya no un timeout por tiempo, sino la cuota de
-  Groq agotada de verdad tras varias tandas seguidas hoy (la 6ª, la sonda de
-  B06, y esta 7ª). Coherente con que la cuota de Groq se renueva a
-  medianoche UTC (2:00 en España). → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-- **No relanzar más hoy.** El margen de tiempo ya no es el problema; lo que
-  falta es cuota de Groq fresca.
+- **Bloqueador:** el ajuste de prompt de `extraerPerfil` (`fd90edc`, arregla
+  B12 y A10 de T113) está en `origin/master` desde el 12/09 pero **sin
+  publicar**: 7 tandas del robot en dos días, todas NO CONCLUYENTE salvo una
+  VERDE real en rama el 12/09. Nunca ha sido un problema del prompt — el
+  contenido generado sale en 100 % cada vez que el juez llega a calificarlo.
+  Ha sido, en orden: timeout del juez en B06 (180 s, resuelto subiendo el
+  margen a 240 s el 13/09, commit `d5a8a4f`) y ahora **cuota de Groq agotada
+  de verdad** tras usarla mucho en un mismo día (última tanda, `gh run
+  34754157164`: B06 ya pasa con el margen nuevo, pero B08
+  `RateLimitExhaustedError`). Detalle completo del recorrido en
+  `knowledge/arreglo-p0bis-b12-a10-11-09.md`.
+- **Decisión de Mar (13/09): esperar a mañana.** La cuota de Groq se renueva
+  a medianoche UTC (2:00 en España); no se relanza más hoy.
 - **Falta:**
-  1. Que Mar traiga los 5 nombres/emails.
-  2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Mañana (14/09), cuota de Groq fresca: relanzar el run fallido
-     (`gh run rerun 34754157164 --failed`) sobre `master` — no hace falta
-     otro push, el código ya está en `origin/master` con el margen nuevo.
-  4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
-     (ya es `master`, la fusión ya se hizo el 12/09).
-- **Estado:** pendiente de los emails y de relanzar mañana con cuota de Groq
-  fresca. Con el aplazamiento a lunes (14/09), hay margen justo — la entrega
-  sigue siendo esa noche/mañana.
+  1. Mañana (14/09), cuota de Groq fresca: `gh run rerun 34754157164
+     --failed` sobre `master` — no hace falta otro push, el código con el
+     margen de 240 s ya está en `origin/master`.
+  2. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional.
+  3. Que Mar traiga los 5 nombres/emails de sus compañeras.
+  4. Darlas de alta en Supabase Auth (`shouldCreateUser: false`).
+- **Estado:** en espera de cuota de Groq fresca (mañana) y de los emails.
+  Con el aplazamiento a lunes, hay margen de sobra.
 
 ---
 

@@ -326,10 +326,12 @@ justo cuando la cuenta ya está sin cupo" — coherente con la hipótesis de
 fondo (varias llamadas a Groq en fila sin espaciar), solo que ahora limitada
 por cupo total del día y no por el reloj de 180/240 s de cada fila.
 
-**Decisión:** no relanzar más hoy — solo desgastaría más la cuota sin poder
-demostrar nada. Mañana (14/09) con cuota fresca, relanzar
-`gh run rerun 34754157164 --failed` sobre `master` tal cual; el código con
-el margen nuevo ya está en `origin/master`, no hace falta otro push.
+**Decisión de Mar (confirmada, 13/09):** esperar a mañana — no relanzar más
+hoy, solo desgastaría más la cuota sin poder demostrar nada. Mañana (14/09)
+con cuota fresca, relanzar `gh run rerun 34754157164 --failed` sobre
+`master` tal cual; el código con el margen nuevo ya está en
+`origin/master`, no hace falta otro push. Con la entrega aplazada al
+lunes 14/09, hay margen de sobra.
 
 # Relacionado
 
