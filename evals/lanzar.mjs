@@ -23,14 +23,23 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 // avanzar, hasta que hubo que matarla. Sin esto, un `npm run evals` que pilla
 // al modelo en mal momento se queda colgado en la terminal sin decir nada.
 //
-//   EVAL_TIMEOUT_MS  · por caso. 3 min es de sobra: el peor camino de
-//                      lib/ia.ts (dos rondas de OpenRouter más el respaldo de
-//                      Groq) suma poco más de un minuto.
+//   EVAL_TIMEOUT_MS  · por caso. Cubre generación + calificación juntas: con
+//                      PROMPTFOO_EVAL_TIMEOUT_MS activo, promptfoo no aplaza
+//                      la calificación por IA aparte de la generación (deja
+//                      de agrupar model-graded assertions), así que las dos
+//                      comparten este mismo margen. El peor camino de
+//                      lib/ia.ts suma poco más de un minuto, pero eso solo
+//                      cubre la generación — verificado el 13/09/2026 (ver
+//                      knowledge/arreglo-p0bis-b12-a10-11-09.md) que el
+//                      juez (Groq) puede necesitar un reintento por 429
+//                      encima de eso, y 180 s se quedaba corto para la suma
+//                      de las dos. 240 s deja margen para un reintento sin
+//                      dejar de cortar una fila de verdad colgada.
 //   MAX_EVAL_TIME_MS · por suite entera. Lo que pase de 20 min está colgado.
 //
 // Los casos que se corten salen como error, y la puerta los cuenta como "sin
 // evaluar", no como suspensos de calidad.
-process.env.PROMPTFOO_EVAL_TIMEOUT_MS ??= '180000';
+process.env.PROMPTFOO_EVAL_TIMEOUT_MS ??= '240000';
 process.env.PROMPTFOO_MAX_EVAL_TIME_MS ??= '1200000';
 
 function ejecutar(script, { tolerarFallo = false } = {}) {

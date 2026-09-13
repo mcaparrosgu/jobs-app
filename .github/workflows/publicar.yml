@@ -368,13 +368,23 @@ jobs:
       #
       # `|| true` deja que el eval termine aunque haya casos en rojo: quien
       # decide no es promptfoo, es la puerta del paso siguiente.
+      #
+      # PROMPTFOO_EVAL_TIMEOUT_MS sube de 180000 a 240000 el 13/09/2026: con
+      # este tope activo, promptfoo no aplaza la calificación por IA aparte
+      # de la generación (deja de agrupar las aserciones model-graded), así
+      # que las dos comparten el mismo margen por fila. 180 s se calculó solo
+      # contra la generación (~1 min en el peor camino de lib/ia.ts) y no
+      # dejaba hueco para un reintento del juez (Groq) ante un 429 — eso
+      # tumbó 4 de 6 tandas seguidas siempre en el mismo caso (B06, el 4º que
+      # llama a Groq en la fila). Detalle en
+      # knowledge/arreglo-p0bis-b12-a10-11-09.md.
       - name: Evals · extraerPerfil (12 casos)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
+          PROMPTFOO_EVAL_TIMEOUT_MS: '240000'
           PROMPTFOO_MAX_EVAL_TIME_MS: '900000'
         run: |
           npx promptfoo eval -c evals/promptfoo/extraer-perfil.yaml \
@@ -387,7 +397,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          PROMPTFOO_EVAL_TIMEOUT_MS: '180000'
+          PROMPTFOO_EVAL_TIMEOUT_MS: '240000'
           PROMPTFOO_MAX_EVAL_TIME_MS: '1800000'
         run: |
           npx promptfoo eval -c evals/promptfoo/generar-cv-carta.yaml \
