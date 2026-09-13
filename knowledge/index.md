@@ -593,7 +593,9 @@ existe en produccion y no se toca desde aqui.
   la generación, sin margen para los reintentos de Groq. B06 es el 4º caso
   que llama a Groq en la fila, justo donde la cuota por minuto empieza a
   apretar. No toca `lib/ia.ts`, así que no dispara la regla de relanzar
-  evals; la palanca de menor riesgo es subir ese margen de tiempo.
+  evals. Con permiso de Mar, subido ese margen de 180 a 240 s en
+  `evals/lanzar.mjs` y `.github/workflows/publicar.yml` (commit local, sin
+  push; falta subir y relanzar con el margen nuevo).
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

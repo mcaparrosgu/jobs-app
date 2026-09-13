@@ -1,5 +1,18 @@
 # Registro de cambios del bundle
 
+## 2026-09-13 (3) — Subido el margen del timeout de evals de 180 a 240 s
+
+* Con permiso explícito de Mar, subido `PROMPTFOO_EVAL_TIMEOUT_MS` de 180000
+  a 240000 en `evals/lanzar.mjs` y en los dos steps de evals de
+  `.github/workflows/publicar.yml` (`extraerPerfil` y `generarCvYCarta`).
+  Ataca directamente la causa verificada en el seguimiento anterior: ese
+  margen se calculó solo contra la generación y no dejaba hueco para un
+  reintento del juez. Cambio solo en el arnés de evals — no toca
+  `lib/ia.ts` ni `prompts/system.md`, así que no dispara la regla de
+  relanzar evals de `CLAUDE.md`. YAML verificado (`js-yaml`). Commit local,
+  sin push. Falta subir a `origin/master` y relanzar la tanda con el margen
+  nuevo.
+
 ## 2026-09-13 (2) — Sonda de B06 + causa real verificada en el código de promptfoo
 
 * Sonda aislada (`npx promptfoo eval ... --filter-pattern "B06"`): B06 solo

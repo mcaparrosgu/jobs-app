@@ -51,20 +51,21 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   Groq. B06 es el 4º caso de `generar-cv-carta.yaml` que llama a Groq, justo
   donde la cuota por minuto empieza a apretar. No toca `lib/ia.ts`, así que
   **no hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
-- **Recomendación:** subir `PROMPTFOO_EVAL_TIMEOUT_MS` (en `evals/lanzar.mjs`
-  y `.github/workflows/publicar.yml`) para dar margen a generación +
-  calificación + algún reintento — cambio de bajo riesgo, solo en el arnés
-  de evals, no en código de producción. Pendiente del visto bueno de Mar por
-  tocar un fichero de workflow de CI.
+- **Hecho (13/09, con permiso de Mar):** subido `PROMPTFOO_EVAL_TIMEOUT_MS`
+  de 180 s a 240 s en `evals/lanzar.mjs` y en los dos steps de evals de
+  `.github/workflows/publicar.yml` — da margen a que generación +
+  calificación + un reintento del juez quepan en el mismo hueco. Cambio solo
+  en el arnés de evals, no en `lib/ia.ts`. Commit local, sin push.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Decidir con Mar: subir el margen del timeout antes de relanzar, o
-     relanzar la tanda completa una 7ª vez tal cual.
+  3. Relanzar la tanda completa (`gh run rerun 34696212200 --failed`) con el
+     margen nuevo ya en `master` — hace falta subir estos commits primero.
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
      (ya es `master`, la fusión ya se hizo el 12/09).
-- **Estado:** pendiente de los emails y de decidir el siguiente paso sobre
-  el timeout del juez. Con el aplazamiento a lunes, sin prisa.
+- **Estado:** pendiente de los emails y de subir el cambio de timeout a
+  `origin/master` para poder relanzar con el margen nuevo. Con el
+  aplazamiento a lunes, sin prisa.
 
 ---
 
