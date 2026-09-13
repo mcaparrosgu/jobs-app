@@ -586,12 +586,14 @@ existe en produccion y no se toca desde aqui.
   Seguimiento 13/09: relanzado con cuota fresca — **NO CONCLUYENTE una 6ª
   vez**, otra vez solo por timeout del juez en **B06** (nada de Cloudflare
   esta vez, los 25 casos generaron bien). Sonda aislada de B06: pasa limpio
-  en 28 s — **no es un caso difícil para el juez**. La causa real está en el
-  arnés: la calificación `llm-rubric` (9 llamadas a Groq en total) corre con
-  `provider.delay = 0`, sin el espaciado que `-j 1 --delay` sí aplica a la
-  generación, así que el caso que acaba topando el timeout de 180 s depende
-  del orden de la cola de calificación — el mismo en cada tanda — no de B06
-  en sí. No toca `lib/ia.ts`, así que no dispara la regla de relanzar evals.
+  en 28 s — **no es un caso difícil para el juez**. Causa real, verificada
+  en el código fuente de `promptfoo`: con `PROMPTFOO_EVAL_TIMEOUT_MS=180000`
+  activo, la calificación no se aplaza — corre en línea con la generación,
+  compartiendo un único límite de 180 s por fila que se calculó solo contra
+  la generación, sin margen para los reintentos de Groq. B06 es el 4º caso
+  que llama a Groq en la fila, justo donde la cuota por minuto empieza a
+  apretar. No toca `lib/ia.ts`, así que no dispara la regla de relanzar
+  evals; la palanca de menor riesgo es subir ese margen de tiempo.
 
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.

@@ -256,40 +256,47 @@ reintento automático. **Esto descarta que B06 sea un caso "difícil" para el
 juez** (rubric largo, ambiguo o que le haga razonar de más) — la hipótesis
 que dejamos abierta el 12/09 no se sostiene.
 
-**Lo que sí se confirma mirando el log de depuración**
-(`promptfoo-debug-*.log`): la calificación por `llm-rubric` corre con
-`provider.delay = 0`, y promptfoo la agrupa aparte de las llamadas de
-generación bajo el mensaje "Grouping model-graded assertions by provider to
-minimize local-model reload overhead". Es decir: **el `--delay 65000` y el
-`-j 1` de `package.json` sólo pautan las llamadas de generación** (el
-proveedor `generarCvYCarta.provider.ts`); las llamadas de calificación a
-Groq —9 en total entre los dos ficheros de evals, 6 en
-`generar-cv-carta.yaml`— se disparan aparte, sin ningún hueco entre ellas.
+**Primera lectura del log de depuración (corregida más abajo):** al ver
+`provider.delay = 0` en el log de la sonda pensé que era la calificación
+corriendo sin el espaciado de `--delay`. Era la llamada de **generación**
+de esa misma sonda — se me olvidó pasar `--delay` al lanzarla a mano, así
+que ese `0` no prueba nada sobre la calificación. Falso positivo, corregido
+leyendo el código fuente de `promptfoo` instalado
+(`node_modules/promptfoo/dist/src/evaluator-SSlcaq_U.js`) en vez de fiarme
+de una sola línea de log.
 
-**Hipótesis de trabajo, no confirmada del todo**: en una tanda completa (25
-casos, 9 aserciones `llm-rubric`), esas 9 llamadas a Groq sin espaciar
-agotan el límite por minuto de la cuenta y generan una cadena de reintentos
-con backoff; cuál de las 9 acaba superando los 180 s depende del orden de
-ejecución y de cuánta cuota quedaba ya gastada — y ese orden es el mismo en
-cada tanda porque los ficheros de test no cambian, así que **siempre cae en
-el mismo sitio del recuento, no porque B06 sea especial**, sino porque su
-posición en la cola de calificación coincide con el punto en que la cuenta
-ya está exhausta. No se ha reproducido el fallo con una tanda completa para
-confirmarlo del todo (habría costado otra tanda entera), pero explica sin
-inventar nada por qué siempre es el mismo caso y por qué en aislado nunca
-falla.
+**Mecanismo real, verificado en el código:** `evals/lanzar.mjs` fija
+`PROMPTFOO_EVAL_TIMEOUT_MS=180000`. Con ese valor activo,
+`shouldGroupGradingByProvider` sale `false` (línea ~9057: solo se agrupa la
+calificación aparte si `concurrency === 1 && !hasEvalStepTimeout`), así que
+en las tandas reales del robot **la calificación NO se aplaza ni se agrupa
+— corre en línea, dentro del mismo paso que la generación**, y los dos
+juntos comparten un único límite de 180 s por fila
+(`processEvalStepWithTimeout`, `Promise.race` contra ese timeout). El
+comentario que fija los 180 s en `lanzar.mjs` dice explícitamente que ese
+margen se calculó **solo contra la generación** ("el peor camino de
+`lib/ia.ts` suma poco más de un minuto") — nunca contó con que la
+calificación (con sus propios reintentos si Groq responde 429) tuviera que
+caber en el mismo hueco.
 
-**Lo que esto implica para P1**: no hace falta tocar el prompt ni el modelo
-—la causa está en el arnés de pruebas (evals/), no en `lib/ia.ts`— así que
-no dispara la regla de "relanzar evals" de `CLAUDE.md`. Relanzar la tanda
-completa una vez más sigue siendo razonable (puede que esta vez sí quepa
-todo dentro de la ventana), pero si vuelve a fallar, la palanca real no es
-insistir sino espaciar las llamadas de calificación — algo que ninguna
-opción de `promptfoo eval` expone directamente para las aserciones
-model-graded; requeriría investigar más (¿un `-j` global más bajo cambia
-esto? ¿trocear los 6 `llm-rubric` de `generar-cv-carta.yaml` en menos
-aserciones?). Sin cambios de código hechos todavía — queda para que Mar
-decida si merece la pena.
+En `generar-cv-carta.yaml`, los casos con aserción `llm-rubric` (que llaman
+a Groq) son, en este orden: **B02, B03, B04, B06, B08, B10**. B06 es el 4º
+que llama a Groq en la fila, después de que `extraer-perfil.yaml` (3
+llamadas más) ya haya calentado la cuenta en el mismo job. Encaja con que
+sea justo ahí donde la cuota por minuto empieza a apretar y un reintento con
+backoff, sumado a la generación de esa fila, cruce los 180 s — sin que B06
+tenga nada de especial en su contenido (la sonda aislada, sin esa presión
+acumulada, lo confirma: 28 s limpios).
+
+**Lo que esto implica para P1**: la causa está en el arnés de pruebas
+(`evals/lanzar.mjs` + el workflow), no en `lib/ia.ts` ni en el prompt —así
+que no dispara la regla de "relanzar evals" de `CLAUDE.md`. La palanca más
+directa y de menor riesgo es subir el margen de
+`PROMPTFOO_EVAL_TIMEOUT_MS` (en `evals/lanzar.mjs` y en
+`.github/workflows/publicar.yml`) lo suficiente para que quepan generación
++ calificación + algún reintento — sin tocar código de producción. Sin
+cambios hechos todavía: pendiente del visto bueno de Mar, porque toca un
+fichero de workflow de CI.
 
 # Relacionado
 

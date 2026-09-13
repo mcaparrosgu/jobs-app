@@ -1,24 +1,30 @@
 # Registro de cambios del bundle
 
-## 2026-09-13 (2) — Sonda de B06: no es el caso, es cómo se reparte la carga del juez
+## 2026-09-13 (2) — Sonda de B06 + causa real verificada en el código de promptfoo
 
 * Sonda aislada (`npx promptfoo eval ... --filter-pattern "B06"`): B06 solo
   pasa limpio en 28 s, muy lejos del timeout de 180 s — descarta que su
   rubric sea "difícil" para el juez.
-* El log de depuración de promptfoo muestra `provider.delay = 0` en la
-  calificación: el `-j 1 --delay 65000` de `package.json` solo pauta las
-  llamadas de **generación**, no las 9 llamadas `llm-rubric` a Groq (6 en
-  `generar-cv-carta.yaml`, 3 en `extraer-perfil.yaml`), que se disparan
-  agrupadas y sin espaciar. Hipótesis de trabajo (no confirmada del todo):
-  en la tanda completa esas 9 llamadas agotan el límite por minuto de Groq y
-  generan reintentos con backoff; cuál de las 9 acaba superando los 180 s
-  depende del orden — el mismo en cada tanda porque los ficheros de test no
-  cambian, de ahí que siempre caiga en el mismo sitio (B06), no porque el
-  caso en sí sea especial.
+* Primera lectura del log de depuración (equivocada, corregida enseguida):
+  un `provider.delay = 0` que pensé que era de la calificación era en
+  realidad de la generación de esa misma sonda (se me olvidó pasar
+  `--delay` al lanzarla a mano).
+* Causa real, verificada leyendo el código fuente instalado de `promptfoo`
+  (no adivinada): `evals/lanzar.mjs` fija `PROMPTFOO_EVAL_TIMEOUT_MS=180000`,
+  y con ese valor activo la calificación **no se aplaza ni se agrupa** —
+  corre en línea, dentro del mismo paso que la generación, compartiendo un
+  único límite de 180 s por fila. Ese margen se calculó solo contra la
+  generación ("poco más de un minuto" en el peor camino), nunca contó con
+  que la calificación (con sus propios reintentos si Groq da 429) tuviera
+  que caber en el mismo hueco. B06 es el 4º caso de `generar-cv-carta.yaml`
+  que llama a Groq (tras B02, B03, B04, y tras las 3 llamadas de
+  `extraer-perfil.yaml` en el mismo job) — encaja con el punto donde la
+  cuota por minuto empieza a apretar.
 * No hace falta tocar el prompt ni el modelo — la causa está en el arnés de
   pruebas, no en `lib/ia.ts` — así que no dispara la regla de "relanzar
-  evals" de `CLAUDE.md`. Sin cambios de código hechos todavía; queda para
-  que Mar decida el siguiente paso.
+  evals" de `CLAUDE.md`. La palanca de menor riesgo es subir el margen de
+  `PROMPTFOO_EVAL_TIMEOUT_MS`. Sin cambios de código hechos todavía; queda
+  para que Mar decida el siguiente paso.
   → [arreglo-p0bis-b12-a10-11-09.md](arreglo-p0bis-b12-a10-11-09.md)
 
 ## 2026-09-13 — 6ª tanda del caso, NO CONCLUYENTE otra vez por B06 (ya no parece ruido)

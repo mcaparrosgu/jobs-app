@@ -42,22 +42,29 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   (21/22, único suspenso real B03, sin relación con B06), idioma 100 %,
   resistencia_inyección 100 %. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
 - **Sonda aislada de B06** (13/09): pasa limpio en 28 s, muy lejos del
-  timeout de 180 s — **no es un caso difícil para el juez**. La causa real
-  está en el arnés de evals: la calificación `llm-rubric` (9 llamadas a
-  Groq) corre sin el espaciado que sí tienen las llamadas de generación, así
-  que el timeout cae en el mismo punto de la cola de calificación en cada
-  tanda — no porque B06 en sí tarde más. No toca `lib/ia.ts`, así que **no
-  hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+  timeout de 180 s — **no es un caso difícil para el juez**. Causa real,
+  verificada en el código fuente de `promptfoo`: `evals/lanzar.mjs` fija
+  `PROMPTFOO_EVAL_TIMEOUT_MS=180000`, y con ese valor la calificación no se
+  aplaza — corre en línea con la generación, compartiendo un único límite de
+  180 s por fila que se calculó solo contra la generación (comentario
+  original: "poco más de un minuto"), sin margen para los reintentos de
+  Groq. B06 es el 4º caso de `generar-cv-carta.yaml` que llama a Groq, justo
+  donde la cuota por minuto empieza a apretar. No toca `lib/ia.ts`, así que
+  **no hace falta relanzar evals por esto**. → `knowledge/arreglo-p0bis-b12-a10-11-09.md`
+- **Recomendación:** subir `PROMPTFOO_EVAL_TIMEOUT_MS` (en `evals/lanzar.mjs`
+  y `.github/workflows/publicar.yml`) para dar margen a generación +
+  calificación + algún reintento — cambio de bajo riesgo, solo en el arnés
+  de evals, no en código de producción. Pendiente del visto bueno de Mar por
+  tocar un fichero de workflow de CI.
 - **Falta:**
   1. Que Mar traiga los 5 nombres/emails.
   2. Darlos de alta en Supabase Auth (`shouldCreateUser: false`).
-  3. Decidir con Mar: relanzar la tanda completa una 7ª vez tal cual (puede
-     que quepa dentro de la ventana), o investigar cómo espaciar las 9
-     llamadas de calificación antes de seguir relanzando a ciegas.
+  3. Decidir con Mar: subir el margen del timeout antes de relanzar, o
+     relanzar la tanda completa una 7ª vez tal cual.
   4. Si sale VERDE: "Publicar en Vercel" corre solo, sin permiso adicional
      (ya es `master`, la fusión ya se hizo el 12/09).
 - **Estado:** pendiente de los emails y de decidir el siguiente paso sobre
-  el juez. Con el aplazamiento a lunes, sin prisa.
+  el timeout del juez. Con el aplazamiento a lunes, sin prisa.
 
 ---
 
