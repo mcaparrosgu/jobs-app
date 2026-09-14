@@ -1,5 +1,22 @@
 # Registro de cambios del bundle
 
+## 2026-09-14 (1) — P11: comprobación de registro de "Llana", colisión real encontrada
+
+* Comprobación de dominio (RDAP/WHOIS, sin navegador disponible esta sesión):
+  `llana.com` registrado desde 2003 y **aparcado en venta en Sedo**;
+  `llana.app` registrado en marzo de 2026 (sin contenido); `llana.io` es la
+  web de `github.com/juicyllama/llana`, un proyecto open-source real y
+  activo (207 ⭐, API wrapper para bases de datos) — colisión de marca que
+  la sesión de naming del 13/09 no vio por buscar solo en el terreno de
+  CV/empleo.
+* `llana.es` y la búsqueda en la OEPM (`ceo.oepm.es/busquedaMarcas`) quedan
+  **sin confirmar**: ambas son aplicaciones JS que necesitan navegador, y la
+  extensión Claude in Chrome no estaba conectada en esta sesión.
+* **Decisión de Mar: seguir con "Llana"** — categoría de producto distinta
+  (developer tools vs. búsqueda de empleo en castellano), riesgo de marca
+  bajo. No se reabre el naming. Falta cerrar `llana.es` + OEPM antes de
+  propagar el nombre a copy público / README.
+
 ## 2026-09-13 (8) — Primer intento de diseño visual de Llana en Claude Design, fallido; nueva skill local
 
 * Prompt inicial a Claude Design ("años 70", "evitar lo genérico de IA")

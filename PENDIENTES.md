@@ -46,10 +46,30 @@ enlaza a su detalle en `knowledge/`. Al cerrar una tarea se mueve a
   interno; lanzamiento más amplio no): comprobar dominio real en un
   registrador y marca en la OEPM. La sesión de naming (13/09) descartó
   colisión de producto por búsqueda web — no sustituye ese trámite.
+- **Comprobación 14/09 (parcial, sin navegador):**
+  - `llana.com`: registrado desde 2003, aparcado en venta en Sedo, activo
+    (actualizado 07/09/2026).
+  - `llana.app`: registrado 05/03/2026 (GoDaddy), sin contenido visible.
+  - `llana.io`: es la web oficial de `github.com/juicyllama/llana`, un
+    proyecto open-source real y activo (207 ⭐, API wrapper para bases de
+    datos) — categoría de developer tools, no empleo/CV. La sesión de
+    naming del 13/09 no lo encontró por buscar solo en el terreno de
+    CV/empleo.
+  - `llana.es`: **sin confirmar** — España restringe el WHOIS público
+    desde 2013 y el buscador oficial (nic.es/registradores) es una SPA en
+    JS que no se puede leer sin navegador.
+  - OEPM (`ceo.oepm.es/busquedaMarcas`): **sin hacer** — también SPA en JS.
+  - Ambas comprobaciones requieren la extensión Claude in Chrome, que no
+    estaba conectada en esta sesión (`claude.ai/chrome`).
+- **Decisión de Mar (14/09):** seguir con "Llana" pese a la colisión con
+  `juicyllama/llana` (categoría distinta, riesgo de marca bajo) — **no se
+  reabre el naming**. Queda solo terminar `llana.es` + OEPM.
 - **Contexto:** `docs/marketing/05-identidad-verbal.md` §1.e,
   [[decision_nombre_llana_13_09]].
 - **Estado:** no bloquea P1 (entrega a la clase); sí antes de propagar el
-  nombre a copy público / README.
+  nombre a copy público / README. Falta reconectar el navegador (o Mar lo
+  comprueba ella misma en `dominios.es` y `ceo.oepm.es/busquedaMarcas`) para
+  cerrar del todo.
 
 ### P3 · Fechas en el CV
 - **Qué:** reintentar añadir el periodo por entrada al CV generado, con una

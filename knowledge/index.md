@@ -611,6 +611,17 @@ existe en produccion y no se toca desde aqui.
   fidelidad 96 %). `fd90edc` publicado en producción; P1 desbloqueada sin
   esperar al día siguiente.
 
+- [comprobacion-registro-llana-14-09.md](comprobacion-registro-llana-14-09.md)
+  — 14/09/2026, P11 (parcial): `llana.com` registrado desde 2003 y aparcado
+  en venta en Sedo; `llana.app` registrado en marzo de 2026; `llana.io` es
+  la web de un proyecto open-source real y activo —
+  `github.com/juicyllama/llana`, 207 ⭐, API wrapper para bases de datos—
+  que la sesión de naming del 13/09 no encontró por buscar solo en el
+  terreno de CV/empleo. `llana.es` y la búsqueda OEPM quedan sin confirmar
+  (SPA en JS, sin navegador conectado). **Decisión de Mar: seguir con
+  "Llana"** — categoría distinta, riesgo de marca bajo, no se reabre el
+  naming.
+
 Segun avance el proyecto, cada decision o hito relevante (spec, stack, tarea
 completada, incidente, aprendizaje) se documenta aqui como un concepto nuevo.
 
